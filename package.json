@@ -1,0 +1,36 @@
+{
+  "name": "synchron",
+  "version": "1.0.0",
+  "description": "Desktop Activity Tracker & Project Dashboard",
+  "main": "electron-main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win portable",
+    "build": "electron-builder --win"
+  },
+  "build": {
+    "appId": "com.jrbay.synchron",
+    "productName": "Synchron",
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/.cache/**"
+    ],
+    "portable": {
+      "artifactName": "Synchron.exe"
+    }
+  },
+  "author": "jrbay",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^40.6.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.97.0"
+  }
+}

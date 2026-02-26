@@ -6,7 +6,7 @@ const GITHUB_RELEASE = "https://github.com/jakebaynham/spiros/releases/latest";
 
 export default function Download() {
   return (
-    <section id="download" className="py-20 px-4">
+    <section id="download" className="px-4 w-full">
       <div className="max-w-4xl mx-auto">
         {/* Section header */}
         <div className="text-center mb-14">

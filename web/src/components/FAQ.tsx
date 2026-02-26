@@ -37,7 +37,7 @@ export default function FAQ() {
   const [open, setOpen] = useState<number | null>(null);
 
   return (
-    <section id="faq" className="py-20 px-4 bg-bg-dark/50">
+    <section id="faq" className="px-4 py-12 flex-1 bg-bg-dark/50">
       <div className="max-w-3xl mx-auto">
         {/* Section header */}
         <div className="text-center mb-14">

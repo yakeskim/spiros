@@ -99,3 +99,78 @@ body {
   background: #f5c542;
   color: #0f0e17;
 }
+
+/* Snap scrolling */
+.snap-container {
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;          /* Firefox */
+  -ms-overflow-style: none;       /* IE/Edge */
+}
+
+.snap-container::-webkit-scrollbar {
+  display: none;                  /* Chrome/Safari */
+}
+
+.snap-section {
+  min-height: calc(100vh - 64px);
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.snap-section-end {
+  min-height: calc(100vh - 64px);
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Scroll indicator */
+.scroll-indicator {
+  position: fixed;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scroll-indicator-dot {
+  width: 8px;
+  height: 8px;
+  border: 1px solid #4a4e6e;
+  background: #2d334a;
+  cursor: pointer;
+}
+
+.scroll-indicator-dot.active {
+  background: #f5c542;
+  border-color: #f5c542;
+  box-shadow: 0 0 4px #f5c54266;
+}
+
+/* Loading bar fill animation (Step 1 mockup) */
+@keyframes loading-fill {
+  0% { width: 0%; }
+  80% { width: 85%; }
+  100% { width: 92%; }
+}
+
+.loading-fill {
+  animation: loading-fill 3s steps(16) infinite;
+}
+
+/* Floating animation */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.animate-float {
+  animation: float 3s steps(6) infinite;
+}

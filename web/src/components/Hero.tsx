@@ -5,7 +5,7 @@ import PixelButton from "./PixelButton";
 
 export default function Hero() {
   return (
-    <section className="relative py-20 sm:py-28 px-4 overflow-hidden">
+    <section className="relative px-4 w-full overflow-hidden">
       {/* Decorative corner accents */}
       <div className="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-gold/30" />
       <div className="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-gold/30" />

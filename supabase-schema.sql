@@ -14,6 +14,9 @@ create table public.profiles (
   title text default 'Novice',
   streak_current integer default 0,
   streak_best integer default 0,
+  last_seen_at timestamptz default null,
+  display_name_changed_count integer default 0,
+  display_name_changed_month text default null,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );

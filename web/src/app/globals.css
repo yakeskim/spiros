@@ -1,0 +1,101 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Kill all border-radius globally */
+*,
+*::before,
+*::after {
+  border-radius: 0 !important;
+}
+
+/* Scanline overlay */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 0, 0, 0.06) 2px,
+    rgba(0, 0, 0, 0.06) 4px
+  );
+}
+
+/* Pixel grid background */
+body {
+  background-color: #0f0e17;
+  background-image:
+    linear-gradient(rgba(68, 136, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(68, 136, 255, 0.03) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+
+/* Text shadow utilities */
+.text-shadow-pixel {
+  text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.5);
+}
+
+.text-shadow-deep {
+  text-shadow: 2px 2px 0 #000, 4px 4px 0 rgba(0, 0, 0, 0.3);
+}
+
+/* Pixel scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a2e;
+  border-left: 2px solid #111122;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #4a4e6e;
+  border: 2px solid #111122;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6e72a0;
+}
+
+/* Scroll-reveal animation */
+.scroll-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.5s steps(4), transform 0.5s steps(4);
+}
+
+.scroll-reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* XP bar shine effect */
+@keyframes xp-shine {
+  0% { left: -40%; }
+  100% { left: 140%; }
+}
+
+.xp-bar-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.15),
+    transparent
+  );
+  width: 40%;
+  animation: xp-shine 3s steps(12) infinite;
+}
+
+/* Selection color */
+::selection {
+  background: #f5c542;
+  color: #0f0e17;
+}

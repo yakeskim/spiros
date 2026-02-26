@@ -1,0 +1,53 @@
+SPIROS - END USER LICENSE AGREEMENT
+
+Last updated: February 2026
+
+By installing or using Spiros ("the Software"), you agree to the
+following terms:
+
+1. LICENSE GRANT
+   You are granted a free, non-exclusive, non-transferable license to
+   install and use Spiros on your personal computer(s) for personal
+   or commercial productivity tracking purposes.
+
+2. OWNERSHIP
+   Spiros and all related intellectual property remain the property
+   of the Spiros team. This license does not transfer ownership.
+
+3. DATA & PRIVACY
+   - All activity tracking data is stored locally on your machine.
+   - Cloud sync features (Champion tier) transmit data only to our
+     secure servers and are opt-in.
+   - We do not sell or share your personal data with third parties.
+   - See our full Privacy Policy at https://spiros.app/privacy
+   - See our Terms of Service at https://spiros.app/terms
+
+4. RESTRICTIONS
+   You may NOT:
+   - Reverse engineer, decompile, or disassemble the Software
+   - Redistribute, sublicense, or resell the Software
+   - Remove or alter any branding, notices, or labels
+   - Use the Software for any unlawful purpose
+
+5. DISCLAIMER OF WARRANTIES
+   THE SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED. USE AT YOUR OWN RISK.
+
+6. LIMITATION OF LIABILITY
+   IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY DAMAGES ARISING
+   FROM THE USE OF THIS SOFTWARE.
+
+7. TERMINATION
+   This license is effective until terminated. It terminates
+   automatically if you violate any of these terms. Upon termination,
+   you must uninstall and destroy all copies of the Software.
+
+8. UPDATES
+   The Software may automatically check for and install updates.
+   Continued use after an update constitutes acceptance of any
+   revised terms.
+
+By clicking "I Agree" or installing Spiros, you acknowledge that
+you have read and agree to this End User License Agreement.
+
+Copyright 2026 Spiros. All rights reserved.

@@ -1,0 +1,67 @@
+{
+  "name": "spiros-app",
+  "version": "1.0.0",
+  "description": "Desktop Activity Tracker & Project Dashboard",
+  "main": "electron-main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win",
+    "dist:win": "electron-builder --win",
+    "dist:mac": "electron-builder --mac",
+    "dist:all": "electron-builder --win --mac",
+    "publish": "electron-builder --win --publish always",
+    "publish:all": "electron-builder --win --mac --publish always",
+    "version:patch": "node scripts/bump-version.js patch",
+    "version:minor": "node scripts/bump-version.js minor",
+    "version:major": "node scripts/bump-version.js major"
+  },
+  "build": {
+    "appId": "com.jrbay.spiros",
+    "productName": "Spiros",
+    "publish": {
+      "provider": "github",
+      "owner": "yakeskim",
+      "repo": "spiros"
+    },
+    "win": {
+      "target": ["nsis"],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeader": "assets/installer-header.bmp",
+      "installerSidebar": "assets/installer-sidebar.bmp",
+      "license": "LICENSE.txt",
+      "artifactName": "Spiros-Setup.${ext}",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Spiros"
+    },
+    "mac": {
+      "target": ["dmg"],
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.productivity"
+    },
+    "dmg": {
+      "artifactName": "Spiros.${ext}"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/.cache/**"
+    ]
+  },
+  "author": "jrbay",
+  "license": "SEE LICENSE IN LICENSE.txt",
+  "devDependencies": {
+    "electron": "40.6.0",
+    "electron-builder": "^25.1.8"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.97.0",
+    "electron-updater": "^6.3.9"
+  }
+}

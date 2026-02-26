@@ -74,12 +74,10 @@ export default function Download() {
         {/* All releases link */}
         <div className="text-center mt-8">
           <a
-            href={GITHUB_RELEASE}
-            target="_blank"
-            rel="noopener noreferrer"
+            href="/download"
             className="text-[9px] text-text-dim hover:text-gold transition-colors"
           >
-            View all releases on GitHub &#8594;
+            View all versions &amp; past releases &#8594;
           </a>
         </div>
       </div>

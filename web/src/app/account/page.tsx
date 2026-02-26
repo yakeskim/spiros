@@ -122,6 +122,7 @@ export default function AccountPage() {
   const xpNeeded = xpForLevel(level);
   const xpPercent = Math.min(100, Math.round((xp / xpNeeded) * 100));
   const titleColor = TITLE_COLORS[profile?.title ?? ""] ?? "text-text-dim";
+  const userTier = profile?.tier ?? "free";
 
   return (
     <>
@@ -237,6 +238,39 @@ export default function AccountPage() {
               </form>
             )}
           </div>
+        </section>
+
+        {/* Subscription */}
+        <section className="bg-bg-dark border-2 border-border-dark shadow-pixel p-6 space-y-4">
+          <h2 className="text-[11px] text-text-bright mb-4">Subscription</h2>
+
+          <div className="flex items-center gap-3">
+            <span className="text-[8px] text-text-dim w-24 shrink-0">Current Tier</span>
+            <span
+              className={`text-[10px] font-pixel ${
+                userTier === "champion"
+                  ? "text-gold"
+                  : userTier === "guild"
+                  ? "text-purple"
+                  : "text-text-dim"
+              }`}
+            >
+              {userTier === "champion"
+                ? "CHAMPION"
+                : userTier === "guild"
+                ? "GUILD"
+                : "WANDERER"}
+            </span>
+          </div>
+
+          {userTier === "free" && (
+            <a
+              href="/subscribe"
+              className="text-[9px] text-gold hover:underline transition-colors inline-block"
+            >
+              Upgrade your tier &#8594;
+            </a>
+          )}
         </section>
 
         {/* Stats Panel */}

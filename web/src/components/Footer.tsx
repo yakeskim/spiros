@@ -14,7 +14,7 @@ export default function Footer() {
             <a href="#features" className="text-[9px] text-text-dim hover:text-gold transition-colors">
               Features
             </a>
-            <a href="#download" className="text-[9px] text-text-dim hover:text-gold transition-colors">
+            <a href="/download" className="text-[9px] text-text-dim hover:text-gold transition-colors">
               Download
             </a>
             <a href="#pricing" className="text-[9px] text-text-dim hover:text-gold transition-colors">

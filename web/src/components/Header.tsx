@@ -7,7 +7,7 @@ import PixelButton from "./PixelButton";
 const NAV_LINKS = [
   { label: "Features", href: "#features" },
   { label: "How It Works", href: "#how-it-works" },
-  { label: "Download", href: "#download" },
+  { label: "Download", href: "/download" },
   { label: "Pricing", href: "#pricing" },
   { label: "FAQ", href: "#faq" },
   { label: "Privacy", href: "/privacy" },
@@ -55,7 +55,7 @@ export default function Header() {
               </a>
             )
           )}
-          <PixelButton href="#download" className="text-[9px] px-4 py-2">
+          <PixelButton href="/download" className="text-[9px] px-4 py-2">
             DOWNLOAD FREE
           </PixelButton>
         </nav>
@@ -102,7 +102,7 @@ export default function Header() {
               </a>
             )
           )}
-          <PixelButton href="#download" className="text-[9px] w-full">
+          <PixelButton href="/download" className="text-[9px] w-full">
             DOWNLOAD FREE
           </PixelButton>
         </nav>

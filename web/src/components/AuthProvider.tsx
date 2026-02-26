@@ -12,6 +12,7 @@ interface Profile {
   streak_current: number;
   streak_best: number;
   last_seen_at: string | null;
+  tier: string | null;
 }
 
 interface AuthContextValue {
@@ -37,7 +38,7 @@ export function useAuth() {
 async function fetchProfile(userId: string): Promise<Profile | null> {
   const { data, error } = await supabase
     .from("profiles")
-    .select("display_name, level, xp, title, streak_current, streak_best, last_seen_at")
+    .select("display_name, level, xp, title, streak_current, streak_best, last_seen_at, tier")
     .eq("id", userId)
     .single();
 

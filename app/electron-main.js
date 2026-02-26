@@ -53,7 +53,7 @@ function ensureDirs() {
 // ===== Settings =====
 function getDefaultSettings() {
   return {
-    projectsFolder: app.getPath('documents'),
+    projectsFolder: '',
     pollIntervalMs: 5000,
     categories: {
       music: { patterns: ['FL Studio', 'Ableton', 'Audacity', 'REAPER', 'Logic Pro', 'GarageBand', 'Bitwig', 'Cubase', 'Pro Tools', 'Bandlab', 'Soundtrap'], icon: 'music-note', color: '#e040fb' },
@@ -2065,6 +2065,7 @@ ipcMain.handle('tracker:range', (e, startDate, endDate) => loadRange(startDate, 
 ipcMain.handle('projects:scan', (e, folder) => {
   const settings = loadSettings();
   const folderPath = folder || settings.projectsFolder;
+  if (!folderPath) return [];
   return scanProjects(folderPath);
 });
 

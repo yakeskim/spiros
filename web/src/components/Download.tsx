@@ -2,7 +2,7 @@
 
 import PixelBorder from "./PixelBorder";
 
-const GITHUB_RELEASE = "https://github.com/yakeskim/spiros/releases/latest";
+const GITHUB_RELEASE = "https://github.com/jakebaynham/spiros/releases/latest";
 
 export default function Download() {
   return (

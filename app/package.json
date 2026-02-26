@@ -20,7 +20,7 @@
     "productName": "Spiros",
     "publish": {
       "provider": "github",
-      "owner": "yakeskim",
+      "owner": "jakebaynham",
       "repo": "spiros",
       "releaseType": "release"
     },

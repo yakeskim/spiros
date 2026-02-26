@@ -30,7 +30,7 @@ export default function Footer() {
               Terms
             </a>
             <a
-              href="https://github.com/yakeskim/spiros"
+              href="https://github.com/jakebaynham/spiros"
               target="_blank"
               rel="noopener noreferrer"
               className="text-[9px] text-text-dim hover:text-gold transition-colors"

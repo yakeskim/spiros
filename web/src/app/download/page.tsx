@@ -24,7 +24,7 @@ interface Release {
   draft: boolean;
 }
 
-const GITHUB_API = "https://api.github.com/repos/yakeskim/spiros/releases";
+const GITHUB_API = "https://api.github.com/repos/jakebaynham/spiros/releases";
 
 function findWindowsAsset(assets: ReleaseAsset[]): ReleaseAsset | null {
   return (
@@ -115,7 +115,7 @@ export default function DownloadPage() {
               Could not fetch releases. You can download directly from GitHub.
             </p>
             <a
-              href="https://github.com/yakeskim/spiros/releases"
+              href="https://github.com/jakebaynham/spiros/releases"
               target="_blank"
               rel="noopener noreferrer"
               className="font-pixel text-[10px] px-6 py-3 border-2 bg-gold text-bg-darkest border-gold-dark shadow-pixel-gold hover:brightness-110 active:shadow-pixel-pressed active:translate-x-[2px] active:translate-y-[2px] cursor-pointer inline-block transition-all"

@@ -9,7 +9,6 @@
 
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
 
 const BUMP_TYPE = process.argv[2];
 if (!['patch', 'minor', 'major'].includes(BUMP_TYPE)) {
@@ -62,15 +61,10 @@ if (headerEnd >= 0) {
 
 fs.writeFileSync(changelogPath, changelog);
 
-// Create git tag
-try {
-  execSync(`git tag v${newVersion}`, { cwd: path.join(__dirname, '..', '..') });
-  console.log(`Bumped: v${oldVersion} -> v${newVersion} (${BUMP_TYPE})`);
-  console.log(`Tag created: v${newVersion}`);
-} catch (e) {
-  console.log(`Bumped: v${oldVersion} -> v${newVersion} (${BUMP_TYPE})`);
-  console.warn(`Warning: could not create git tag — ${e.message}`);
-}
+console.log(`Bumped: v${oldVersion} -> v${newVersion} (${BUMP_TYPE})`);
 console.log(`Changelog updated: ${changelogPath}`);
 if (description) console.log(`Note: ${description}`);
-console.log(`\nNext: git add -A && git commit -m "v${newVersion}" && git push && git push --tags`);
+console.log(`\nNext steps:`);
+console.log(`  git add -A && git commit -m "v${newVersion}"`);
+console.log(`  git tag v${newVersion}`);
+console.log(`  git push && git push --tags`);

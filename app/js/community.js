@@ -26,7 +26,7 @@ const Community = (() => {
   async function render(container) {
     // Load user votes
     try {
-      const votes = await synchronAPI.getUserVotes();
+      const votes = await spirosAPI.getUserVotes();
       userVotes = {};
       for (const v of (votes || [])) {
         userVotes[v.project_id] = v.vote_type;
@@ -37,14 +37,14 @@ const Community = (() => {
     const filter = currentCategory === 'All' ? null : currentCategory;
     let projects = [];
     try {
-      projects = await synchronAPI.getCommunityProjects(filter, currentSort) || [];
+      projects = await spirosAPI.getCommunityProjects(filter, currentSort) || [];
     } catch (_) {}
 
     container.innerHTML = `
       <div class="community-page">
         <div class="community-header">
           <h2 class="page-title">Community Projects</h2>
-          <button class="btn-pixel btn-sm" id="btn-submit-project">${showSubmitForm ? 'Cancel' : 'Submit Project'}</button>
+          <button class="btn-pixel btn-sm${!(window.requiresTier && window.requiresTier('pro')) ? ' btn-locked' : ''}" id="btn-submit-project">${!(window.requiresTier && window.requiresTier('pro')) ? '&#x1F512; ' : ''}${showSubmitForm ? 'Cancel' : 'Submit Project'}</button>
         </div>
 
         ${showSubmitForm ? renderSubmitForm() : ''}
@@ -154,8 +154,12 @@ const Community = (() => {
   }
 
   function wireEvents(container, projects) {
-    // Submit toggle
+    // Submit toggle (Pro required)
     container.querySelector('#btn-submit-project')?.addEventListener('click', () => {
+      if (!(window.requiresTier && window.requiresTier('pro'))) {
+        if (window.showUpgradeModal) window.showUpgradeModal('Submit Project', 'pro');
+        return;
+      }
       showSubmitForm = !showSubmitForm;
       render(container);
     });
@@ -179,7 +183,7 @@ const Community = (() => {
         return;
       }
 
-      const result = await synchronAPI.submitCommunityProject(title, desc, url, cat);
+      const result = await spirosAPI.submitCommunityProject(title, desc, url, cat);
       if (result.success) {
         showSubmitForm = false;
         render(container);
@@ -208,10 +212,10 @@ const Community = (() => {
       btn.addEventListener('click', async () => {
         const pid = btn.dataset.pid;
         const voteType = btn.dataset.vote;
-        await synchronAPI.voteCommunityProject(pid, voteType);
+        await spirosAPI.voteCommunityProject(pid, voteType);
         // Refresh votes and re-render
         try {
-          const votes = await synchronAPI.getUserVotes();
+          const votes = await spirosAPI.getUserVotes();
           userVotes = {};
           for (const v of (votes || [])) userVotes[v.project_id] = v.vote_type;
         } catch (_) {}
@@ -222,7 +226,7 @@ const Community = (() => {
     // URL clicks
     container.querySelectorAll('.community-project-url').forEach(el => {
       el.addEventListener('click', () => {
-        if (el.dataset.url) synchronAPI.openExternalLink(el.dataset.url);
+        if (el.dataset.url) spirosAPI.openExternalLink(el.dataset.url);
       });
     });
 
@@ -235,7 +239,7 @@ const Community = (() => {
         } else {
           expandedComments[pid] = true;
           try {
-            commentsCache[pid] = await synchronAPI.getProjectComments(pid) || [];
+            commentsCache[pid] = await spirosAPI.getProjectComments(pid) || [];
           } catch (_) { commentsCache[pid] = []; }
         }
         render(container);
@@ -251,9 +255,9 @@ const Community = (() => {
         if (!content) return;
 
         btn.disabled = true;
-        const result = await synchronAPI.addProjectComment(pid, content);
+        const result = await spirosAPI.addProjectComment(pid, content);
         if (result.success) {
-          commentsCache[pid] = await synchronAPI.getProjectComments(pid) || [];
+          commentsCache[pid] = await spirosAPI.getProjectComments(pid) || [];
           render(container);
         } else {
           btn.disabled = false;
@@ -276,7 +280,7 @@ const Community = (() => {
       btn.addEventListener('click', async () => {
         const pid = btn.dataset.delete;
         if (!confirm('Delete this project?')) return;
-        await synchronAPI.deleteCommunityProject(pid);
+        await spirosAPI.deleteCommunityProject(pid);
         render(container);
       });
     });

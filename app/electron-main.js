@@ -475,6 +475,66 @@ function stopPersistentPS() {
   }
 }
 
+// Normalize app display names — consistent capitalization
+const APP_DISPLAY_NAMES = {
+  // Browsers
+  'chrome': 'Chrome', 'firefox': 'Firefox', 'msedge': 'Edge', 'opera': 'Opera',
+  'brave': 'Brave', 'vivaldi': 'Vivaldi', 'safari': 'Safari', 'arc': 'Arc',
+  'iexplore': 'Internet Explorer', 'chromium': 'Chromium',
+  // Dev tools
+  'code': 'VS Code', 'devenv': 'Visual Studio', 'idea64': 'IntelliJ IDEA',
+  'idea': 'IntelliJ IDEA', 'webstorm64': 'WebStorm', 'webstorm': 'WebStorm',
+  'pycharm64': 'PyCharm', 'pycharm': 'PyCharm', 'rider64': 'Rider',
+  'phpstorm64': 'PhpStorm', 'goland64': 'GoLand', 'rubymine64': 'RubyMine',
+  'clion64': 'CLion', 'datagrip64': 'DataGrip', 'sublime_text': 'Sublime Text',
+  'notepad++': 'Notepad++', 'notepad': 'Notepad', 'atom': 'Atom',
+  'cursor': 'Cursor', 'windsurf': 'Windsurf', 'zed': 'Zed',
+  // Terminals
+  'powershell': 'PowerShell', 'pwsh': 'PowerShell', 'cmd': 'Command Prompt',
+  'windowsterminal': 'Windows Terminal', 'wt': 'Windows Terminal',
+  'conhost': 'Console Host', 'mintty': 'MinTTY', 'alacritty': 'Alacritty',
+  'wezterm-gui': 'WezTerm', 'hyper': 'Hyper',
+  // Communication
+  'discord': 'Discord', 'slack': 'Slack', 'teams': 'Teams', 'zoom': 'Zoom',
+  'telegram': 'Telegram', 'whatsapp': 'WhatsApp', 'signal': 'Signal',
+  'thunderbird': 'Thunderbird', 'outlook': 'Outlook',
+  // Design
+  'figma': 'Figma', 'photoshop': 'Photoshop', 'illustrator': 'Illustrator',
+  'afterfx': 'After Effects', 'premiere': 'Premiere Pro',
+  'blender': 'Blender', 'gimp-2.10': 'GIMP', 'gimp': 'GIMP',
+  'inkscape': 'Inkscape', 'canva': 'Canva',
+  // Productivity
+  'winword': 'Word', 'excel': 'Excel', 'powerpnt': 'PowerPoint',
+  'onenote': 'OneNote', 'obsidian': 'Obsidian', 'notion': 'Notion',
+  'evernote': 'Evernote', 'logseq': 'Logseq',
+  // Media
+  'spotify': 'Spotify', 'vlc': 'VLC', 'wmplayer': 'Windows Media Player',
+  'itunes': 'iTunes', 'audacity': 'Audacity',
+  // Gaming
+  'steam': 'Steam', 'epicgameslauncher': 'Epic Games', 'riotclientservices': 'Riot Client',
+  'battle.net': 'Battle.net',
+  // System / Utils
+  'explorer': 'File Explorer', 'taskmgr': 'Task Manager',
+  'snippingtool': 'Snipping Tool', 'mspaint': 'Paint',
+  'calc': 'Calculator', 'systemsettings': 'Settings',
+  'postman': 'Postman', 'insomnia': 'Insomnia',
+  'docker': 'Docker', 'wsl': 'WSL',
+  'git': 'Git', 'github': 'GitHub Desktop', 'gitkraken': 'GitKraken',
+  // Already nice
+  'claude code': 'Claude Code',
+};
+
+function normalizeAppName(raw) {
+  if (!raw || raw === 'Unknown') return raw;
+  const mapped = APP_DISPLAY_NAMES[raw.toLowerCase()];
+  if (mapped) return mapped;
+  // Fallback: Title Case the process name (split on common delimiters)
+  return raw
+    .replace(/([a-z])([A-Z])/g, '$1 $2')   // camelCase → camel Case
+    .replace(/[-_\.]/g, ' ')                 // kebab/snake/dot → spaces
+    .replace(/\b\w/g, c => c.toUpperCase()); // capitalize each word
+}
+
 function handlePollResult(result) {
   try {
     // Format: title|processName|pid|clicks|rightClicks|keys|letters|words|scrolls|mouseMoved|controller
@@ -530,6 +590,9 @@ function handlePollResult(result) {
     if (terminalProcs.includes(lowerProc) && (lowerTitle.includes('claude') || lowerTitle.includes('❯ claude'))) {
       appName = 'Claude Code';
     }
+
+    // Normalize app display name — consistent capitalization
+    appName = normalizeAppName(appName);
 
     // Blocked apps filter (uses resolved app name, so "Claude Code" won't be blocked)
     const checkName = appName.toLowerCase();
@@ -887,99 +950,117 @@ function loadRange(startDate, endDate) {
 }
 
 // ===== Projects Scanner =====
-function scanProjects(folderPath) {
+// Async helper: run a git command and return trimmed stdout (or fallback on error)
+function gitAsync(cmd, cwd, fallback = '') {
+  return new Promise((resolve) => {
+    exec(cmd, { cwd, encoding: 'utf8', timeout: 5000, windowsHide: true }, (err, stdout) => {
+      resolve(err ? fallback : (stdout || '').trim());
+    });
+  });
+}
+
+async function scanProjects(folderPath) {
   const projects = [];
+  let entries;
   try {
-    const entries = fs.readdirSync(folderPath, { withFileTypes: true });
-    for (const entry of entries) {
-      if (projects.length >= 100) break;
-      if (!entry.isDirectory()) continue;
-      const projPath = path.join(folderPath, entry.name);
+    entries = fs.readdirSync(folderPath, { withFileTypes: true });
+  } catch (e) { return []; }
 
-      try {
-        const hasGit = fs.existsSync(path.join(projPath, '.git'));
-        const project = {
-          name: entry.name,
-          path: projPath,
-          hasGit,
-          projectType: detectProjectType(projPath),
-          branch: '',
-          lastCommit: '',
-          lastCommitDate: '',
-          commitCount: 0,
-          dirty: false,
-          languages: {},
-          fileCount: 0,
-          lineCount: 0
-        };
+  for (const entry of entries) {
+    if (projects.length >= 100) break;
+    if (!entry.isDirectory()) continue;
+    const projPath = path.join(folderPath, entry.name);
 
-        if (hasGit) {
-          const gitOpts = { cwd: projPath, encoding: 'utf8', timeout: 5000, windowsHide: true };
-          try { project.branch = execSync('git rev-parse --abbrev-ref HEAD', gitOpts).trim(); } catch (e) {}
-          try { project.lastCommit = execSync('git log -1 --pretty=format:%s', gitOpts).trim(); } catch (e) {}
-          try { project.lastCommitDate = execSync('git log -1 --pretty=format:%aI', gitOpts).trim(); } catch (e) {}
-          try { project.commitCount = parseInt(execSync('git rev-list --count HEAD', gitOpts).trim()) || 0; } catch (e) {}
-          try { project.dirty = execSync('git status --porcelain', gitOpts).trim().length > 0; } catch (e) {}
-        } else {
-          // Use directory mtime as lastCommitDate fallback for sorting
-          try { project.lastCommitDate = fs.statSync(projPath).mtime.toISOString(); } catch (e) {}
-        }
+    try {
+      const hasGit = fs.existsSync(path.join(projPath, '.git'));
+      const project = {
+        name: entry.name,
+        path: projPath,
+        hasGit,
+        projectType: detectProjectType(projPath),
+        branch: '',
+        lastCommit: '',
+        lastCommitDate: '',
+        commitCount: 0,
+        dirty: false,
+        languages: {},
+        fileCount: 0,
+        lineCount: 0
+      };
 
-        const exts = {};
-        let fileCount = 0;
-        let lineCount = 0;
-        const ignore = new Set(['.git', 'node_modules', '.next', 'dist', 'build', '__pycache__', '.cache', 'vendor']);
+      if (hasGit) {
+        // Run git commands in parallel — async so main process stays responsive
+        const [branch, lastCommit, lastCommitDate, commitCountStr, statusOut] = await Promise.all([
+          gitAsync('git rev-parse --abbrev-ref HEAD', projPath),
+          gitAsync('git log -1 --pretty=format:%s', projPath),
+          gitAsync('git log -1 --pretty=format:%aI', projPath),
+          gitAsync('git rev-list --count HEAD', projPath, '0'),
+          gitAsync('git status --porcelain', projPath),
+        ]);
+        project.branch = branch;
+        project.lastCommit = lastCommit;
+        project.lastCommitDate = lastCommitDate;
+        project.commitCount = parseInt(commitCountStr) || 0;
+        project.dirty = statusOut.length > 0;
+      } else {
+        // Use directory mtime as lastCommitDate fallback for sorting
+        try { project.lastCommitDate = fs.statSync(projPath).mtime.toISOString(); } catch (e) {}
+      }
 
-        function walk(dir, depth) {
-          if (depth > 4 || fileCount > 500) return;
-          try {
-            const items = fs.readdirSync(dir, { withFileTypes: true });
-            for (const item of items) {
-              if (fileCount > 500) return;
-              if (ignore.has(item.name)) continue;
-              const full = path.join(dir, item.name);
-              if (item.isDirectory()) {
-                walk(full, depth + 1);
-              } else if (item.isFile()) {
-                fileCount++;
-                const ext = path.extname(item.name).toLowerCase();
-                if (ext) {
-                  exts[ext] = (exts[ext] || 0) + 1;
-                }
-                try {
-                  const stat = fs.statSync(full);
-                  if (stat.size > 0 && stat.size < 256 * 1024) {
-                    const content = fs.readFileSync(full, 'utf8');
-                    lineCount += content.split('\n').length;
-                  }
-                } catch (e) { /* binary or unreadable */ }
+      const exts = {};
+      let fileCount = 0;
+      let lineCount = 0;
+      const ignore = new Set(['.git', 'node_modules', '.next', 'dist', 'build', '__pycache__', '.cache', 'vendor']);
+
+      function walk(dir, depth) {
+        if (depth > 4 || fileCount > 500) return;
+        try {
+          const items = fs.readdirSync(dir, { withFileTypes: true });
+          for (const item of items) {
+            if (fileCount > 500) return;
+            if (ignore.has(item.name)) continue;
+            const full = path.join(dir, item.name);
+            if (item.isDirectory()) {
+              walk(full, depth + 1);
+            } else if (item.isFile()) {
+              fileCount++;
+              const ext = path.extname(item.name).toLowerCase();
+              if (ext) {
+                exts[ext] = (exts[ext] || 0) + 1;
               }
+              try {
+                const stat = fs.statSync(full);
+                if (stat.size > 0 && stat.size < 256 * 1024) {
+                  const content = fs.readFileSync(full, 'utf8');
+                  lineCount += content.split('\n').length;
+                }
+              } catch (e) { /* binary or unreadable */ }
             }
-          } catch (e) { /* permission error */ }
-        }
+          }
+        } catch (e) { /* permission error */ }
+      }
 
-        walk(projPath, 0);
-        project.fileCount = fileCount;
-        project.lineCount = lineCount;
+      walk(projPath, 0);
+      project.fileCount = fileCount;
+      project.lineCount = lineCount;
 
-        const langMap = {
-          '.js': 'JavaScript', '.jsx': 'JavaScript', '.ts': 'TypeScript', '.tsx': 'TypeScript',
-          '.py': 'Python', '.rb': 'Ruby', '.go': 'Go', '.rs': 'Rust',
-          '.java': 'Java', '.kt': 'Kotlin', '.cs': 'C#', '.cpp': 'C++', '.c': 'C',
-          '.html': 'HTML', '.css': 'CSS', '.scss': 'SCSS',
-          '.json': 'JSON', '.md': 'Markdown', '.yml': 'YAML', '.yaml': 'YAML',
-          '.php': 'PHP', '.swift': 'Swift', '.dart': 'Dart', '.vue': 'Vue',
-          '.svelte': 'Svelte', '.lua': 'Lua', '.sh': 'Shell'
-        };
-        for (const [ext, count] of Object.entries(exts)) {
-          const lang = langMap[ext] || ext;
-          project.languages[lang] = (project.languages[lang] || 0) + count;
-        }
+      const langMap = {
+        '.js': 'JavaScript', '.jsx': 'JavaScript', '.ts': 'TypeScript', '.tsx': 'TypeScript',
+        '.py': 'Python', '.rb': 'Ruby', '.go': 'Go', '.rs': 'Rust',
+        '.java': 'Java', '.kt': 'Kotlin', '.cs': 'C#', '.cpp': 'C++', '.c': 'C',
+        '.html': 'HTML', '.css': 'CSS', '.scss': 'SCSS',
+        '.json': 'JSON', '.md': 'Markdown', '.yml': 'YAML', '.yaml': 'YAML',
+        '.php': 'PHP', '.swift': 'Swift', '.dart': 'Dart', '.vue': 'Vue',
+        '.svelte': 'Svelte', '.lua': 'Lua', '.sh': 'Shell'
+      };
+      for (const [ext, count] of Object.entries(exts)) {
+        const lang = langMap[ext] || ext;
+        project.languages[lang] = (project.languages[lang] || 0) + count;
+      }
 
-        projects.push(project);
-      } catch (e) { /* skip broken repos */ }
-    }
-  } catch (e) { /* folder not found */ }
+      projects.push(project);
+    } catch (e) { /* skip broken repos */ }
+  }
 
   projects.sort((a, b) => (b.lastCommitDate || '').localeCompare(a.lastCommitDate || ''));
   return projects;
@@ -1172,6 +1253,182 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   }
 });
 
+// ===== Subscription Tier System =====
+let cachedTier = 'free';
+let tierSubscription = null;
+
+async function getUserTier() {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { cachedTier = 'free'; return 'free'; }
+
+    const { data } = await supabase
+      .from('subscriptions')
+      .select('tier, status')
+      .eq('user_id', user.id)
+      .single();
+
+    if (data && data.status === 'active' && data.tier) {
+      cachedTier = data.tier;
+    } else {
+      cachedTier = 'free';
+    }
+  } catch (e) {
+    logError('getUserTier', e);
+    cachedTier = 'free';
+  }
+  return cachedTier;
+}
+
+function hasTier(required) {
+  const order = { free: 0, pro: 1, team: 2 };
+  return (order[cachedTier] || 0) >= (order[required] || 0);
+}
+
+function subscribeToTierChanges() {
+  if (tierSubscription) return;
+  supabase.auth.getUser().then(({ data: { user } }) => {
+    if (!user) return;
+    tierSubscription = supabase
+      .channel('subscription-changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'subscriptions',
+        filter: `user_id=eq.${user.id}`
+      }, (payload) => {
+        const newTier = payload.new?.tier || 'free';
+        cachedTier = newTier;
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('subscription:tierChanged', newTier);
+        }
+      })
+      .subscribe();
+  });
+}
+
+function unsubscribeTierChanges() {
+  if (tierSubscription) {
+    supabase.removeChannel(tierSubscription);
+    tierSubscription = null;
+  }
+}
+
+async function getSubscriptionDetails() {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    return data || null;
+  } catch (e) {
+    logError('getSubscriptionDetails', e);
+    return null;
+  }
+}
+
+async function createCheckoutSession(planKey) {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return { error: 'Not logged in' };
+
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout-session`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({ planKey })
+    });
+
+    const result = await response.json();
+    if (result.url) {
+      shell.openExternal(result.url);
+      return { success: true };
+    }
+    return { error: result.error || 'Failed to create checkout' };
+  } catch (e) {
+    logError('createCheckoutSession', e);
+    return { error: e.message };
+  }
+}
+
+async function openPortalSession() {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return { error: 'Not logged in' };
+
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/create-portal-session`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({})
+    });
+
+    const result = await response.json();
+    if (result.url) {
+      shell.openExternal(result.url);
+      return { success: true };
+    }
+    return { error: result.error || 'Failed to open portal' };
+  } catch (e) {
+    logError('openPortalSession', e);
+    return { error: e.message };
+  }
+}
+
+async function useStreakFreeze(userId) {
+  if (!hasTier('pro')) return { success: false, error: 'Pro subscription required' };
+
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('streak_freezes_used, streak_freeze_last_reset')
+      .eq('id', userId)
+      .single();
+
+    if (!profile) return { success: false, error: 'Profile not found' };
+
+    // Reset weekly on Monday
+    const now = new Date();
+    const monday = new Date(now);
+    monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+    const mondayStr = monday.toISOString().split('T')[0];
+
+    let freezesUsed = profile.streak_freezes_used || 0;
+    if (profile.streak_freeze_last_reset !== mondayStr) {
+      freezesUsed = 0; // new week, reset
+    }
+
+    if (freezesUsed >= 1) {
+      return { success: false, error: 'Already used streak freeze this week' };
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        streak_freezes_used: freezesUsed + 1,
+        streak_freeze_last_reset: mondayStr
+      })
+      .eq('id', userId);
+
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (e) {
+    logError('useStreakFreeze', e);
+    return { success: false, error: e.message };
+  }
+}
+
 // Restore session on startup
 async function restoreSession() {
   const saved = loadPersistedSession();
@@ -1215,11 +1472,16 @@ async function authLogin(email, password) {
   // Start cloud sync on login — pull data from cloud, then start push interval
   startSyncInterval();
   joinPresence();
+  // Initialize tier system
+  getUserTier();
+  subscribeToTierChanges();
   return { success: true, user: data.user, session: data.session };
 }
 
 async function authLogout() {
   stopSyncInterval();
+  unsubscribeTierChanges();
+  cachedTier = 'free';
   await leavePresence();
   await supabase.auth.signOut();
   clearPersistedSession();
@@ -1532,6 +1794,21 @@ async function sendChatMessage(channel, content) {
     if (!user) return { success: false, error: 'Not logged in' };
     if (!content || content.length < 1 || content.length > 500) return { success: false, error: 'Message must be 1-500 characters' };
 
+    // Free users: 50 messages per day rate limit
+    if (!hasTier('pro')) {
+      const today = new Date().toISOString().split('T')[0];
+      const { data: rateRow } = await supabase.from('chat_rate_limits')
+        .select('message_count')
+        .eq('user_id', user.id)
+        .eq('date', today)
+        .maybeSingle();
+      const count = rateRow?.message_count || 0;
+      if (count >= 50) return { success: false, error: 'Free accounts are limited to 50 messages per day. Upgrade to Pro for unlimited chat.' };
+      await supabase.from('chat_rate_limits').upsert({
+        user_id: user.id, date: today, message_count: count + 1
+      }, { onConflict: 'user_id,date' });
+    }
+
     // Moderation check
     const mod = moderateContent(content);
     if (!mod.ok) return { success: false, error: mod.error };
@@ -1667,6 +1944,9 @@ async function syncActivityToCloud() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
+  // Pro+ only — free users don't get cloud sync
+  if (!hasTier('pro')) return;
+
   const settings = loadSettings();
   const privacy = settings.privacy || {};
   const now = new Date();
@@ -1699,16 +1979,7 @@ async function syncActivityToCloud() {
   }
 
   // Also sync game state + profile to cloud
-  try {
-    const gs = loadGameState();
-    await supabase.from('profiles').update({
-      level: gs.level,
-      xp: gs.xp,
-      title: gs.title,
-      streak_current: gs.streak?.current || 0,
-      streak_best: gs.streak?.best || 0
-    }).eq('id', user.id);
-  } catch (e) { logError('syncProfile', e); }
+  await syncProfileToCloud();
 }
 
 // Download cloud data to local (runs on login / startup)
@@ -1769,6 +2040,8 @@ function startSyncInterval() {
   pullCloudToLocal().then(() => {
     setTimeout(syncActivityToCloud, 10000);
   });
+  // Seed weekly challenges on startup
+  getWeeklyChallenges().catch(e => logError('startSyncInterval:seedChallenges', e));
 }
 
 function stopSyncInterval() {
@@ -2014,6 +2287,562 @@ async function getCommunityStats() {
   }
 }
 
+// ===== Public Profile =====
+async function getPublicProfile(userId) {
+  try {
+    if (!userId) return { profile: null };
+    const { data: { user } } = await supabase.auth.getUser();
+
+    // If it's the current user, sync game state to profiles first so data is fresh
+    if (user && user.id === userId) {
+      await syncProfileToCloud();
+    }
+
+    const { data, error } = await supabase.from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+    if (error) {
+      logError('getPublicProfile', error);
+      return { profile: null };
+    }
+    if (data) return { profile: data };
+    return { profile: null };
+  } catch (e) {
+    logError('getPublicProfile', e);
+    return { profile: null };
+  }
+}
+
+// ===== Global Leaderboard =====
+async function syncProfileToCloud() {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const gs = loadGameState();
+    await supabase.from('profiles').upsert({
+      id: user.id,
+      display_name: user.user_metadata?.display_name || user.email?.split('@')[0] || 'Unknown',
+      level: gs.level || 1,
+      xp: gs.xp || 0,
+      title: gs.title || 'Novice',
+      streak_current: gs.streak?.current || 0,
+      streak_best: gs.streak?.best || 0
+    }, { onConflict: 'id' });
+  } catch (e) { logError('syncProfileToCloud', e); }
+}
+
+async function getGlobalLeaderboard(metric, limit) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { players: [], myRank: null };
+
+    // Ensure current user's stats are fresh in profiles table
+    await syncProfileToCloud();
+
+    const validMetrics = ['level', 'xp', 'streak_current'];
+    const col = validMetrics.includes(metric) ? metric : 'level';
+    const topN = Math.min(Math.max(limit || 50, 10), 100);
+
+    const { data, error } = await supabase.from('profiles')
+      .select('id, display_name, level, xp, title, streak_current')
+      .order(col, { ascending: false })
+      .limit(topN);
+    if (error) { logError('getGlobalLeaderboard', error); return { players: [], myRank: null }; }
+
+    const players = (data || []).map((p, i) => ({
+      id: p.id,
+      name: p.display_name || 'Unknown',
+      level: p.level || 1,
+      xp: p.xp || 0,
+      title: p.title || 'Novice',
+      streak: p.streak_current || 0,
+      rank: i + 1,
+      isYou: p.id === user.id
+    }));
+
+    // Check if user is in the list
+    let myRank = null;
+    const meInList = players.find(p => p.isYou);
+    if (meInList) {
+      myRank = meInList.rank;
+    } else {
+      // Get user's rank by counting how many are above them
+      const { data: profile } = await supabase.from('profiles')
+        .select(col).eq('id', user.id).single();
+      if (profile) {
+        const { count } = await supabase.from('profiles')
+          .select('id', { count: 'exact', head: true })
+          .gt(col, profile[col]);
+        myRank = (count || 0) + 1;
+      }
+    }
+
+    return { players, myRank };
+  } catch (e) {
+    logError('getGlobalLeaderboard', e);
+    return { players: [], myRank: null };
+  }
+}
+
+// ===== Guilds =====
+async function getGuilds(sort, search) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    let query = supabase.from('guilds').select('*');
+    if (search) query = query.ilike('name', `%${search}%`);
+    if (sort === 'xp') query = query.order('total_xp', { ascending: false });
+    else query = query.order('member_count', { ascending: false });
+    query = query.limit(50);
+
+    const { data, error } = await query;
+    if (error) { logError('getGuilds', error); return []; }
+    return data || [];
+  } catch (e) {
+    logError('getGuilds', e);
+    return [];
+  }
+}
+
+async function getGuild(guildId) {
+  try {
+    const { data, error } = await supabase.from('guilds')
+      .select('*').eq('id', guildId).single();
+    if (error) { logError('getGuild', error); return null; }
+    return data;
+  } catch (e) {
+    logError('getGuild', e);
+    return null;
+  }
+}
+
+async function getGuildMembers(guildId) {
+  try {
+    const { data, error } = await supabase.from('guild_members')
+      .select('*, profile:profiles(display_name, level, title)')
+      .eq('guild_id', guildId)
+      .order('role', { ascending: true });
+    if (error) { logError('getGuildMembers', error); return []; }
+    return (data || []).map(m => ({
+      ...m,
+      display_name: m.profile?.display_name || 'Unknown',
+      level: m.profile?.level || 1,
+      title: m.profile?.title || 'Novice'
+    }));
+  } catch (e) {
+    logError('getGuildMembers', e);
+    return [];
+  }
+}
+
+async function createGuild(name, description, icon, color) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not logged in' };
+    if (!name || name.length < 2 || name.length > 30) return { success: false, error: 'Name must be 2-30 characters' };
+
+    // Check if user is already in a guild
+    const { data: existing } = await supabase.from('guild_members')
+      .select('id').eq('user_id', user.id).limit(1);
+    if (existing && existing.length > 0) return { success: false, error: 'You are already in a guild' };
+
+    const { data: guild, error } = await supabase.from('guilds').insert({
+      name, description: description || '', icon: icon || '⚔', color: color || '#f5c542',
+      owner_id: user.id, member_count: 1, total_xp: 0
+    }).select().single();
+    if (error) return { success: false, error: error.message };
+
+    // Add creator as owner member
+    await supabase.from('guild_members').insert({
+      guild_id: guild.id, user_id: user.id, role: 'owner'
+    });
+
+    return { success: true, guild };
+  } catch (e) {
+    logError('createGuild', e);
+    return { success: false, error: e.message };
+  }
+}
+
+async function joinGuild(guildId) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not logged in' };
+
+    // Check if user is already in a guild
+    const { data: existing } = await supabase.from('guild_members')
+      .select('id').eq('user_id', user.id).limit(1);
+    if (existing && existing.length > 0) return { success: false, error: 'You are already in a guild' };
+
+    const { error } = await supabase.from('guild_members').insert({
+      guild_id: guildId, user_id: user.id, role: 'member'
+    });
+    if (error) return { success: false, error: error.message };
+
+    // Increment member count
+    await supabase.rpc('increment_guild_members', { guild_id_param: guildId });
+
+    return { success: true };
+  } catch (e) {
+    logError('joinGuild', e);
+    return { success: false, error: e.message };
+  }
+}
+
+async function leaveGuild(guildId) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not logged in' };
+
+    const { error } = await supabase.from('guild_members')
+      .delete().eq('guild_id', guildId).eq('user_id', user.id);
+    if (error) return { success: false, error: error.message };
+
+    // Decrement member count
+    await supabase.rpc('decrement_guild_members', { guild_id_param: guildId });
+
+    return { success: true };
+  } catch (e) {
+    logError('leaveGuild', e);
+    return { success: false, error: e.message };
+  }
+}
+
+async function updateGuildMemberRole(guildId, userId, role) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not logged in' };
+
+    // Verify caller is guild owner
+    const { data: guild } = await supabase.from('guilds')
+      .select('owner_id').eq('id', guildId).single();
+    if (!guild || guild.owner_id !== user.id) return { success: false, error: 'Only the guild owner can change roles' };
+
+    const validRoles = ['member', 'officer'];
+    if (!validRoles.includes(role)) return { success: false, error: 'Invalid role' };
+
+    const { error } = await supabase.from('guild_members')
+      .update({ role }).eq('guild_id', guildId).eq('user_id', userId);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (e) {
+    logError('updateGuildMemberRole', e);
+    return { success: false, error: e.message };
+  }
+}
+
+async function getMyGuild() {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data: membership } = await supabase.from('guild_members')
+      .select('guild_id, role').eq('user_id', user.id).limit(1).single();
+    if (!membership) return null;
+
+    const guild = await getGuild(membership.guild_id);
+    if (!guild) return null;
+    return { ...guild, myRole: membership.role };
+  } catch (e) {
+    logError('getMyGuild', e);
+    return null;
+  }
+}
+
+// ===== Weekly Challenges =====
+const CHALLENGE_TEMPLATES = [
+  { key: 'code_10h', title: 'Code Warrior', description: 'Spend 10 hours coding this week', target: 36000000, metric: 'coding_ms', xp: 75 },
+  { key: 'streak_5', title: 'Streak Master', description: 'Maintain a 5-day streak', target: 5, metric: 'streak', xp: 50 },
+  { key: 'apps_6', title: 'Multi-Tasker', description: 'Use 6 or more different apps in a day', target: 6, metric: 'daily_apps', xp: 40 },
+  { key: 'active_5d', title: 'Consistent', description: 'Be active for 5 days this week', target: 5, metric: 'active_days', xp: 50 },
+  { key: 'total_20h', title: 'Dedicated', description: 'Track 20 hours of activity this week', target: 72000000, metric: 'total_ms', xp: 60 },
+  { key: 'music_3h', title: 'Musician', description: 'Spend 3 hours making music', target: 10800000, metric: 'music_ms', xp: 50 },
+  { key: 'design_3h', title: 'Designer', description: 'Spend 3 hours on design work', target: 10800000, metric: 'design_ms', xp: 50 },
+  { key: 'clicks_5k', title: 'Clicker', description: 'Register 5,000 clicks this week', target: 5000, metric: 'clicks', xp: 35 },
+  { key: 'keys_20k', title: 'Typist', description: 'Hit 20,000 keystrokes this week', target: 20000, metric: 'keys', xp: 40 },
+  { key: 'cats_4', title: 'Diverse', description: 'Use 4 different categories in a day', target: 4, metric: 'daily_cats', xp: 35 },
+  { key: 'browse_under_2h', title: 'Focused', description: 'Keep browsing under 2 hours this week', target: 7200000, metric: 'browsing_under_ms', xp: 60 },
+  { key: 'total_30h', title: 'Grinder', description: 'Track 30 hours of activity this week', target: 108000000, metric: 'total_ms_30', xp: 100 },
+  { key: 'events_10k', title: 'Active Hands', description: 'Register 10,000 input events', target: 10000, metric: 'events', xp: 45 },
+  { key: 'code_5h', title: 'Code Session', description: 'Spend 5 hours coding this week', target: 18000000, metric: 'coding_ms_5', xp: 40 },
+  { key: 'prod_5h', title: 'Productive', description: 'Spend 5 hours on productivity apps', target: 18000000, metric: 'productivity_ms', xp: 45 }
+];
+
+function getWeekMonday() {
+  const d = new Date();
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(d.setDate(diff));
+  return monday.toISOString().split('T')[0];
+}
+
+async function ensureWeeklyChallenges() {
+  try {
+    const weekStart = getWeekMonday();
+
+    // Check if challenges already exist for this week
+    const { data: existing } = await supabase.from('weekly_challenges')
+      .select('id').eq('week_start', weekStart).limit(1);
+    if (existing && existing.length > 0) return;
+
+    // Deterministic seed from week start date
+    let seed = 0;
+    for (const ch of weekStart) seed = ((seed << 5) - seed + ch.charCodeAt(0)) | 0;
+    const rng = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+
+    // Pick 4 challenges
+    const shuffled = [...CHALLENGE_TEMPLATES].sort(() => rng() - 0.5);
+    const picked = shuffled.slice(0, 4);
+
+    const rows = picked.map(t => ({
+      week_start: weekStart,
+      challenge_key: t.key,
+      title: t.title,
+      description: t.description,
+      target_value: t.target,
+      xp_reward: t.xp,
+      metric: t.metric
+    }));
+
+    await supabase.from('weekly_challenges').upsert(rows, { onConflict: 'week_start,challenge_key' });
+  } catch (e) {
+    logError('ensureWeeklyChallenges', e);
+  }
+}
+
+async function getWeeklyChallenges() {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const weekStart = getWeekMonday();
+    await ensureWeeklyChallenges();
+
+    const { data: challenges, error } = await supabase.from('weekly_challenges')
+      .select('*').eq('week_start', weekStart);
+    if (error) { logError('getWeeklyChallenges', error); return []; }
+
+    // Fetch user progress
+    const challengeIds = (challenges || []).map(c => c.id);
+    const { data: progress } = await supabase.from('challenge_progress')
+      .select('*').eq('user_id', user.id).in('challenge_id', challengeIds);
+    const progressMap = {};
+    for (const p of (progress || [])) progressMap[p.challenge_id] = p;
+
+    // Compute current progress from activity data
+    const weekEnd = new Date().toISOString().split('T')[0];
+    let weekData = [];
+    try { weekData = await loadRange(weekStart, weekEnd); } catch (_) {}
+
+    let totalMs = 0, codingMs = 0, musicMs = 0, designMs = 0, browsingMs = 0, productivityMs = 0;
+    let totalClicks = 0, totalKeys = 0, totalEvents = 0, activeDays = 0;
+    let maxDailyApps = 0, maxDailyCats = 0;
+    const gameState = loadGameState();
+
+    for (const day of weekData) {
+      const s = day.summary || {};
+      totalMs += s.totalMs || 0;
+      totalClicks += (s.totalClicks || 0) + (s.totalRightClicks || 0);
+      totalKeys += s.totalKeys || 0;
+      totalEvents += s.totalEvents || 0;
+      if ((s.totalMs || 0) >= 3600000) activeDays++;
+      const byCat = s.byCategory || {};
+      codingMs += byCat.coding || 0;
+      musicMs += byCat.music || 0;
+      designMs += byCat.design || 0;
+      browsingMs += byCat.browsing || 0;
+      productivityMs += byCat.productivity || 0;
+      maxDailyApps = Math.max(maxDailyApps, Object.keys(s.byApp || {}).length);
+      maxDailyCats = Math.max(maxDailyCats, Object.keys(byCat).length);
+    }
+
+    return (challenges || []).map(c => {
+      const prog = progressMap[c.id];
+      let current = 0;
+      switch (c.metric) {
+        case 'coding_ms': case 'coding_ms_5': current = codingMs; break;
+        case 'music_ms': current = musicMs; break;
+        case 'design_ms': current = designMs; break;
+        case 'productivity_ms': current = productivityMs; break;
+        case 'total_ms': case 'total_ms_30': current = totalMs; break;
+        case 'browsing_under_ms': current = Math.max(0, c.target_value - browsingMs); break;
+        case 'streak': current = gameState.streak?.current || 0; break;
+        case 'active_days': current = activeDays; break;
+        case 'daily_apps': current = maxDailyApps; break;
+        case 'daily_cats': current = maxDailyCats; break;
+        case 'clicks': current = totalClicks; break;
+        case 'keys': current = totalKeys; break;
+        case 'events': current = totalEvents; break;
+      }
+      return {
+        ...c,
+        current_value: prog?.current_value || current,
+        completed: prog?.completed || false,
+        completed_at: prog?.completed_at || null,
+        computed_current: current
+      };
+    });
+  } catch (e) {
+    logError('getWeeklyChallenges', e);
+    return [];
+  }
+}
+
+async function completeChallenge(challengeId) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not logged in' };
+
+    // Check challenge exists and get xp reward
+    const { data: challenge } = await supabase.from('weekly_challenges')
+      .select('*').eq('id', challengeId).single();
+    if (!challenge) return { success: false, error: 'Challenge not found' };
+
+    // Upsert progress
+    await supabase.from('challenge_progress').upsert({
+      user_id: user.id,
+      challenge_id: challengeId,
+      completed: true,
+      completed_at: new Date().toISOString(),
+      current_value: challenge.target_value
+    }, { onConflict: 'user_id,challenge_id' });
+
+    // Award XP
+    const gameState = loadGameState();
+    gameState.xp = (gameState.xp || 0) + (challenge.xp_reward || 50);
+    saveGameState(gameState);
+
+    return { success: true, xpAwarded: challenge.xp_reward || 50 };
+  } catch (e) {
+    logError('completeChallenge', e);
+    return { success: false, error: e.message };
+  }
+}
+
+// ===== Chat Reactions =====
+const ALLOWED_REACTIONS = ['👍', '❤️', '😂', '🎉', '🔥', '👀', '💯', '⚔'];
+
+async function addReaction(messageId, messageType, emoji) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not logged in' };
+    if (!ALLOWED_REACTIONS.includes(emoji)) return { success: false, error: 'Invalid emoji' };
+
+    // Toggle: check if reaction exists
+    const { data: existing } = await supabase.from('chat_reactions')
+      .select('id').eq('message_id', messageId).eq('user_id', user.id).eq('emoji', emoji).limit(1);
+
+    if (existing && existing.length > 0) {
+      // Remove existing reaction
+      await supabase.from('chat_reactions').delete().eq('id', existing[0].id);
+      return { success: true, action: 'removed' };
+    } else {
+      // Add new reaction
+      await supabase.from('chat_reactions').insert({
+        message_id: messageId,
+        message_type: messageType || 'channel',
+        user_id: user.id,
+        emoji
+      });
+      return { success: true, action: 'added' };
+    }
+  } catch (e) {
+    logError('addReaction', e);
+    return { success: false, error: e.message };
+  }
+}
+
+async function getReactions(messageIds) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return {};
+    if (!messageIds || messageIds.length === 0) return {};
+
+    const { data, error } = await supabase.from('chat_reactions')
+      .select('message_id, emoji, user_id')
+      .in('message_id', messageIds);
+    if (error) { logError('getReactions', error); return {}; }
+
+    // Group: { messageId: { emoji: { count, mine } } }
+    const result = {};
+    for (const r of (data || [])) {
+      if (!result[r.message_id]) result[r.message_id] = {};
+      if (!result[r.message_id][r.emoji]) result[r.message_id][r.emoji] = { count: 0, mine: false };
+      result[r.message_id][r.emoji].count++;
+      if (r.user_id === user.id) result[r.message_id][r.emoji].mine = true;
+    }
+    return result;
+  } catch (e) {
+    logError('getReactions', e);
+    return {};
+  }
+}
+
+// ===== Projects: Git Integration =====
+function runGitCommand(projectPath, args) {
+  return new Promise((resolve, reject) => {
+    execFile('git', args, { cwd: projectPath, timeout: 10000 }, (err, stdout, stderr) => {
+      if (err) reject(err);
+      else resolve(stdout.trim());
+    });
+  });
+}
+
+async function getGitLog(projectPath, limit) {
+  try {
+    const n = Math.min(Math.max(limit || 15, 1), 50);
+    const output = await runGitCommand(projectPath, ['log', `--oneline`, `--format=%H|%an|%s|%ai`, `-${n}`]);
+    if (!output) return [];
+    return output.split('\n').filter(Boolean).map(line => {
+      const [hash, author, message, date] = line.split('|');
+      return { hash: (hash || '').slice(0, 8), author, message, date };
+    });
+  } catch (e) {
+    return [];
+  }
+}
+
+async function getGitBranches(projectPath) {
+  try {
+    const output = await runGitCommand(projectPath, ['branch', '-a']);
+    if (!output) return { branches: [], current: '' };
+    const branches = [];
+    let current = '';
+    for (const line of output.split('\n')) {
+      const trimmed = line.trim();
+      if (!trimmed) continue;
+      if (trimmed.startsWith('* ')) {
+        current = trimmed.slice(2);
+        branches.push(current);
+      } else {
+        branches.push(trimmed);
+      }
+    }
+    return { branches, current };
+  } catch (e) {
+    return { branches: [], current: '' };
+  }
+}
+
+async function getGitStatus(projectPath) {
+  try {
+    const output = await runGitCommand(projectPath, ['status', '--porcelain']);
+    if (!output) return [];
+    return output.split('\n').filter(Boolean).map(line => {
+      const status = line.slice(0, 2).trim();
+      const file = line.slice(3);
+      let type = 'modified';
+      if (status === '??' || status === 'A') type = 'added';
+      else if (status === 'D') type = 'deleted';
+      return { file, status, type };
+    });
+  } catch (e) {
+    return [];
+  }
+}
+
 // ===== IPC Handlers =====
 // Auth
 ipcMain.handle('auth:signup', (e, email, password, displayName) => authSignUp(email, password, displayName));
@@ -2035,6 +2864,7 @@ ipcMain.handle('auth:updateProfile', (e, updates) => updateProfile(updates));
 
 // Profile
 ipcMain.handle('profile:changeName', (e, newName) => changeDisplayName(newName));
+ipcMain.handle('profile:getPublic', (e, userId) => getPublicProfile(userId));
 
 // Friends
 ipcMain.handle('friends:search', (e, query) => searchUsers(query));
@@ -2063,12 +2893,68 @@ ipcMain.handle('chat:subscribeChannel', (e, channel) => subscribeChatChannel(cha
 ipcMain.handle('chat:subscribeDM', (e, friendId) => subscribeDMChannel(friendId));
 ipcMain.handle('chat:unsubscribe', () => unsubscribeChat());
 
+// Chat Reactions
+ipcMain.handle('chat:addReaction', (e, messageId, messageType, emoji) => addReaction(messageId, messageType, emoji));
+ipcMain.handle('chat:getReactions', (e, messageIds) => getReactions(messageIds));
+
+// Leaderboard
+ipcMain.handle('leaderboard:global', (e, metric, limit) => getGlobalLeaderboard(metric, limit));
+
+// Guilds
+ipcMain.handle('guilds:list', (e, sort, search) => getGuilds(sort, search));
+ipcMain.handle('guilds:get', (e, guildId) => getGuild(guildId));
+ipcMain.handle('guilds:members', (e, guildId) => getGuildMembers(guildId));
+ipcMain.handle('guilds:create', (e, name, desc, icon, color) => createGuild(name, desc, icon, color));
+ipcMain.handle('guilds:join', (e, guildId) => joinGuild(guildId));
+ipcMain.handle('guilds:leave', (e, guildId) => leaveGuild(guildId));
+ipcMain.handle('guilds:updateRole', (e, guildId, userId, role) => updateGuildMemberRole(guildId, userId, role));
+ipcMain.handle('guilds:mine', () => getMyGuild());
+
+// Challenges
+ipcMain.handle('challenges:getWeekly', () => getWeeklyChallenges());
+ipcMain.handle('challenges:complete', (e, challengeId) => completeChallenge(challengeId));
+
+// Subscriptions
+ipcMain.handle('subscription:getTier', () => getUserTier());
+ipcMain.handle('subscription:getCached', () => cachedTier);
+ipcMain.handle('subscription:createCheckout', (e, planKey) => createCheckoutSession(planKey));
+ipcMain.handle('subscription:openPortal', () => openPortalSession());
+ipcMain.handle('subscription:getDetails', () => getSubscriptionDetails());
+ipcMain.handle('subscription:useStreakFreeze', async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not logged in' };
+  return useStreakFreeze(user.id);
+});
+
+// Projects: Git
+ipcMain.handle('projects:gitLog', (e, projectPath, limit) => getGitLog(projectPath, limit));
+ipcMain.handle('projects:gitBranches', (e, projectPath) => getGitBranches(projectPath));
+ipcMain.handle('projects:gitStatus', (e, projectPath) => getGitStatus(projectPath));
+
 // Presence
 ipcMain.handle('presence:getOnlineFriends', () => getOnlineFriends());
 ipcMain.handle('presence:communityStats', () => getCommunityStats());
 
 // Sync
 ipcMain.handle('sync:now', () => syncActivityToCloud());
+ipcMain.handle('sync:profile', async () => {
+  try {
+    await syncProfileToCloud();
+    return { success: true };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
+ipcMain.handle('profile:localStats', () => {
+  const gs = loadGameState();
+  return {
+    level: gs.level || 1,
+    xp: gs.xp || 0,
+    title: gs.title || 'Novice',
+    streak: gs.streak?.current || 0,
+    bestStreak: gs.streak?.best || 0
+  };
+});
 
 // Tracker
 ipcMain.handle('tracker:start', () => { startTracking(); return { success: true }; });
@@ -2083,11 +2969,16 @@ ipcMain.handle('app:getChangelog', () => {
   catch (e) { return ''; }
 });
 
-ipcMain.handle('projects:scan', (e, folder) => {
+ipcMain.handle('projects:scan', async (e, folder) => {
   const settings = loadSettings();
   const folderPath = folder || settings.projectsFolder;
   if (!folderPath) return [];
-  return scanProjects(folderPath);
+  try {
+    return await scanProjects(folderPath);
+  } catch (err) {
+    console.error('projects:scan error:', err);
+    return [];
+  }
 });
 
 ipcMain.handle('settings:get', () => loadSettings());
@@ -2150,15 +3041,29 @@ ipcMain.handle('app:openTerminal', (e, projPath) => {
 
 ipcMain.handle('app:exportData', async () => {
   try {
+    if (!hasTier('pro')) return { success: false, error: 'Data export requires a Pro subscription.' };
     const files = fs.readdirSync(activityDir).filter(f => f.endsWith('.json'));
     const allData = files.map(f => JSON.parse(fs.readFileSync(path.join(activityDir, f), 'utf8')));
     const result = await dialog.showSaveDialog(mainWindow, {
       title: 'Export Activity Data',
       defaultPath: 'spiros-export.json',
-      filters: [{ name: 'JSON', extensions: ['json'] }]
+      filters: [
+        { name: 'JSON', extensions: ['json'] },
+        { name: 'CSV', extensions: ['csv'] }
+      ]
     });
     if (!result.canceled && result.filePath) {
-      fs.writeFileSync(result.filePath, JSON.stringify(allData, null, 2));
+      if (result.filePath.endsWith('.csv')) {
+        // CSV export: one row per day with summary columns
+        const header = 'date,totalMs,totalClicks,totalKeys,totalWords,totalScrolls,totalEvents';
+        const rows = allData.map(d => {
+          const s = d.summary || {};
+          return `${d.date || ''},${s.totalMs || 0},${(s.totalClicks || 0) + (s.totalRightClicks || 0)},${s.totalKeys || 0},${s.totalWords || 0},${s.totalScrolls || 0},${s.totalEvents || 0}`;
+        });
+        fs.writeFileSync(result.filePath, header + '\n' + rows.join('\n'));
+      } else {
+        fs.writeFileSync(result.filePath, JSON.stringify(allData, null, 2));
+      }
       return { success: true, path: result.filePath };
     }
     return { success: false };
@@ -2371,6 +3276,8 @@ app.whenReady().then(async () => {
   if (session) {
     startSyncInterval();
     joinPresence();
+    getUserTier();
+    subscribeToTierChanges();
   }
 });
 

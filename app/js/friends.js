@@ -79,24 +79,24 @@ const Friends = (() => {
 
     // Load initial online state
     try {
-      onlineUsers = await synchronAPI.getOnlineFriends() || {};
+      onlineUsers = await spirosAPI.getOnlineFriends() || {};
     } catch (_) {}
 
     await loadFriends();
   }
 
   function setupPresenceListeners() {
-    synchronAPI.onPresenceSync((data) => {
+    spirosAPI.onPresenceSync((data) => {
       onlineUsers = data || {};
       renderOnlineSection();
       updateOnlineDots();
     });
-    synchronAPI.onPresenceJoin(({ key, data }) => {
+    spirosAPI.onPresenceJoin(({ key, data }) => {
       if (key && data) onlineUsers[key] = data;
       renderOnlineSection();
       updateOnlineDots();
     });
-    synchronAPI.onPresenceLeave(({ key }) => {
+    spirosAPI.onPresenceLeave(({ key }) => {
       delete onlineUsers[key];
       renderOnlineSection();
       updateOnlineDots();
@@ -160,7 +160,7 @@ const Friends = (() => {
     const query = document.getElementById('friend-search-input')?.value?.trim();
     if (!query || query.length < 2) return;
 
-    const results = await synchronAPI.searchUsers(query);
+    const results = await spirosAPI.searchUsers(query);
     const el = document.getElementById('friend-search-results');
     if (!el) return;
 
@@ -197,7 +197,7 @@ const Friends = (() => {
       btn.addEventListener('click', async () => {
         btn.disabled = true;
         btn.textContent = 'Sending...';
-        const result = await synchronAPI.sendFriendRequest(btn.dataset.id);
+        const result = await spirosAPI.sendFriendRequest(btn.dataset.id);
         if (result && result.success === false) {
           btn.textContent = 'Failed';
           btn.classList.add('btn-danger');
@@ -215,7 +215,7 @@ const Friends = (() => {
   }
 
   async function loadFriends() {
-    friendsData = await synchronAPI.getFriends();
+    friendsData = await spirosAPI.getFriends();
     renderOnlineSection();
     renderFriendsList();
     renderRequests();
@@ -259,7 +259,7 @@ const Friends = (() => {
     el.querySelectorAll('.btn-remove-friend').forEach(btn => {
       btn.addEventListener('click', async () => {
         if (confirm('Remove this friend?')) {
-          const result = await synchronAPI.removeFriend(btn.dataset.fid);
+          const result = await spirosAPI.removeFriend(btn.dataset.fid);
           if (result && result.success === false) {
             btn.title = 'Failed to remove';
             btn.style.color = 'var(--orange)';
@@ -301,7 +301,7 @@ const Friends = (() => {
       btn.addEventListener('click', async () => {
         btn.disabled = true;
         btn.textContent = 'Accepting...';
-        const result = await synchronAPI.respondFriendRequest(btn.dataset.fid, true);
+        const result = await spirosAPI.respondFriendRequest(btn.dataset.fid, true);
         if (result && result.success === false) {
           btn.textContent = 'Failed';
           btn.classList.add('btn-danger');
@@ -315,7 +315,7 @@ const Friends = (() => {
     list.querySelectorAll('.btn-decline').forEach(btn => {
       btn.addEventListener('click', async () => {
         btn.disabled = true;
-        const result = await synchronAPI.respondFriendRequest(btn.dataset.fid, false);
+        const result = await spirosAPI.respondFriendRequest(btn.dataset.fid, false);
         if (result && result.success === false) {
           btn.textContent = 'Failed';
           setTimeout(() => { btn.textContent = 'Decline'; btn.disabled = false; }, 2000);
@@ -354,6 +354,22 @@ const Friends = (() => {
     const content = document.getElementById('compare-content');
     if (!section || !content) return;
 
+    // Pro required for stat comparison
+    if (!(window.requiresTier && window.requiresTier('pro'))) {
+      section.style.display = 'block';
+      title.textContent = 'Compare Stats';
+      content.innerHTML = `
+        <div class="empty-state" style="text-align:center;padding:20px">
+          <p>&#x1F512; Friend stat comparison requires Pro</p>
+          <button class="btn-pixel btn-sm" id="btn-upgrade-compare" style="margin-top:8px">Upgrade to Pro</button>
+        </div>
+      `;
+      content.querySelector('#btn-upgrade-compare')?.addEventListener('click', () => {
+        if (window.showUpgradeModal) window.showUpgradeModal('Friend Comparison', 'pro');
+      });
+      return;
+    }
+
     section.style.display = 'block';
     title.textContent = `You vs ${friendName}`;
     content.innerHTML = '<div class="loading-state">Loading...</div>';
@@ -363,10 +379,10 @@ const Friends = (() => {
     const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
 
     // Fetch friend's last 7 days (sanitized server-side — only totalMs, totalEvents, byCategory)
-    const friendStats = await synchronAPI.getFriendStats(friendId, weekAgo, today);
+    const friendStats = await spirosAPI.getFriendStats(friendId, weekAgo, today);
 
     // Fetch own last 7 days
-    const myStats = await synchronAPI.getRange(weekAgo, today);
+    const myStats = await spirosAPI.getRange(weekAgo, today);
 
     // Aggregate totals and category breakdowns
     let myTotal = 0, friendTotal = 0;

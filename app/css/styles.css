@@ -2332,6 +2332,37 @@ canvas {
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
 }
 
+/* ===== Cloud Profile Stats ===== */
+.cloud-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+  gap: 8px;
+}
+.cloud-stat {
+  text-align: center;
+  padding: 8px 4px;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(245,197,66,0.15);
+  border-radius: 4px;
+}
+.cloud-stat-value {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--gold);
+  margin-bottom: 4px;
+}
+.cloud-stat-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+.cloud-profile-loading {
+  font-size: 7px;
+  color: var(--text-dim);
+  padding: 8px 0;
+}
+
 /* ===== Pixel Selection Color ===== */
 ::selection {
   background: var(--gold-dark);
@@ -2952,3 +2983,1123 @@ canvas {
   .chat-channel-btn { justify-content: center; padding: 6px; }
   .chat-dm-item { justify-content: center; padding: 6px; }
 }
+
+/* ===== LEADERBOARD ===== */
+
+.leaderboard-page { padding: 20px; }
+
+.leaderboard-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.lb-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: var(--bg-panel);
+  border: var(--px) solid var(--border-dark);
+  border-radius: 0;
+  font-size: 8px;
+  transition: background 0.15s;
+}
+
+.lb-row:hover { background: var(--bg-panel-light); }
+
+.lb-row.lb-you {
+  background: rgba(245, 197, 66, 0.08);
+  border-color: var(--gold-dark);
+  box-shadow: inset 0 0 0 1px rgba(245, 197, 66, 0.15);
+}
+
+.lb-row.lb-rank-1 { border-left: 3px solid #f5c542; }
+.lb-row.lb-rank-2 { border-left: 3px solid #b0b0b8; }
+.lb-row.lb-rank-3 { border-left: 3px solid #cd7f32; }
+
+.lb-rank {
+  width: 28px;
+  text-align: center;
+  font-size: 9px;
+  color: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.lb-rank-1 .lb-rank { color: #f5c542; }
+.lb-rank-2 .lb-rank { color: #b0b0b8; }
+.lb-rank-3 .lb-rank { color: #cd7f32; }
+
+.lb-avatar {
+  width: 26px;
+  height: 26px;
+  background: var(--bg-mid);
+  border: var(--px) solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  color: var(--gold);
+  flex-shrink: 0;
+}
+
+.lb-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.lb-you .lb-name { color: var(--gold); }
+
+.lb-title {
+  font-size: 7px;
+  color: var(--text-dim);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.lb-value {
+  width: 72px;
+  text-align: right;
+  font-size: 9px;
+  color: var(--text-bright);
+  flex-shrink: 0;
+}
+
+.lb-empty {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 8px;
+  padding: 32px 16px;
+}
+
+.lb-empty-cta {
+  margin-top: 12px;
+}
+
+.lb-loading {
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 8px;
+  padding: 24px;
+}
+
+/* ===== SETTINGS SIDEBAR LAYOUT ===== */
+
+.settings-page { padding: 20px; }
+
+.settings-layout {
+  display: flex;
+  gap: 0;
+  margin-top: 12px;
+  min-height: 500px;
+}
+
+.settings-sidebar {
+  width: 160px;
+  min-width: 160px;
+  background: var(--bg-dark);
+  border: var(--px) solid var(--border-dark);
+  border-right: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 4px 0;
+}
+
+.settings-sidebar-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: var(--pixel-font);
+  font-size: 7px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s, color 0.15s;
+  border-left: 3px solid transparent;
+}
+
+.settings-sidebar-btn:hover {
+  background: var(--bg-panel);
+  color: var(--text);
+}
+
+.settings-sidebar-btn.active {
+  background: var(--bg-panel);
+  color: var(--gold);
+  border-left-color: var(--gold);
+}
+
+.settings-sidebar-icon {
+  font-size: 10px;
+  width: 18px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.settings-content {
+  flex: 1;
+  background: var(--bg-panel);
+  border: var(--px) solid var(--border-dark);
+  padding: 20px;
+  overflow-y: auto;
+  max-height: calc(100vh - 140px);
+}
+
+.settings-content .settings-section {
+  margin-bottom: 16px;
+}
+
+.settings-content .settings-section:last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 700px) {
+  .settings-sidebar {
+    width: 42px;
+    min-width: 42px;
+    padding: 4px 0;
+  }
+  .settings-sidebar-btn {
+    justify-content: center;
+    padding: 10px 6px;
+    gap: 0;
+  }
+  .settings-sidebar-btn span:last-child { display: none; }
+  .settings-sidebar-icon { width: auto; }
+}
+
+/* ===== Leaderboard Scope Toggle ===== */
+.lb-scope-toggle {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.lb-scope-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  padding: 6px 16px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.lb-scope-btn:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.lb-scope-btn.active {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+.lb-my-rank-banner {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  text-align: center;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+  background: rgba(245, 197, 66, 0.08);
+  border: 1px solid rgba(245, 197, 66, 0.25);
+  color: var(--accent);
+}
+
+/* ===== Profile Heatmap ===== */
+.profile-heatmap {
+  display: flex;
+  gap: 4px;
+  margin: 10px 0 6px;
+}
+.heatmap-labels {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 5px;
+  color: var(--text-dim);
+  padding-top: 0;
+}
+.heatmap-label {
+  height: 10px;
+  display: flex;
+  align-items: center;
+}
+.heatmap-grid {
+  display: grid;
+  grid-template-rows: repeat(7, 10px);
+  grid-auto-flow: column;
+  gap: 1px;
+}
+.heatmap-cell {
+  width: 10px;
+  height: 10px;
+  border-radius: 1px;
+}
+.heatmap-cell[data-level="0"] { background: rgba(255,255,255,0.04); }
+.heatmap-cell[data-level="1"] { background: rgba(0, 230, 118, 0.2); }
+.heatmap-cell[data-level="2"] { background: rgba(0, 230, 118, 0.45); }
+.heatmap-cell[data-level="3"] { background: rgba(0, 230, 118, 0.7); }
+.heatmap-cell[data-level="4"] { background: #f5c542; }
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 5px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+.heatmap-legend .heatmap-cell {
+  width: 8px;
+  height: 8px;
+}
+
+/* ===== Profile Showcase ===== */
+.profile-showcase {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.showcase-ach {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 8px 10px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  min-width: 80px;
+  position: relative;
+}
+.showcase-ach-icon {
+  font-size: 18px;
+}
+.showcase-ach-name {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 5px;
+  text-align: center;
+  color: var(--text);
+}
+.btn-pin {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: none;
+  border: none;
+  font-size: 8px;
+  cursor: pointer;
+  color: var(--text-dim);
+  padding: 2px;
+}
+.btn-pin:hover, .btn-pin.pinned {
+  color: var(--accent);
+}
+.profile-guild-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  padding: 3px 8px;
+  background: rgba(245, 197, 66, 0.08);
+  border: 1px solid rgba(245, 197, 66, 0.2);
+  margin-top: 4px;
+}
+
+/* ===== Guilds ===== */
+.guilds-page {
+  padding: 0;
+}
+.guild-card {
+  padding: 14px;
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+}
+.guild-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+.guild-card-header {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.guild-card-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+.guild-card-info {
+  flex: 1;
+  min-width: 0;
+}
+.guild-card-name {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: var(--text);
+  margin: 0;
+}
+.guild-card-desc {
+  font-size: 7px;
+  color: var(--text-dim);
+  margin-top: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.guild-card-stats {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  color: var(--text-dim);
+}
+.guild-header {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 16px;
+}
+.guild-header-icon {
+  flex-shrink: 0;
+}
+.guild-header-info {
+  flex: 1;
+}
+.guild-header-name {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  color: var(--text);
+  margin: 0;
+}
+.guild-header-desc {
+  font-size: 8px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+.guild-header-stats {
+  display: flex;
+  gap: 16px;
+  margin-top: 6px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  color: var(--text-dim);
+}
+.guild-header-actions {
+  display: flex;
+  gap: 6px;
+}
+.guild-members-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 6px;
+}
+.guild-member-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 6px;
+  font-size: 7px;
+}
+.guild-member-row:hover {
+  background: rgba(255,255,255,0.02);
+}
+.guild-member-name {
+  flex: 1;
+  color: var(--text);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+}
+.guild-member-level {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 5px;
+  color: var(--text-dim);
+}
+.guild-role-badge {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 5px;
+  padding: 1px 5px;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+.guild-role-badge.role-owner {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.guild-role-badge.role-officer {
+  color: #448aff;
+  border-color: #448aff;
+}
+.btn-role {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 5px;
+  padding: 2px 6px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  cursor: pointer;
+}
+.btn-role:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.guild-create-form {
+  padding: 16px;
+}
+.guild-form-field {
+  margin-bottom: 10px;
+}
+.guild-form-field label {
+  display: block;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+.guild-icon-picker, .guild-color-picker {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.guild-icon-btn {
+  width: 30px;
+  height: 30px;
+  font-size: 16px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.guild-icon-btn.active, .guild-icon-btn:hover {
+  border-color: var(--accent);
+  background: rgba(245, 197, 66, 0.1);
+}
+.guild-color-btn {
+  width: 24px;
+  height: 24px;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+.guild-color-btn.active, .guild-color-btn:hover {
+  border-color: #fff;
+}
+.guild-search-bar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+/* ===== Chat Reactions ===== */
+.chat-reactions-row {
+  display: flex;
+  gap: 3px;
+  flex-wrap: wrap;
+  margin-top: 3px;
+  align-items: center;
+}
+.chat-reaction-pill {
+  font-size: 8px;
+  padding: 1px 5px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.03);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-family: inherit;
+  color: var(--text-dim);
+  transition: all 0.1s;
+}
+.chat-reaction-pill:hover {
+  border-color: var(--accent);
+  background: rgba(245, 197, 66, 0.08);
+}
+.chat-reaction-pill.mine {
+  border-color: var(--accent);
+  background: rgba(245, 197, 66, 0.12);
+  color: var(--accent);
+}
+.chat-react-btn {
+  font-size: 8px;
+  width: 18px;
+  height: 18px;
+  border: 1px dashed var(--border);
+  background: transparent;
+  cursor: pointer;
+  color: var(--text-dim);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s;
+}
+.chat-react-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  border-style: solid;
+}
+.chat-emoji-picker {
+  position: fixed;
+  bottom: 100%;
+  left: 0;
+  display: flex;
+  gap: 2px;
+  padding: 4px;
+  background: var(--bg-card, #1a1a2e);
+  border: 1px solid var(--border);
+  z-index: 100;
+  box-shadow: 0 -2px 12px rgba(0,0,0,0.4);
+}
+.chat-emoji-btn {
+  width: 26px;
+  height: 26px;
+  font-size: 14px;
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.chat-emoji-btn:hover {
+  background: rgba(245, 197, 66, 0.1);
+  border-color: var(--accent);
+}
+.chat-message {
+  position: relative;
+}
+
+/* ===== Projects Git Detail ===== */
+.detail-commit-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+.detail-commit-row {
+  display: grid;
+  grid-template-columns: 55px 1fr auto auto;
+  gap: 6px;
+  align-items: center;
+  padding: 3px 0;
+  font-size: 6px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.detail-commit-hash {
+  font-family: monospace;
+  color: var(--accent);
+  font-size: 6px;
+}
+.detail-commit-msg-text {
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.detail-commit-author {
+  color: var(--text-dim);
+}
+.detail-commit-date {
+  color: var(--text-dim);
+  font-size: 5px;
+}
+.detail-branch-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+.detail-branch-tag {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 5px;
+  padding: 2px 6px;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+.detail-branch-tag.detail-branch-current {
+  border-color: #00e676;
+  color: #00e676;
+  background: rgba(0, 230, 118, 0.08);
+}
+.detail-status-list {
+  margin-top: 4px;
+}
+.detail-status-row {
+  display: flex;
+  gap: 6px;
+  font-size: 6px;
+  padding: 2px 0;
+}
+.detail-status-type {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 5px;
+  width: 50px;
+  text-transform: uppercase;
+}
+.detail-status-row.status-added .detail-status-type { color: #00e676; }
+.detail-status-row.status-deleted .detail-status-type { color: #ff5252; }
+.detail-status-row.status-modified .detail-status-type { color: #f5c542; }
+.detail-status-file {
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.detail-goal-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 7px;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.detail-goal-bar {
+  height: 8px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.detail-goal-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00e676, #f5c542);
+  transition: width 0.3s;
+}
+.detail-goal-label {
+  font-size: 6px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+.detail-notes-area {
+  width: 100%;
+  min-height: 60px;
+  max-height: 120px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  padding: 6px;
+  resize: vertical;
+}
+.detail-notes-area::placeholder {
+  color: var(--text-dim);
+}
+
+/* ===== Weekly Challenges ===== */
+.dash-challenges {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+.challenge-card {
+  padding: 10px;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.challenge-card:hover {
+  border-color: var(--accent);
+}
+.challenge-card.challenge-complete {
+  border-color: rgba(0, 230, 118, 0.3);
+  background: rgba(0, 230, 118, 0.04);
+}
+.challenge-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.challenge-card-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  color: var(--text);
+}
+.challenge-complete .challenge-card-title {
+  color: #00e676;
+}
+.challenge-reward {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  color: var(--accent);
+  padding: 1px 5px;
+  border: 1px solid rgba(245, 197, 66, 0.3);
+  background: rgba(245, 197, 66, 0.06);
+  white-space: nowrap;
+}
+.challenge-card-desc {
+  font-size: 6px;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+.challenge-progress-bar {
+  height: 6px;
+  background: rgba(255,255,255,0.05);
+  margin-top: 6px;
+  overflow: hidden;
+}
+.challenge-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #00e676);
+  transition: width 0.3s;
+}
+.challenge-complete .challenge-progress-fill {
+  background: #00e676;
+}
+.challenge-progress-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 5px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+/* ===== Chat Profile Link ===== */
+.chat-profile-link {
+  cursor: pointer;
+  transition: color 0.1s;
+}
+.chat-profile-link:hover {
+  color: var(--accent) !important;
+  text-decoration: underline;
+}
+
+/* ===== Chat Profile Popup ===== */
+.chat-profile-popup-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.chat-profile-popup {
+  width: 300px;
+  padding: 20px;
+  position: relative;
+}
+.chat-profile-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+}
+.chat-profile-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.chat-profile-name {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--text);
+}
+.chat-profile-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  color: var(--text-dim);
+  margin-top: 3px;
+}
+.chat-profile-stats {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+.chat-profile-stat {
+  text-align: center;
+  flex: 1;
+  padding: 8px 4px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid var(--border);
+}
+.chat-profile-stat-value {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: var(--accent);
+}
+.chat-profile-stat-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 5px;
+  color: var(--text-dim);
+  margin-top: 3px;
+}
+.chat-profile-since {
+  font-size: 6px;
+  color: var(--text-dim);
+  text-align: center;
+}
+
+/* ===== Subscription System ===== */
+
+/* Tier badges */
+.tier-badge {
+  display: inline-block;
+  font-size: 6px;
+  padding: 2px 6px;
+  border: 2px solid;
+  font-family: 'Press Start 2P', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.tier-pro {
+  color: #f5c542;
+  border-color: #f5c542;
+  background: rgba(245, 197, 66, 0.1);
+  box-shadow: inset 0 0 8px rgba(245, 197, 66, 0.15);
+}
+.tier-team {
+  color: #e040fb;
+  border-color: #e040fb;
+  background: rgba(224, 64, 251, 0.1);
+  box-shadow: inset 0 0 8px rgba(224, 64, 251, 0.15);
+}
+
+/* Lock indicator on buttons */
+.btn-locked {
+  opacity: 0.7;
+  position: relative;
+}
+.btn-locked:hover {
+  opacity: 0.85;
+}
+
+/* Upgrade modal */
+.upgrade-modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 10000;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+}
+.upgrade-modal.active {
+  display: flex;
+}
+.upgrade-modal-content {
+  background: var(--bg);
+  border: 2px solid var(--border);
+  padding: 24px;
+  width: 380px;
+  max-width: 90vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.3);
+}
+.upgrade-modal-header {
+  font-size: 9px;
+  font-family: 'Press Start 2P', monospace;
+  color: var(--text);
+  margin-bottom: 16px;
+  text-align: center;
+}
+.upgrade-modal-feature {
+  font-size: 7px;
+  color: var(--text-dim);
+  text-align: center;
+  margin-bottom: 16px;
+}
+.upgrade-plans {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.upgrade-plan {
+  flex: 1;
+  border: 2px solid var(--border);
+  padding: 12px;
+  cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s;
+}
+.upgrade-plan:hover,
+.upgrade-plan.selected {
+  border-color: var(--green);
+}
+.upgrade-plan-name {
+  font-size: 8px;
+  font-family: 'Press Start 2P', monospace;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.upgrade-plan-price {
+  font-size: 10px;
+  font-family: 'Press Start 2P', monospace;
+  color: var(--green);
+  margin-bottom: 2px;
+}
+.upgrade-plan-interval {
+  font-size: 6px;
+  color: var(--text-dim);
+}
+.upgrade-plan-save {
+  font-size: 6px;
+  color: #f5c542;
+  margin-top: 4px;
+}
+.upgrade-btn {
+  width: 100%;
+  padding: 10px;
+  font-size: 8px;
+  font-family: 'Press Start 2P', monospace;
+  background: var(--green);
+  color: var(--bg);
+  border: 2px solid var(--green);
+  cursor: pointer;
+  text-align: center;
+  transition: opacity 0.15s;
+}
+.upgrade-btn:hover {
+  opacity: 0.85;
+}
+.upgrade-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.upgrade-close {
+  display: block;
+  margin: 12px auto 0;
+  font-size: 7px;
+  font-family: 'Press Start 2P', monospace;
+  color: var(--text-dim);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.upgrade-close:hover {
+  color: var(--text);
+}
+
+/* Subscription settings tab */
+.subscription-current-plan {
+  text-align: center;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.subscription-plan-label {
+  font-size: 10px;
+  font-family: 'Press Start 2P', monospace;
+  margin-bottom: 8px;
+}
+.subscription-plan-status {
+  font-size: 7px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+}
+.subscription-plans-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+.subscription-plan-card {
+  border: 2px solid var(--border);
+  padding: 16px;
+}
+.subscription-plan-card h4 {
+  font-size: 8px;
+  font-family: 'Press Start 2P', monospace;
+  margin-bottom: 8px;
+}
+.subscription-plan-card .plan-price {
+  font-size: 10px;
+  font-family: 'Press Start 2P', monospace;
+  color: var(--green);
+  margin-bottom: 8px;
+}
+.subscription-plan-card ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 12px 0;
+}
+.subscription-plan-card li {
+  font-size: 6px;
+  color: var(--text-dim);
+  padding: 2px 0;
+}
+.subscription-plan-card li::before {
+  content: '✓ ';
+  color: var(--green);
+}
+
+/* Chat locked states */
+.chat-locked {
+  opacity: 0.5;
+  pointer-events: none;
+  position: relative;
+}
+.chat-locked::after {
+  content: '🔒';
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 8px;
+}
+
+/* Project locked card */
+.project-locked {
+  border: 2px dashed var(--border);
+  opacity: 0.6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+  text-align: center;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.project-locked:hover {
+  opacity: 0.8;
+}
+.project-locked-text {
+  font-size: 7px;
+  color: var(--text-dim);
+}
+
+/* Profile customization */
+.profile-frame-picker {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.frame-option {
+  font-size: 6px;
+  font-family: 'Press Start 2P', monospace;
+  padding: 4px 8px;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  color: var(--text-dim);
+  cursor: pointer;
+  text-transform: capitalize;
+}
+.frame-option:hover {
+  border-color: var(--text-dim);
+}
+.frame-option.active {
+  border-color: var(--green);
+  color: var(--green);
+}
+
+/* Color swatch (reuses guild-color-btn) */
+.color-swatch {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  cursor: pointer;
+  display: inline-block;
+}
+.color-swatch.active {
+  border-color: var(--text);
+  box-shadow: 0 0 0 1px var(--text);
+}
+

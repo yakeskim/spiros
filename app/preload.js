@@ -1,6 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('synchronAPI', {
+contextBridge.exposeInMainWorld('spirosAPI', {
   // Auth
   signUp: (email, password, displayName) => ipcRenderer.invoke('auth:signup', email, password, displayName),
   login: (email, password) => ipcRenderer.invoke('auth:login', email, password),
@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('synchronAPI', {
 
   // Profile
   changeDisplayName: (newName) => ipcRenderer.invoke('profile:changeName', newName),
+  getPublicProfile: (userId) => ipcRenderer.invoke('profile:getPublic', userId),
 
   // Chat
   getChatMessages: (channel) => ipcRenderer.invoke('chat:getMessages', channel),
@@ -60,6 +61,8 @@ contextBridge.exposeInMainWorld('synchronAPI', {
 
   // Sync
   syncNow: () => ipcRenderer.invoke('sync:now'),
+  syncProfile: () => ipcRenderer.invoke('sync:profile'),
+  getLocalStats: () => ipcRenderer.invoke('profile:localStats'),
 
   // Tracker
   startTracking: () => ipcRenderer.invoke('tracker:start'),
@@ -107,6 +110,43 @@ contextBridge.exposeInMainWorld('synchronAPI', {
   installUpdate: () => ipcRenderer.invoke('update:install'),
   onUpdateStatus: (callback) => {
     ipcRenderer.on('update:status', (event, data) => callback(data));
+  },
+
+  // Global Leaderboard
+  getGlobalLeaderboard: (metric, limit) => ipcRenderer.invoke('leaderboard:global', metric, limit),
+
+  // Guilds
+  getGuilds: (sort, search) => ipcRenderer.invoke('guilds:list', sort, search),
+  getGuild: (guildId) => ipcRenderer.invoke('guilds:get', guildId),
+  getGuildMembers: (guildId) => ipcRenderer.invoke('guilds:members', guildId),
+  createGuild: (name, desc, icon, color) => ipcRenderer.invoke('guilds:create', name, desc, icon, color),
+  joinGuild: (guildId) => ipcRenderer.invoke('guilds:join', guildId),
+  leaveGuild: (guildId) => ipcRenderer.invoke('guilds:leave', guildId),
+  updateGuildMemberRole: (guildId, userId, role) => ipcRenderer.invoke('guilds:updateRole', guildId, userId, role),
+  getMyGuild: () => ipcRenderer.invoke('guilds:mine'),
+
+  // Weekly Challenges
+  getWeeklyChallenges: () => ipcRenderer.invoke('challenges:getWeekly'),
+  completeChallenge: (challengeId) => ipcRenderer.invoke('challenges:complete', challengeId),
+
+  // Chat Reactions
+  addReaction: (messageId, messageType, emoji) => ipcRenderer.invoke('chat:addReaction', messageId, messageType, emoji),
+  getReactions: (messageIds) => ipcRenderer.invoke('chat:getReactions', messageIds),
+
+  // Projects: Git
+  getGitLog: (projectPath, limit) => ipcRenderer.invoke('projects:gitLog', projectPath, limit),
+  getGitBranches: (projectPath) => ipcRenderer.invoke('projects:gitBranches', projectPath),
+  getGitStatus: (projectPath) => ipcRenderer.invoke('projects:gitStatus', projectPath),
+
+  // Subscriptions
+  getTier: () => ipcRenderer.invoke('subscription:getTier'),
+  getCachedTier: () => ipcRenderer.invoke('subscription:getCached'),
+  createCheckout: (planKey) => ipcRenderer.invoke('subscription:createCheckout', planKey),
+  openPortal: () => ipcRenderer.invoke('subscription:openPortal'),
+  getSubscriptionDetails: () => ipcRenderer.invoke('subscription:getDetails'),
+  useStreakFreeze: () => ipcRenderer.invoke('subscription:useStreakFreeze'),
+  onTierChanged: (callback) => {
+    ipcRenderer.on('subscription:tierChanged', (event, tier) => callback(tier));
   },
 
   isElectron: true

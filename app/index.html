@@ -118,6 +118,10 @@
           <span class="nav-icon">⌂</span>
           <span>Community</span>
         </button>
+        <button class="nav-item" data-view="guilds">
+          <span class="nav-icon">⛊</span>
+          <span>Guilds</span>
+        </button>
         <button class="nav-item" data-view="chat">
           <span class="nav-icon">✉</span>
           <span>Chat</span>
@@ -125,6 +129,10 @@
         <button class="nav-item" data-view="friends">
           <span class="nav-icon">♦</span>
           <span>Friends</span>
+        </button>
+        <button class="nav-item" data-view="leaderboard">
+          <span class="nav-icon">♛</span>
+          <span>Leaderboard</span>
         </button>
         <button class="nav-item" data-view="achievements">
           <span class="nav-icon">★</span>
@@ -188,8 +196,10 @@
       <div id="view-dashboard" class="view active"></div>
       <div id="view-projects" class="view"></div>
       <div id="view-community" class="view"></div>
+      <div id="view-guilds" class="view"></div>
       <div id="view-chat" class="view"></div>
       <div id="view-friends" class="view"></div>
+      <div id="view-leaderboard" class="view"></div>
       <div id="view-achievements" class="view"></div>
       <div id="view-profile" class="view"></div>
       <div id="view-settings" class="view"></div>
@@ -228,6 +238,30 @@
     </div>
   </div>
 
+  <!-- Upgrade Modal -->
+  <div id="upgrade-modal" class="modal-overlay hidden">
+    <div class="upgrade-modal glass">
+      <button class="project-detail-close" id="upgrade-modal-close">&times;</button>
+      <div class="upgrade-modal-header">
+        <div class="upgrade-lock-icon">&#x1F512;</div>
+        <h2 id="upgrade-modal-title">Upgrade to Pro</h2>
+        <p id="upgrade-modal-desc" class="upgrade-modal-desc">This feature requires a Pro subscription</p>
+      </div>
+      <div class="upgrade-plans" id="upgrade-plans">
+        <div class="upgrade-plan" data-plan="monthly">
+          <div class="upgrade-plan-name">Monthly</div>
+          <div class="upgrade-plan-price" id="upgrade-price-monthly">$5/mo</div>
+        </div>
+        <div class="upgrade-plan active" data-plan="yearly">
+          <div class="upgrade-plan-name">Yearly</div>
+          <div class="upgrade-plan-price" id="upgrade-price-yearly">$40/yr</div>
+          <div class="upgrade-plan-save">Save 33%</div>
+        </div>
+      </div>
+      <button class="btn-pixel upgrade-btn" id="upgrade-modal-subscribe">Subscribe</button>
+    </div>
+  </div>
+
   <script src="js/charts.js"></script>
   <script src="js/gamification.js"></script>
   <script src="js/dashboard.js"></script>
@@ -236,6 +270,8 @@
   <script src="js/friends.js"></script>
   <script src="js/community.js"></script>
   <script src="js/chat.js"></script>
+  <script src="js/guilds.js"></script>
+  <script src="js/leaderboard.js"></script>
   <script src="js/profile.js"></script>
   <script src="js/changelog.js"></script>
   <script src="js/app.js"></script>

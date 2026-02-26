@@ -1,4 +1,4 @@
-// projects.js — Project scanner UI
+// projects.js — Project scanner UI with Git integration, Goals, and Notes
 
 const Projects = (() => {
   let projectsData = [];
@@ -31,11 +31,11 @@ const Projects = (() => {
     `;
 
     container.querySelector('#btn-set-folder').addEventListener('click', async () => {
-      const result = await synchronAPI.openFolder();
+      const result = await spirosAPI.openFolder();
       if (result.success) {
-        const settings = await synchronAPI.getSettings();
+        const settings = await spirosAPI.getSettings();
         settings.projectsFolder = result.path;
-        await synchronAPI.setSettings(settings);
+        await spirosAPI.setSettings(settings);
         await scanAndRender();
       }
     });
@@ -54,10 +54,20 @@ const Projects = (() => {
 
   async function scanAndRender() {
     const grid = document.getElementById('projects-grid');
-    if (grid) grid.innerHTML = '<div class="loading-state">Scanning projects...</div>';
+    if (!grid) return;
+
+    // Check if a folder is set first
+    const settings = await spirosAPI.getSettings();
+    if (!settings.projectsFolder) {
+      grid.innerHTML = '<div class="empty-state" style="display:flex;align-items:center;justify-content:center;text-align:center;min-height:calc(100vh - 160px)">No projects folder selected.<br><br>Click <strong>Set Folder</strong> above to choose a folder containing your projects.</div>';
+      projectsData = [];
+      return;
+    }
+
+    grid.innerHTML = '<div class="loading-state">Scanning projects...</div>';
 
     try {
-      projectsData = await synchronAPI.scanProjects();
+      projectsData = await spirosAPI.scanProjects();
     } catch (e) {
       console.error('scanProjects error:', e);
       projectsData = [];
@@ -102,14 +112,31 @@ const Projects = (() => {
       return;
     }
 
-    grid.innerHTML = filtered.map((p, i) => renderProjectCard(p, i)).join('');
+    // Free users: show 1 project + locked card
+    const isPro = window.requiresTier && window.requiresTier('pro');
+    const visibleProjects = isPro ? filtered : filtered.slice(0, 1);
+
+    grid.innerHTML = visibleProjects.map((p, i) => renderProjectCard(p, i)).join('');
+
+    if (!isPro && filtered.length > 1) {
+      grid.innerHTML += `
+        <div class="project-card glass project-locked" id="project-locked-card">
+          <div class="lock-icon">&#x1F512;</div>
+          <div style="font-size:8px;color:var(--text-dim);margin-top:8px">+${filtered.length - 1} more project${filtered.length - 1 > 1 ? 's' : ''}</div>
+          <div style="font-size:7px;color:var(--gold);margin-top:6px">Upgrade to Pro to see all projects</div>
+        </div>
+      `;
+      grid.querySelector('#project-locked-card')?.addEventListener('click', () => {
+        if (window.showUpgradeModal) window.showUpgradeModal('Unlimited Projects', 'pro');
+      });
+    }
 
     // Wire up buttons (stop propagation so card click doesn't fire)
     grid.querySelectorAll('.btn-vscode').forEach(btn => {
-      btn.addEventListener('click', (e) => { e.stopPropagation(); synchronAPI.openInVSCode(btn.dataset.path); });
+      btn.addEventListener('click', (e) => { e.stopPropagation(); spirosAPI.openInVSCode(btn.dataset.path); });
     });
     grid.querySelectorAll('.btn-terminal').forEach(btn => {
-      btn.addEventListener('click', (e) => { e.stopPropagation(); synchronAPI.openTerminal(btn.dataset.path); });
+      btn.addEventListener('click', (e) => { e.stopPropagation(); spirosAPI.openTerminal(btn.dataset.path); });
     });
 
     // Wire up card click → detail popup
@@ -204,14 +231,28 @@ const Projects = (() => {
   }
 
   function escapeAttr(s) {
-    return s.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    return (s || '').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
   function escapeHtml(s) {
     return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
-  function showProjectDetail(project) {
+  // ===== localStorage helpers for goals & notes =====
+  function loadProjectGoals() {
+    try { return JSON.parse(localStorage.getItem('spiros_project_goals') || '{}'); } catch (_) { return {}; }
+  }
+  function saveProjectGoals(goals) {
+    localStorage.setItem('spiros_project_goals', JSON.stringify(goals));
+  }
+  function loadProjectNotes() {
+    try { return JSON.parse(localStorage.getItem('spiros_project_notes') || '{}'); } catch (_) { return {}; }
+  }
+  function saveProjectNotes(notes) {
+    localStorage.setItem('spiros_project_notes', JSON.stringify(notes));
+  }
+
+  async function showProjectDetail(project) {
     // Remove any existing popup
     const existing = document.getElementById('project-detail-backdrop');
     if (existing) existing.remove();
@@ -268,6 +309,12 @@ const Projects = (() => {
       ? `\u2387 ${escapeHtml(project.branch || 'main')} ${dirtyBadge}`
       : `${escapeHtml(project.projectType)}`;
 
+    // Load goals and notes
+    const goals = loadProjectGoals();
+    const notes = loadProjectNotes();
+    const projectGoal = goals[project.path] || { target: 10, current: 0 };
+    const projectNote = notes[project.path] || '';
+
     const backdrop = document.createElement('div');
     backdrop.id = 'project-detail-backdrop';
     backdrop.className = 'project-detail-backdrop';
@@ -296,6 +343,40 @@ const Projects = (() => {
           </div>
           <div class="lang-bar" style="margin:6px 0 4px;height:8px">${langBar}</div>
           <div class="detail-lang-list">${langRows}</div>
+        </div>
+
+        ${project.hasGit ? `
+        <div class="project-detail-section" id="detail-git-extended">
+          <h4 class="detail-section-title">Recent Commits</h4>
+          <div id="detail-commits" class="detail-commit-list"><div class="lb-loading">Loading...</div></div>
+        </div>
+
+        <div class="project-detail-section">
+          <h4 class="detail-section-title">Branches</h4>
+          <div id="detail-branches" class="detail-branch-list"><div class="lb-loading">Loading...</div></div>
+        </div>
+
+        <div class="project-detail-section">
+          <h4 class="detail-section-title">Working Changes</h4>
+          <div id="detail-status" class="detail-status-list"><div class="lb-loading">Loading...</div></div>
+        </div>
+        ` : ''}
+
+        <div class="project-detail-section">
+          <h4 class="detail-section-title">Weekly Goal</h4>
+          <div class="detail-goal-row">
+            <label>Target hours/week:</label>
+            <input type="number" id="detail-goal-input" class="input-pixel" value="${projectGoal.target}" min="1" max="100" style="width:60px">
+          </div>
+          <div class="detail-goal-bar">
+            <div class="detail-goal-bar-fill" id="detail-goal-fill" style="width:0%"></div>
+          </div>
+          <div class="detail-goal-label" id="detail-goal-label">Calculating...</div>
+        </div>
+
+        <div class="project-detail-section">
+          <h4 class="detail-section-title">Notes</h4>
+          <textarea id="detail-notes" class="detail-notes-area" placeholder="Add project notes...">${escapeHtml(projectNote)}</textarea>
         </div>
 
         <div class="project-detail-actions">
@@ -328,18 +409,41 @@ const Projects = (() => {
     backdrop.querySelector('#detail-copy-ctx').addEventListener('click', () => {
       navigator.clipboard.writeText(contextMd);
       const btn = backdrop.querySelector('#detail-copy-ctx');
-      btn.textContent = '✓ Copied!';
-      setTimeout(() => { btn.textContent = '📋 Copy Context'; }, 1500);
+      btn.textContent = '\u2713 Copied!';
+      setTimeout(() => { btn.textContent = '\u{1F4CB} Copy Context'; }, 1500);
     });
 
     // VS Code
     backdrop.querySelector('#detail-vscode').addEventListener('click', () => {
-      synchronAPI.openInVSCode(project.path);
+      spirosAPI.openInVSCode(project.path);
     });
 
     // Terminal
     backdrop.querySelector('#detail-terminal').addEventListener('click', () => {
-      synchronAPI.openTerminal(project.path);
+      spirosAPI.openTerminal(project.path);
+    });
+
+    // Goal input
+    const goalInput = backdrop.querySelector('#detail-goal-input');
+    goalInput?.addEventListener('change', () => {
+      const val = Math.max(1, Math.min(100, parseInt(goalInput.value) || 10));
+      goalInput.value = val;
+      const g = loadProjectGoals();
+      g[project.path] = { target: val };
+      saveProjectGoals(g);
+      updateGoalProgress(project, val);
+    });
+
+    // Notes auto-save
+    const notesArea = backdrop.querySelector('#detail-notes');
+    let noteTimer = null;
+    notesArea?.addEventListener('input', () => {
+      clearTimeout(noteTimer);
+      noteTimer = setTimeout(() => {
+        const n = loadProjectNotes();
+        n[project.path] = notesArea.value;
+        saveProjectNotes(n);
+      }, 500);
     });
 
     // Close on Escape
@@ -347,6 +451,101 @@ const Projects = (() => {
       if (e.key === 'Escape') { backdrop.remove(); document.removeEventListener('keydown', onKey); }
     };
     document.addEventListener('keydown', onKey);
+
+    // Load git extended info asynchronously
+    if (project.hasGit) {
+      loadGitExtended(project);
+    }
+
+    // Load goal progress
+    updateGoalProgress(project, projectGoal.target);
+  }
+
+  async function loadGitExtended(project) {
+    // Load commits, branches, status in parallel
+    const [commits, branchInfo, status] = await Promise.all([
+      spirosAPI.getGitLog(project.path, 15),
+      spirosAPI.getGitBranches(project.path),
+      spirosAPI.getGitStatus(project.path)
+    ]);
+
+    // Render commits
+    const commitsEl = document.getElementById('detail-commits');
+    if (commitsEl) {
+      if (commits.length === 0) {
+        commitsEl.innerHTML = '<div style="color:var(--text-dim);font-size:7px">No commits found</div>';
+      } else {
+        commitsEl.innerHTML = commits.map(c => `
+          <div class="detail-commit-row">
+            <span class="detail-commit-hash">${escapeHtml(c.hash)}</span>
+            <span class="detail-commit-msg-text">${escapeHtml(truncate(c.message, 60))}</span>
+            <span class="detail-commit-author">${escapeHtml(c.author || '')}</span>
+            <span class="detail-commit-date">${c.date ? getTimeAgo(c.date) : ''}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    // Render branches
+    const branchesEl = document.getElementById('detail-branches');
+    if (branchesEl) {
+      if (branchInfo.branches.length === 0) {
+        branchesEl.innerHTML = '<div style="color:var(--text-dim);font-size:7px">No branches found</div>';
+      } else {
+        branchesEl.innerHTML = branchInfo.branches.map(b => {
+          const isCurrent = b === branchInfo.current;
+          const cls = isCurrent ? ' detail-branch-current' : '';
+          return `<span class="detail-branch-tag${cls}">${escapeHtml(b)}</span>`;
+        }).join(' ');
+      }
+    }
+
+    // Render status
+    const statusEl = document.getElementById('detail-status');
+    if (statusEl) {
+      if (status.length === 0) {
+        statusEl.innerHTML = '<div style="color:var(--text-dim);font-size:7px">Working tree clean</div>';
+      } else {
+        statusEl.innerHTML = status.map(s => {
+          const cls = s.type === 'added' ? 'status-added' : s.type === 'deleted' ? 'status-deleted' : 'status-modified';
+          return `<div class="detail-status-row ${cls}">
+            <span class="detail-status-type">${s.type}</span>
+            <span class="detail-status-file">${escapeHtml(s.file)}</span>
+          </div>`;
+        }).join('');
+      }
+    }
+  }
+
+  async function updateGoalProgress(project, targetHours) {
+    const fillEl = document.getElementById('detail-goal-fill');
+    const labelEl = document.getElementById('detail-goal-label');
+    if (!fillEl || !labelEl) return;
+
+    // Get this week's activity for this project
+    const today = new Date().toISOString().split('T')[0];
+    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+    let weekMs = 0;
+
+    try {
+      const weekData = await spirosAPI.getRange(weekAgo, today);
+      // Sum up time for apps matching project name
+      const projLower = project.name.toLowerCase();
+      for (const day of weekData) {
+        const byApp = day.summary?.byApp || {};
+        for (const [app, ms] of Object.entries(byApp)) {
+          if (app.toLowerCase().includes(projLower)) weekMs += ms;
+        }
+      }
+    } catch (_) {}
+
+    const targetMs = targetHours * 3600000;
+    const pct = Math.min(100, Math.round((weekMs / targetMs) * 100));
+    const hours = Math.floor(weekMs / 3600000);
+    const mins = Math.round((weekMs % 3600000) / 60000);
+
+    fillEl.style.width = pct + '%';
+    labelEl.textContent = `${hours}h ${mins}m / ${targetHours}h (${pct}%)`;
   }
 
   return { render };

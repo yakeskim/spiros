@@ -29,8 +29,8 @@ const Dashboard = (() => {
   }
 
   async function render(container) {
-    settings = await synchronAPI.getSettings();
-    privacySettings = await synchronAPI.getPrivacySettings();
+    settings = await spirosAPI.getSettings();
+    privacySettings = await spirosAPI.getPrivacySettings();
 
     container.innerHTML = `
       <div class="dashboard">
@@ -119,9 +119,9 @@ const Dashboard = (() => {
     let data;
     const today = getDateStr(new Date());
     if (dateStr === today) {
-      data = await synchronAPI.getToday();
+      data = await spirosAPI.getToday();
     } else {
-      const range = await synchronAPI.getRange(dateStr, dateStr);
+      const range = await spirosAPI.getRange(dateStr, dateStr);
       data = range[0] || { date: dateStr, entries: [], summary: {
         totalMs: 0, totalClicks: 0, totalRightClicks: 0, totalKeys: 0,
         totalLetters: 0, totalWords: 0, totalScrolls: 0, totalEvents: 0,
@@ -146,7 +146,7 @@ const Dashboard = (() => {
     let avgMs = 0, avgApps = 0, avgCategories = 0, avgEvents = 0;
     try {
       // Fetch all data up to yesterday
-      const allDays = await synchronAPI.getRange('2020-01-01', getDateStr(currentDate));
+      const allDays = await spirosAPI.getRange('2020-01-01', getDateStr(currentDate));
       const daysWithData = allDays.filter(d => d.summary && d.summary.totalMs > 0);
       if (daysWithData.length > 0) {
         const n = daysWithData.length;
@@ -318,8 +318,30 @@ const Dashboard = (() => {
             </table>
           </div>
         </div>
+
+        <div class="dash-card glass wide">
+          <h3 class="card-title" data-tooltip="Complete challenges to earn bonus XP">Weekly Challenges</h3>
+          <div id="dash-challenges" class="dash-challenges">
+            <div class="lb-loading">Loading challenges...</div>
+          </div>
+        </div>
+
+        ${(window.requiresTier && window.requiresTier('pro')) ? `
+        <div class="dash-card glass wide" id="pro-analytics-section">
+          <h3 class="card-title" data-tooltip="Advanced analytics (Pro)">Pro Analytics</h3>
+          <div id="pro-analytics-content" class="lb-loading">Loading analytics...</div>
+        </div>
+        ` : ''}
       </div>
     `;
+
+    // Load challenges widget after DOM update
+    renderChallengesWidget();
+
+    // Load Pro analytics if applicable
+    if (window.requiresTier && window.requiresTier('pro')) {
+      renderProAnalytics(data, summary, categories);
+    }
 
     // Render charts after DOM update
     requestAnimationFrame(() => {
@@ -432,7 +454,7 @@ const Dashboard = (() => {
 
   // ===== WEEKLY VIEW =====
   async function renderWeekly(container, weekStart, weekEnd) {
-    const rangeData = await synchronAPI.getRange(getDateStr(weekStart), getDateStr(weekEnd));
+    const rangeData = await spirosAPI.getRange(getDateStr(weekStart), getDateStr(weekEnd));
     const categories = settings.categories || {};
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -471,7 +493,7 @@ const Dashboard = (() => {
     // Compute weekly averages from ALL available data (including current week)
     let avgWeekTotal = 0, avgWeekDailyAvg = 0, avgWeekActiveDays = 0, avgWeekEvents = 0;
     try {
-      const allDays = await synchronAPI.getRange('2020-01-01', getDateStr(weekEnd));
+      const allDays = await spirosAPI.getRange('2020-01-01', getDateStr(weekEnd));
       const weeks = {};
       for (const day of allDays) {
         if (!day.summary || !day.summary.totalMs) continue;
@@ -598,7 +620,7 @@ const Dashboard = (() => {
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
 
-    const rangeData = await synchronAPI.getRange(getDateStr(firstDay), getDateStr(lastDay));
+    const rangeData = await spirosAPI.getRange(getDateStr(firstDay), getDateStr(lastDay));
     const categories = settings.categories || {};
 
     // Build heatmap data and totals
@@ -646,7 +668,7 @@ const Dashboard = (() => {
     // Compute monthly averages from ALL available data (including current month)
     let avgMonthTotal = 0, avgMonthActiveDays = 0, avgMonthDailyAvg = 0, avgMonthEvents = 0;
     try {
-      const allDays = await synchronAPI.getRange('2020-01-01', getDateStr(lastDay));
+      const allDays = await spirosAPI.getRange('2020-01-01', getDateStr(lastDay));
       const months = {};
       for (const day of allDays) {
         if (!day.summary || !day.summary.totalMs) continue;
@@ -768,6 +790,153 @@ const Dashboard = (() => {
     return 'other';
   }
 
+  // ===== Weekly Challenges Widget =====
+  async function renderChallengesWidget() {
+    const widgetEl = document.getElementById('dash-challenges');
+    if (!widgetEl) return;
+
+    // Pro required for weekly challenges
+    if (!(window.requiresTier && window.requiresTier('pro'))) {
+      widgetEl.innerHTML = `
+        <div class="empty-state" style="text-align:center;padding:16px">
+          <p>&#x1F512; Weekly Challenges require Pro</p>
+          <p style="font-size:6px;color:var(--text-dim);margin-top:4px">Complete challenges to earn bonus XP each week</p>
+          <button class="btn-pixel btn-sm" id="btn-upgrade-challenges" style="margin-top:8px">Upgrade to Pro</button>
+        </div>
+      `;
+      widgetEl.querySelector('#btn-upgrade-challenges')?.addEventListener('click', () => {
+        if (window.showUpgradeModal) window.showUpgradeModal('Weekly Challenges', 'pro');
+      });
+      return;
+    }
+
+    try {
+      const challenges = await spirosAPI.getWeeklyChallenges();
+      if (!challenges || challenges.length === 0) {
+        widgetEl.innerHTML = '<div style="color:var(--text-dim);font-size:7px">No challenges this week</div>';
+        return;
+      }
+
+      widgetEl.innerHTML = challenges.map(c => {
+        const target = Number(c.target_value) || 1;
+        const current = c.computed_current || 0;
+        const pct = Math.min(100, Math.round((current / target) * 100));
+        const completed = c.completed || pct >= 100;
+        const completedClass = completed ? ' challenge-complete' : '';
+
+        return `
+          <div class="challenge-card${completedClass}" data-challenge-id="${c.id}">
+            <div class="challenge-card-top">
+              <div class="challenge-card-title">${completed ? '✓ ' : ''}${escapeHtml(c.title)}</div>
+              <div class="challenge-reward">${c.xp_reward} XP</div>
+            </div>
+            <div class="challenge-card-desc">${escapeHtml(c.description)}</div>
+            <div class="challenge-progress-bar">
+              <div class="challenge-progress-fill" style="width:${pct}%"></div>
+            </div>
+            <div class="challenge-progress-label">${pct}%${completed && !c.completed ? ' — Click to claim!' : ''}</div>
+          </div>
+        `;
+      }).join('');
+
+      // Wire claim click on completed but unclaimed challenges
+      widgetEl.querySelectorAll('.challenge-card').forEach(card => {
+        card.addEventListener('click', async () => {
+          const id = card.dataset.challengeId;
+          // Find challenge
+          const ch = challenges.find(c => c.id === id);
+          if (!ch) return;
+          const target = Number(ch.target_value) || 1;
+          const current = ch.computed_current || 0;
+          const pct = Math.min(100, Math.round((current / target) * 100));
+          if (pct >= 100 && !ch.completed) {
+            const result = await spirosAPI.completeChallenge(id);
+            if (result.success) {
+              renderChallengesWidget();
+            }
+          }
+        });
+      });
+    } catch (e) {
+      widgetEl.innerHTML = '<div style="color:var(--text-dim);font-size:7px">Could not load challenges</div>';
+    }
+  }
+
+  // ===== Pro Analytics (daily view extra) =====
+  async function renderProAnalytics(todayData, summary, categories) {
+    const el = document.getElementById('pro-analytics-content');
+    if (!el) return;
+
+    try {
+      // Fetch last 28 days for trend analysis
+      const endDate = new Date();
+      const startDate = new Date(endDate);
+      startDate.setDate(startDate.getDate() - 27);
+      const rangeData = await spirosAPI.getRange(getDateStr(startDate), getDateStr(endDate));
+
+      // 4-week productivity trend
+      const weeks = [[], [], [], []];
+      for (let i = 0; i < 28; i++) {
+        const weekIdx = Math.floor(i / 7);
+        const d = new Date(startDate);
+        d.setDate(d.getDate() + i);
+        const dateStr = getDateStr(d);
+        const dayData = rangeData.find(r => r.date === dateStr);
+        weeks[weekIdx].push(dayData?.summary?.totalMs || 0);
+      }
+      const weekTotals = weeks.map(w => w.reduce((s, v) => s + v, 0));
+
+      // Peak hours from today's entries
+      const hourBuckets = new Array(24).fill(0);
+      for (const entry of (todayData.entries || [])) {
+        const hour = new Date(entry.ts).getHours();
+        hourBuckets[hour] += (entry.dur || 0);
+      }
+
+      // Category breakdown over time (last 7 days)
+      const last7 = rangeData.slice(-7);
+      const catTimeline = {};
+      for (const day of last7) {
+        for (const [cat, ms] of Object.entries(day.summary?.byCategory || {})) {
+          if (!catTimeline[cat]) catTimeline[cat] = [];
+          catTimeline[cat].push(ms);
+        }
+      }
+
+      // Render
+      const trendHtml = weekTotals.map((ms, i) => {
+        const label = i === 3 ? 'This Week' : `${3 - i} wk ago`;
+        const pct = weekTotals[0] > 0 ? Math.round((ms / Math.max(...weekTotals)) * 100) : 0;
+        return `<div class="app-item"><div class="app-info"><span class="app-name">${label}</span><span class="app-time">${formatHours(ms)}</span></div><div class="app-bar"><div class="app-bar-fill" style="width:${pct}%;background:#00e676"></div></div></div>`;
+      }).join('');
+
+      const peakHour = hourBuckets.indexOf(Math.max(...hourBuckets));
+      const peakHoursHtml = hourBuckets.map((ms, h) => {
+        const maxMs = Math.max(...hourBuckets) || 1;
+        const intensity = Math.round((ms / maxMs) * 4);
+        const label = h === 0 ? '12a' : h < 12 ? `${h}a` : h === 12 ? '12p' : `${h - 12}p`;
+        return `<div class="heatmap-cell" data-level="${intensity}" title="${label}: ${formatHours(ms)}" style="width:12px;height:12px"></div>`;
+      }).join('');
+
+      el.innerHTML = `
+        <div style="margin-bottom:12px">
+          <h4 style="font-size:7px;margin-bottom:6px">4-Week Productivity Trend</h4>
+          ${trendHtml}
+        </div>
+        <div style="margin-bottom:12px">
+          <h4 style="font-size:7px;margin-bottom:6px">Peak Hours Today ${peakHour >= 0 && Math.max(...hourBuckets) > 0 ? '(Peak: ' + (peakHour === 0 ? '12am' : peakHour < 12 ? peakHour + 'am' : peakHour === 12 ? '12pm' : (peakHour - 12) + 'pm') + ')' : ''}</h4>
+          <div style="display:flex;gap:2px;flex-wrap:wrap">${peakHoursHtml}</div>
+        </div>
+      `;
+    } catch (e) {
+      el.innerHTML = '<div style="color:var(--text-dim);font-size:7px">Could not load analytics</div>';
+    }
+  }
+
+  function escapeHtml(s) {
+    return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
   // Refresh just today's data (called on activity:update)
   async function refreshIfDaily() {
     if (currentRange !== 'daily') return;
@@ -778,5 +947,5 @@ const Dashboard = (() => {
     if (content) await renderDaily(content);
   }
 
-  return { render, refreshIfDaily, currentRange: () => currentRange };
+  return { render, refreshIfDaily, renderChallengesWidget, currentRange: () => currentRange };
 })();

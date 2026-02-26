@@ -1,5 +1,59 @@
 // app.js — Main renderer: routing, state, init, auth
 
+// ===== Global Tier State =====
+let currentTier = 'free';
+window._currentTier = 'free';
+
+function requiresTier(tier) {
+  const order = { free: 0, pro: 1, team: 2 };
+  return (order[currentTier] || 0) >= (order[tier] || 0);
+}
+window.requiresTier = requiresTier;
+
+function showUpgradeModal(featureName, requiredTier) {
+  const modal = document.getElementById('upgrade-modal');
+  if (!modal) return;
+  const titleEl = document.getElementById('upgrade-modal-title');
+  const descEl = document.getElementById('upgrade-modal-desc');
+  const priceMonthly = document.getElementById('upgrade-price-monthly');
+  const priceYearly = document.getElementById('upgrade-price-yearly');
+
+  const tierLabel = requiredTier === 'team' ? 'Team' : 'Pro';
+  if (titleEl) titleEl.textContent = `Upgrade to ${tierLabel}`;
+  if (descEl) descEl.textContent = featureName ? `"${featureName}" requires a ${tierLabel} subscription` : `This feature requires a ${tierLabel} subscription`;
+
+  if (requiredTier === 'team') {
+    if (priceMonthly) priceMonthly.textContent = '$12/mo';
+    if (priceYearly) priceYearly.textContent = '$96/yr';
+  } else {
+    if (priceMonthly) priceMonthly.textContent = '$5/mo';
+    if (priceYearly) priceYearly.textContent = '$40/yr';
+  }
+
+  // Store required tier for subscribe button
+  modal.dataset.requiredTier = requiredTier || 'pro';
+  modal.classList.remove('hidden');
+}
+window.showUpgradeModal = showUpgradeModal;
+
+function updateTierBadge() {
+  let badge = document.getElementById('tier-badge');
+  if (currentTier === 'free') {
+    if (badge) badge.remove();
+    return;
+  }
+  if (!badge) {
+    badge = document.createElement('div');
+    badge.id = 'tier-badge';
+    const xpContainer = document.getElementById('xp-bar-container');
+    if (xpContainer) xpContainer.insertAdjacentElement('afterend', badge);
+  }
+  const tierClass = currentTier === 'team' ? 'tier-team' : 'tier-pro';
+  const tierLabel = currentTier === 'team' ? 'TEAM' : 'PRO';
+  badge.className = `tier-badge ${tierClass}`;
+  badge.textContent = tierLabel;
+}
+
 // Global confirm modal (replaces native confirm())
 function showConfirm(message) {
   return new Promise((resolve) => {
@@ -81,7 +135,7 @@ function showConfirm(message) {
 
   // Check consent and show consent screen or proceed to app
   async function checkConsentThenShowApp() {
-    const { consentAccepted } = await synchronAPI.getConsent();
+    const { consentAccepted } = await spirosAPI.getConsent();
     if (consentAccepted) {
       showApp();
       initApp();
@@ -92,7 +146,7 @@ function showConfirm(message) {
 
   // Consent screen handlers
   document.getElementById('consent-accept')?.addEventListener('click', async () => {
-    await synchronAPI.acceptConsent();
+    await spirosAPI.acceptConsent();
     showApp();
     initApp();
   });
@@ -105,12 +159,12 @@ function showConfirm(message) {
 
   document.getElementById('consent-privacy-link')?.addEventListener('click', (e) => {
     e.preventDefault();
-    synchronAPI.openExternalLink('https://spiros.app/privacy');
+    spirosAPI.openExternalLink('https://spiros.app/privacy');
   });
 
   document.getElementById('consent-terms-link')?.addEventListener('click', (e) => {
     e.preventDefault();
-    synchronAPI.openExternalLink('https://spiros.app/terms');
+    spirosAPI.openExternalLink('https://spiros.app/terms');
   });
 
   // Toggle login/signup forms
@@ -150,7 +204,7 @@ function showConfirm(message) {
     btn.textContent = 'Sending...';
     btn.disabled = true;
 
-    const result = await synchronAPI.resetPassword(email);
+    const result = await spirosAPI.resetPassword(email);
     btn.textContent = 'Send Reset Link';
     btn.disabled = false;
 
@@ -178,7 +232,7 @@ function showConfirm(message) {
     btn.textContent = 'Logging in...';
     btn.disabled = true;
 
-    const result = await synchronAPI.login(email, password);
+    const result = await spirosAPI.login(email, password);
     btn.textContent = 'Login';
     btn.disabled = false;
 
@@ -200,7 +254,7 @@ function showConfirm(message) {
     btn.textContent = 'Creating...';
     btn.disabled = true;
 
-    const result = await synchronAPI.signUp(email, password, name);
+    const result = await spirosAPI.signUp(email, password, name);
     btn.textContent = 'Create Account';
     btn.disabled = false;
 
@@ -271,11 +325,17 @@ function showConfirm(message) {
       case 'community':
         await Community.render(container);
         break;
+      case 'guilds':
+        await Guilds.render(container);
+        break;
       case 'chat':
         await Chat.render(container);
         break;
       case 'friends':
         await Friends.render(container);
+        break;
+      case 'leaderboard':
+        await Leaderboard.render(container);
         break;
       case 'achievements':
         await renderAchievements(container);
@@ -296,7 +356,7 @@ function showConfirm(message) {
   let achFilter = 'all';
 
   async function renderAchievements(container) {
-    gameState = await synchronAPI.getGameState();
+    gameState = await spirosAPI.getGameState();
     const earned = gameState.achievements || [];
     const allAch = Gamification.ACHIEVEMENTS;
     const categories = Gamification.ACHIEVEMENT_CATEGORIES;
@@ -419,7 +479,7 @@ function showConfirm(message) {
 
   // ===== Tracking Status =====
   async function updateTrackingStatus() {
-    const status = await synchronAPI.getTrackingStatus();
+    const status = await spirosAPI.getTrackingStatus();
     const dot = document.getElementById('tracking-dot');
     const label = document.getElementById('tracking-label');
     if (dot) {
@@ -443,7 +503,7 @@ function showConfirm(message) {
   let _cachedTotalUsers = 0;
   async function updateSidebarOnline() {
     try {
-      const stats = await synchronAPI.getCommunityStats();
+      const stats = await spirosAPI.getCommunityStats();
       if (!stats) return;
       const container = document.getElementById('sidebar-online');
       const countEl = document.getElementById('sidebar-online-count');
@@ -494,53 +554,112 @@ function showConfirm(message) {
   let pendingXP = 0;
   let lastGameProcess = 0;
 
-  synchronAPI.onActivityUpdate(async (entry) => {
-    pendingXP += Gamification.calcEntryXP(entry);
+  spirosAPI.onActivityUpdate(async (entry) => {
+    try {
+      pendingXP += Gamification.calcEntryXP(entry);
 
-    const now = Date.now();
-    if (now - lastGameProcess < 30000) {
+      const now = Date.now();
+      if (now - lastGameProcess < 30000) {
+        Dashboard.refreshIfDaily();
+        return;
+      }
+      lastGameProcess = now;
+
+      // Re-read fresh state so we don't overwrite concurrent changes
+      gameState = await spirosAPI.getGameState();
+
+      const todayData = await spirosAPI.getToday();
+      const oldLevel = gameState.level;
+
+      const catTotals = { ...(todayData.summary.byCategory || {}) };
+      const result = Gamification.processDayActivity(gameState, todayData, catTotals);
+
+      await spirosAPI.setGameState(gameState);
+
+      updateXPBar();
+      updateStreak();
+
+      for (const ach of result.newAchievements) {
+        showAchievementToast(ach);
+      }
+
+      if (result.leveledUp) {
+        showLevelUp(gameState.level, gameState.title);
+      }
+
       Dashboard.refreshIfDaily();
-      return;
+    } catch (e) {
+      console.error('onActivityUpdate error:', e);
     }
-    lastGameProcess = now;
-
-    // Re-read fresh state so we don't overwrite concurrent changes
-    gameState = await synchronAPI.getGameState();
-
-    const todayData = await synchronAPI.getToday();
-    const oldLevel = gameState.level;
-
-    const catTotals = { ...(todayData.summary.byCategory || {}) };
-    const result = Gamification.processDayActivity(gameState, todayData, catTotals);
-
-    await synchronAPI.setGameState(gameState);
-
-    updateXPBar();
-    updateStreak();
-
-    for (const ach of result.newAchievements) {
-      showAchievementToast(ach);
-    }
-
-    if (result.leveledUp) {
-      showLevelUp(gameState.level, gameState.title);
-    }
-
-    Dashboard.refreshIfDaily();
   });
+
+  // ===== Upgrade Modal Wiring =====
+  (function wireUpgradeModal() {
+    const modal = document.getElementById('upgrade-modal');
+    const closeBtn = document.getElementById('upgrade-modal-close');
+    const subscribeBtn = document.getElementById('upgrade-modal-subscribe');
+
+    closeBtn?.addEventListener('click', () => modal?.classList.add('hidden'));
+    modal?.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
+
+    // Plan selection
+    document.querySelectorAll('.upgrade-plan').forEach(plan => {
+      plan.addEventListener('click', () => {
+        document.querySelectorAll('.upgrade-plan').forEach(p => p.classList.remove('active'));
+        plan.classList.add('active');
+      });
+    });
+
+    subscribeBtn?.addEventListener('click', async () => {
+      const tier = modal?.dataset.requiredTier || 'pro';
+      const activePlan = document.querySelector('.upgrade-plan.active');
+      const billing = activePlan?.dataset.plan || 'yearly';
+      const planKey = `${tier}_${billing}`;
+
+      subscribeBtn.textContent = 'Opening checkout...';
+      subscribeBtn.disabled = true;
+
+      const result = await spirosAPI.createCheckout(planKey);
+      subscribeBtn.textContent = 'Subscribe';
+      subscribeBtn.disabled = false;
+
+      if (result.success) {
+        modal?.classList.add('hidden');
+      } else {
+        subscribeBtn.textContent = result.error || 'Failed';
+        setTimeout(() => { subscribeBtn.textContent = 'Subscribe'; }, 3000);
+      }
+    });
+  })();
 
   // ===== Init App (after auth) =====
   async function initApp() {
-    gameState = await synchronAPI.getGameState();
-    settings = await synchronAPI.getSettings();
+    gameState = await spirosAPI.getGameState();
+    settings = await spirosAPI.getSettings();
+
+    // Initialize tier state
+    try {
+      currentTier = await spirosAPI.getTier() || 'free';
+    } catch (_) { currentTier = 'free'; }
+    window._currentTier = currentTier;
+    updateTierBadge();
+
+    // Listen for tier changes via Realtime
+    if (spirosAPI.onTierChanged) {
+      spirosAPI.onTierChanged((tier) => {
+        currentTier = tier;
+        window._currentTier = tier;
+        updateTierBadge();
+      });
+    }
 
     updateXPBar();
     updateStreak();
     updateTrackingStatus();
 
     // Display app version in sidebar
-    if (synchronAPI.getAppVersion) {
-      synchronAPI.getAppVersion().then(info => {
+    if (spirosAPI.getAppVersion) {
+      spirosAPI.getAppVersion().then(info => {
         const el = document.getElementById('app-version');
         if (el && info && info.version) el.textContent = 'v' + info.version;
       }).catch(() => {});
@@ -548,14 +667,14 @@ function showConfirm(message) {
 
     // Sidebar online count
     updateSidebarOnline();
-    if (synchronAPI.onPresenceSync) {
-      synchronAPI.onPresenceSync(() => updateSidebarOnline());
+    if (spirosAPI.onPresenceSync) {
+      spirosAPI.onPresenceSync(() => updateSidebarOnline());
     }
-    if (synchronAPI.onPresenceJoin) {
-      synchronAPI.onPresenceJoin(() => updateSidebarOnline());
+    if (spirosAPI.onPresenceJoin) {
+      spirosAPI.onPresenceJoin(() => updateSidebarOnline());
     }
-    if (synchronAPI.onPresenceLeave) {
-      synchronAPI.onPresenceLeave(() => updateSidebarOnline());
+    if (spirosAPI.onPresenceLeave) {
+      spirosAPI.onPresenceLeave(() => updateSidebarOnline());
     }
 
     // Wire nav
@@ -569,7 +688,7 @@ function showConfirm(message) {
 
   // ===== Startup: check auth =====
   async function startup() {
-    const { user } = await synchronAPI.getUser();
+    const { user } = await spirosAPI.getUser();
     if (user) {
       currentUser = user;
       await checkConsentThenShowApp();

@@ -1,5 +1,5 @@
 -- =============================================
--- SYNCHRON — Migration 002: Community Projects, Chat, Profile Name Rate-Limit
+-- SPIROS — Migration 002: Community Projects, Chat, Profile Name Rate-Limit
 -- Run this in Supabase Dashboard → SQL Editor
 -- =============================================
 

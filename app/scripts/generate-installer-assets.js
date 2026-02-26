@@ -228,8 +228,8 @@ function generateHeader() {
     }
   }
 
-  // "SYNCHRON" text
-  drawText(set, 'SYNCHRON', 48, 16, C.gold, 2);
+  // "SPIROS" text
+  drawText(set, 'SPIROS', 48, 16, C.gold, 2);
 
   // "Desktop Tracker" subtitle
   drawText(set, 'DESKTOP TRACKER', 48, 36, C.textDim, 1);
@@ -277,9 +277,9 @@ function generateSidebar() {
     }
   }
 
-  // "SYNCHRON" text centered below icon
+  // "SPIROS" text centered below icon
   const textY = iconY + iconSize + 20;
-  drawText(set, 'SYNCHRON', Math.floor((W - 8 * 6 * 2) / 2) + 4, textY, C.gold, 2);
+  drawText(set, 'SPIROS', Math.floor((W - 6 * 6 * 2) / 2) + 4, textY, C.gold, 2);
 
   // Decorative line separator
   const lineY = textY + 18;

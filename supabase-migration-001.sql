@@ -1,5 +1,5 @@
 -- =============================================
--- SYNCHRON — Migration 001: Online Presence + Friend Re-requests
+-- SPIROS — Migration 001: Online Presence + Friend Re-requests
 -- Run this in Supabase Dashboard → SQL Editor
 -- =============================================
 

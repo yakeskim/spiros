@@ -22,7 +22,7 @@ export default function Header() {
         {/* Logo */}
         <a href="#" className="flex items-center gap-3 text-gold text-sm text-shadow-pixel">
           <span className="text-lg">&#9876;</span>
-          <span>SYNCHRON</span>
+          <span>SPIROS</span>
         </a>
 
         {/* Desktop Nav */}

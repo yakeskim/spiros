@@ -1,5 +1,5 @@
 -- =============================================
--- SYNCHRON — Supabase Database Schema
+-- SPIROS — Supabase Database Schema
 -- Run this in Supabase Dashboard → SQL Editor
 -- =============================================
 

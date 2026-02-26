@@ -56,7 +56,12 @@ const Projects = (() => {
     const grid = document.getElementById('projects-grid');
     if (grid) grid.innerHTML = '<div class="loading-state">Scanning projects...</div>';
 
-    projectsData = await synchronAPI.scanProjects();
+    try {
+      projectsData = await synchronAPI.scanProjects();
+    } catch (e) {
+      console.error('scanProjects error:', e);
+      projectsData = [];
+    }
     updateLanguageFilter();
     renderGrid();
   }

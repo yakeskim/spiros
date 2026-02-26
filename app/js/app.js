@@ -248,7 +248,11 @@ function showConfirm(message) {
       el.classList.toggle('active', el.id === `view-${view}`);
     });
 
-    await renderView(view);
+    try {
+      await renderView(view);
+    } catch (e) {
+      console.error('renderView error:', e);
+    }
 
     hideLoader();
   }

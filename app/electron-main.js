@@ -892,6 +892,7 @@ function scanProjects(folderPath) {
   try {
     const entries = fs.readdirSync(folderPath, { withFileTypes: true });
     for (const entry of entries) {
+      if (projects.length >= 100) break;
       if (!entry.isDirectory()) continue;
       const projPath = path.join(folderPath, entry.name);
 
@@ -946,8 +947,11 @@ function scanProjects(folderPath) {
                   exts[ext] = (exts[ext] || 0) + 1;
                 }
                 try {
-                  const content = fs.readFileSync(full, 'utf8');
-                  lineCount += content.split('\n').length;
+                  const stat = fs.statSync(full);
+                  if (stat.size > 0 && stat.size < 256 * 1024) {
+                    const content = fs.readFileSync(full, 'utf8');
+                    lineCount += content.split('\n').length;
+                  }
                 } catch (e) { /* binary or unreadable */ }
               }
             }

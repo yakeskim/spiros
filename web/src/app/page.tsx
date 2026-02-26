@@ -13,14 +13,14 @@ import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
 
 const SECTIONS = [
-  "hero",
-  "features",
-  "how-step-1",
-  "how-step-2",
-  "how-step-3",
-  "download",
-  "pricing",
-  "faq",
+  { id: "hero", label: "Home" },
+  { id: "features", label: "Features" },
+  { id: "how-step-1", label: "Step 1" },
+  { id: "how-step-2", label: "Step 2" },
+  { id: "how-step-3", label: "Step 3" },
+  { id: "download", label: "Download" },
+  { id: "pricing", label: "Pricing" },
+  { id: "faq", label: "FAQ" },
 ];
 
 export default function Home() {
@@ -86,13 +86,15 @@ export default function Home() {
 
       {/* Scroll indicator dots */}
       <div className="scroll-indicator hidden md:flex">
-        {SECTIONS.map((_, i) => (
+        {SECTIONS.map((sec, i) => (
           <button
             key={i}
             className={`scroll-indicator-dot${i === active ? " active" : ""}`}
             onClick={() => scrollTo(i)}
-            aria-label={`Go to ${SECTIONS[i]}`}
-          />
+            aria-label={`Go to ${sec.label}`}
+          >
+            <span className="scroll-indicator-label">{sec.label}</span>
+          </button>
         ))}
       </div>
 

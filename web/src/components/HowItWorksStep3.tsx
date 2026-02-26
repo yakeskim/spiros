@@ -3,16 +3,16 @@ import MockupWindow from "./MockupWindow";
 export default function HowItWorksStep3() {
   return (
     <section id="how-step-3" className="px-4 w-full">
-      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+      <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
         {/* Text */}
         <div>
-          <span className="text-[9px] text-gold border border-gold/40 bg-gold/10 px-3 py-1">
+          <span className="text-[10px] text-gold border border-gold/40 bg-gold/10 px-4 py-1.5">
             STEP 03
           </span>
-          <h2 className="text-lg sm:text-xl text-text-bright mt-6 text-shadow-pixel">
+          <h2 className="text-xl sm:text-2xl text-text-bright mt-6 text-shadow-pixel">
             LEVEL UP &amp; COMPETE
           </h2>
-          <p className="text-[10px] text-text-dim mt-4 leading-loose max-w-sm">
+          <p className="text-[11px] text-text-dim mt-5 leading-loose max-w-md">
             Earn XP for every minute of activity, unlock achievements, and climb
             the leaderboard. Add friends and see who reigns supreme.
           </p>

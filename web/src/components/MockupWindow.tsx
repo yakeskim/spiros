@@ -12,7 +12,7 @@ export default function MockupWindow({
   activeNav = 0,
 }: MockupWindowProps) {
   return (
-    <div className="border-2 border-border-light bg-bg-darkest shadow-pixel w-full max-w-md mx-auto">
+    <div className="border-2 border-border-light bg-bg-darkest shadow-pixel w-full max-w-lg mx-auto">
       {/* Title bar */}
       <div className="flex items-center justify-between px-3 py-2 bg-bg-panel border-b-2 border-border-dark">
         <div className="flex items-center gap-2">
@@ -46,7 +46,7 @@ export default function MockupWindow({
         )}
 
         {/* Content area */}
-        <div className="flex-1 p-4 min-h-[240px]">{children}</div>
+        <div className="flex-1 p-5 min-h-[280px]">{children}</div>
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Press_Start_2P } from "next/font/google";
+import AuthProvider from "@/components/AuthProvider";
 import CookieBanner from "@/components/CookieBanner";
 import "./globals.css";
 
@@ -38,8 +39,10 @@ export default function RootLayout({
   return (
     <html lang="en" className={pixelFont.variable}>
       <body className="font-pixel text-text-default antialiased">
-        {children}
-        <CookieBanner />
+        <AuthProvider>
+          {children}
+          <CookieBanner />
+        </AuthProvider>
       </body>
     </html>
   );

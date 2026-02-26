@@ -1,33 +1,28 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-
-const SUPABASE_URL = "https://acdjnobbiwiobvmijans.supabase.co";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [status, setStatus] = useState<"form" | "loading" | "success" | "error">("loading");
   const [error, setError] = useState("");
-  const [accessToken, setAccessToken] = useState("");
 
   useEffect(() => {
-    // Supabase redirects with tokens in the URL hash:
-    // #access_token=...&refresh_token=...&type=recovery
-    const hash = window.location.hash.substring(1);
-    const params = new URLSearchParams(hash);
-    const token = params.get("access_token");
-    const type = params.get("type");
-
-    if (token && type === "recovery") {
-      setAccessToken(token);
-      setStatus("form");
-    } else {
-      setError("Invalid or expired reset link. Please request a new one from the app.");
-      setStatus("error");
-    }
+    // If we arrived here via /auth/callback, the Supabase client already has
+    // the session from the recovery token. If we arrived directly with hash
+    // tokens (legacy links), Supabase auto-detects them on init.
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setStatus("form");
+      } else {
+        setError("Invalid or expired reset link. Please request a new one.");
+        setStatus("error");
+      }
+    });
   }, []);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -45,27 +40,13 @@ export default function ResetPasswordPage() {
     setStatus("loading");
     setError("");
 
-    try {
-      const res = await fetch(`${SUPABASE_URL}/auth/v1/user`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-          apikey: accessToken,
-        },
-        body: JSON.stringify({ password }),
-      });
+    const { error: err } = await supabase.auth.updateUser({ password });
 
-      if (res.ok) {
-        setStatus("success");
-      } else {
-        const data = await res.json();
-        setError(data.msg || data.error_description || "Failed to reset password. The link may have expired.");
-        setStatus("form");
-      }
-    } catch {
-      setError("Network error. Please try again.");
+    if (err) {
+      setError(err.message);
       setStatus("form");
+    } else {
+      setStatus("success");
     }
   }
 
@@ -82,14 +63,15 @@ export default function ResetPasswordPage() {
         {status === "error" && (
           <div className="text-center">
             <p className="text-[9px] text-red-400 mb-6">{error}</p>
-            <a href="/" className="text-[9px] text-gold hover:underline">Back to home</a>
+            <a href="/login" className="text-[9px] text-gold hover:underline">Go to login</a>
           </div>
         )}
 
         {status === "success" && (
           <div className="text-center">
             <p className="text-[9px] text-green-400 mb-4">Password updated successfully!</p>
-            <p className="text-[9px] text-text-dim">You can now log in with your new password in the Spiros app.</p>
+            <p className="text-[9px] text-text-dim mb-4">You can now log in with your new password.</p>
+            <a href="/login" className="text-[9px] text-gold hover:underline">Go to login</a>
           </div>
         )}
 

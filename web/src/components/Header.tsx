@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useAuth } from "./AuthProvider";
 import PixelButton from "./PixelButton";
 
 const NAV_LINKS = [
@@ -15,12 +16,13 @@ const NAV_LINKS = [
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user, profile, loading } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 bg-bg-darkest/95 border-b-2 border-border-dark backdrop-blur-none">
       <div className="max-w-6xl mx-auto px-4 flex items-center justify-between h-16">
         {/* Logo */}
-        <a href="#" className="flex items-center gap-3 text-gold text-sm text-shadow-pixel">
+        <a href="/" className="flex items-center gap-3 text-gold text-sm text-shadow-pixel">
           <span className="text-lg">&#9876;</span>
           <span>SPIROS</span>
         </a>
@@ -36,6 +38,23 @@ export default function Header() {
               {link.label}
             </a>
           ))}
+          {!loading && (
+            user ? (
+              <a
+                href="/account"
+                className="text-[9px] text-bg-darkest bg-gold px-3 py-1 border-2 border-gold-dark shadow-pixel-gold hover:brightness-110 transition-all"
+              >
+                {profile?.display_name ?? user.email?.split("@")[0] ?? "Account"}
+              </a>
+            ) : (
+              <a
+                href="/login"
+                className="text-text-dim text-[10px] hover:text-gold transition-colors"
+              >
+                Login
+              </a>
+            )
+          )}
           <PixelButton href="#download" className="text-[9px] px-4 py-2">
             DOWNLOAD FREE
           </PixelButton>
@@ -64,6 +83,25 @@ export default function Header() {
               {link.label}
             </a>
           ))}
+          {!loading && (
+            user ? (
+              <a
+                href="/account"
+                className="text-gold text-[10px] hover:underline"
+                onClick={() => setMenuOpen(false)}
+              >
+                {profile?.display_name ?? "Account"}
+              </a>
+            ) : (
+              <a
+                href="/login"
+                className="text-text-dim text-[10px] hover:text-gold"
+                onClick={() => setMenuOpen(false)}
+              >
+                Login
+              </a>
+            )
+          )}
           <PixelButton href="#download" className="text-[9px] w-full">
             DOWNLOAD FREE
           </PixelButton>

@@ -12,6 +12,7 @@
   const appEl = document.getElementById('app');
   const loginForm = document.getElementById('login-form');
   const signupForm = document.getElementById('signup-form');
+  const forgotForm = document.getElementById('forgot-form');
   const authError = document.getElementById('auth-error');
 
   function showAuthError(msg) {
@@ -86,8 +87,43 @@
   document.getElementById('show-login')?.addEventListener('click', (e) => {
     e.preventDefault();
     signupForm.style.display = 'none';
+    forgotForm.style.display = 'none';
     loginForm.style.display = 'block';
     authError.style.display = 'none';
+  });
+
+  document.getElementById('show-forgot')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    loginForm.style.display = 'none';
+    forgotForm.style.display = 'block';
+    authError.style.display = 'none';
+  });
+
+  document.getElementById('show-login-from-forgot')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    forgotForm.style.display = 'none';
+    loginForm.style.display = 'block';
+    authError.style.display = 'none';
+  });
+
+  forgotForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('forgot-email').value;
+    const btn = document.getElementById('forgot-btn');
+    btn.textContent = 'Sending...';
+    btn.disabled = true;
+
+    const result = await synchronAPI.resetPassword(email);
+    btn.textContent = 'Send Reset Link';
+    btn.disabled = false;
+
+    if (result.success) {
+      showAuthError('Reset link sent! Check your email.');
+      forgotForm.style.display = 'none';
+      loginForm.style.display = 'block';
+    } else {
+      showAuthError(result.error);
+    }
   });
 
   // Skip auth (use offline)

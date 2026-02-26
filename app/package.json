@@ -21,7 +21,8 @@
     "publish": {
       "provider": "github",
       "owner": "yakeskim",
-      "repo": "spiros"
+      "repo": "spiros",
+      "releaseType": "release"
     },
     "win": {
       "target": [

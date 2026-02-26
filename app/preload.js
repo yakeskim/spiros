@@ -4,6 +4,7 @@ contextBridge.exposeInMainWorld('synchronAPI', {
   // Auth
   signUp: (email, password, displayName) => ipcRenderer.invoke('auth:signup', email, password, displayName),
   login: (email, password) => ipcRenderer.invoke('auth:login', email, password),
+  resetPassword: (email) => ipcRenderer.invoke('auth:resetPassword', email),
   logout: () => ipcRenderer.invoke('auth:logout'),
   getUser: () => ipcRenderer.invoke('auth:user'),
   updateProfile: (updates) => ipcRenderer.invoke('auth:updateProfile', updates),

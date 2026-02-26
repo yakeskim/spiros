@@ -2015,6 +2015,15 @@ async function getCommunityStats() {
 // Auth
 ipcMain.handle('auth:signup', (e, email, password, displayName) => authSignUp(email, password, displayName));
 ipcMain.handle('auth:login', (e, email, password) => authLogin(email, password));
+ipcMain.handle('auth:resetPassword', async (e, email) => {
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err.message };
+  }
+});
 ipcMain.handle('auth:logout', () => authLogout());
 ipcMain.handle('auth:user', () => authGetUser());
 ipcMain.handle('auth:updateProfile', (e, updates) => updateProfile(updates));

@@ -97,6 +97,13 @@ const Settings = (() => {
             <label>Current Version</label>
             <span class="about-text" id="update-current-version">v1.0.0</span>
           </div>
+          <div class="setting-row">
+            <label class="checkbox-label">
+              <input type="checkbox" id="setting-auto-update" ${currentSettings.autoUpdate !== false ? 'checked' : ''}>
+              Auto-download updates
+            </label>
+            <span class="setting-hint" style="margin-left:24px;display:block">Automatically download new versions in the background and install on next restart</span>
+          </div>
           <div id="update-status" class="update-status"></div>
           <div class="setting-row" style="gap:8px;margin-top:8px">
             <button class="btn-pixel" id="btn-check-updates">Check for Updates</button>
@@ -337,6 +344,11 @@ const Settings = (() => {
 
     container.querySelector('#setting-start-minimized')?.addEventListener('change', (e) => {
       currentSettings.startMinimized = e.target.checked;
+      saveCurrentSettings();
+    });
+
+    container.querySelector('#setting-auto-update')?.addEventListener('change', (e) => {
+      currentSettings.autoUpdate = e.target.checked;
       saveCurrentSettings();
     });
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Press_Start_2P } from "next/font/google";
+import CookieBanner from "@/components/CookieBanner";
 import "./globals.css";
 
 const pixelFont = Press_Start_2P({
@@ -38,6 +39,7 @@ export default function RootLayout({
     <html lang="en" className={pixelFont.variable}>
       <body className="font-pixel text-text-default antialiased">
         {children}
+        <CookieBanner />
       </body>
     </html>
   );

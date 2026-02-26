@@ -84,11 +84,20 @@ export default function PrivacyPage() {
         </section>
 
         <section className="mb-10">
-          <h2 className="text-text-bright text-[11px] mb-4">6. Third Parties</h2>
+          <h2 className="text-text-bright text-[11px] mb-4">6. Software Updates</h2>
+          <div className="text-[9px] text-text-dim leading-relaxed space-y-3">
+            <p>By default, Spiros automatically checks for and downloads updates from GitHub Releases. This involves a periodic HTTPS request to <strong className="text-text-bright">github.com</strong> to check for new versions. No personal data is sent during this process.</p>
+            <p>When an update is downloaded, it is installed automatically the next time you close the app. You can disable automatic updates at any time in Settings &gt; Updates &gt; Auto-download updates. Manual update checks remain available even when auto-update is off.</p>
+          </div>
+        </section>
+
+        <section className="mb-10">
+          <h2 className="text-text-bright text-[11px] mb-4">7. Third Parties</h2>
           <div className="text-[9px] text-text-dim leading-relaxed space-y-3">
             <p>We use the following third-party services:</p>
             <ul className="list-disc pl-6 space-y-1">
               <li><strong className="text-text-bright">Supabase</strong> — database hosting and authentication (PostgreSQL, hosted in AWS us-east-1)</li>
+              <li><strong className="text-text-bright">GitHub</strong> — source code hosting and release distribution for app updates</li>
               <li><strong className="text-text-bright">Vercel</strong> — website hosting for this marketing site</li>
             </ul>
             <p>We do not sell, rent, or share your data with advertisers, data brokers, or any other third parties. We do not use analytics or tracking pixels on the desktop app.</p>
@@ -96,7 +105,7 @@ export default function PrivacyPage() {
         </section>
 
         <section className="mb-10">
-          <h2 className="text-text-bright text-[11px] mb-4">7. Contact</h2>
+          <h2 className="text-text-bright text-[11px] mb-4">8. Contact</h2>
           <div className="text-[9px] text-text-dim leading-relaxed space-y-3">
             <p>For privacy questions or data requests, contact us at: <a href="mailto:privacy@spiros.app" className="text-gold hover:underline">privacy@spiros.app</a></p>
           </div>

@@ -106,7 +106,8 @@ function getDefaultSettings() {
       shareDetailedStats: false,
       dataRetentionDays: 90
     },
-    consentAccepted: false
+    consentAccepted: false,
+    autoUpdate: true
   };
 }
 
@@ -2078,6 +2079,9 @@ ipcMain.handle('projects:scan', (e, folder) => {
 ipcMain.handle('settings:get', () => loadSettings());
 ipcMain.handle('settings:set', (e, newSettings) => {
   saveSettings(newSettings);
+  if (newSettings.autoUpdate !== undefined) {
+    autoUpdater.autoDownload = newSettings.autoUpdate !== false;
+  }
   return { success: true };
 });
 
@@ -2232,7 +2236,8 @@ ipcMain.handle('app:version', () => {
 });
 
 // ===== Auto-Update =====
-autoUpdater.autoDownload = false;
+const settings = loadSettings();
+autoUpdater.autoDownload = settings.autoUpdate !== false;
 autoUpdater.autoInstallOnAppQuit = true;
 
 function sendUpdateStatus(status, info) {

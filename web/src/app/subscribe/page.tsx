@@ -8,7 +8,8 @@ import PixelBorder from "@/components/PixelBorder";
 import PixelButton from "@/components/PixelButton";
 
 export default function SubscribePage() {
-  const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
+  const [billing, setBilling] = useState<"annual" | "monthly">("annual");
+  const isAnnual = billing === "annual";
 
   return (
     <>
@@ -30,51 +31,40 @@ export default function SubscribePage() {
         {/* Billing toggle */}
         <div className="flex items-center justify-center gap-4">
           <button
+            onClick={() => setBilling("annual")}
+            className={`font-pixel text-[9px] px-4 py-2 border-2 cursor-pointer transition-all ${
+              isAnnual
+                ? "bg-gold text-bg-darkest border-gold-dark shadow-pixel-gold"
+                : "bg-transparent text-text-dim border-border-dark shadow-pixel hover:text-text-bright"
+            }`}
+          >
+            ANNUAL
+            {isAnnual && <span className="ml-2 text-[7px] text-green">SAVE</span>}
+          </button>
+          <button
             onClick={() => setBilling("monthly")}
             className={`font-pixel text-[9px] px-4 py-2 border-2 cursor-pointer transition-all ${
-              billing === "monthly"
+              !isAnnual
                 ? "bg-gold text-bg-darkest border-gold-dark shadow-pixel-gold"
                 : "bg-transparent text-text-dim border-border-dark shadow-pixel hover:text-text-bright"
             }`}
           >
             MONTHLY
           </button>
-          <button
-            onClick={() => setBilling("annual")}
-            className={`font-pixel text-[9px] px-4 py-2 border-2 cursor-pointer transition-all ${
-              billing === "annual"
-                ? "bg-gold text-bg-darkest border-gold-dark shadow-pixel-gold"
-                : "bg-transparent text-text-dim border-border-dark shadow-pixel hover:text-text-bright"
-            }`}
-          >
-            ANNUAL
-            <span className="ml-2 text-[7px] text-green">SAVE</span>
-          </button>
-        </div>
-
-        {/* Coming Soon banner */}
-        <div className="text-center">
-          <span className="text-[8px] text-bg-darkest bg-gold px-4 py-1 animate-pixel-blink inline-block">
-            PAID TIERS COMING SOON
-          </span>
         </div>
 
         {/* Tier cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {TIERS.map((tier) => {
-            const isAnnual = billing === "annual";
-            const displayPrice =
-              tier.id === "free"
-                ? "$0"
-                : isAnnual
-                ? tier.annualPrice
-                : tier.price;
-            const displayPeriod =
-              tier.id === "free"
-                ? ""
-                : isAnnual
-                ? "/yr" + (tier.period.includes("seat") ? "/seat" : "")
-                : tier.period;
+            const isFree = tier.id === "free";
+            const displayPrice = isFree
+              ? "$0"
+              : isAnnual
+              ? tier.annualMonthlyPrice
+              : tier.monthlyPrice;
+            const displayPeriod = isFree
+              ? ""
+              : tier.period;
 
             return (
               <PixelBorder
@@ -109,11 +99,20 @@ export default function SubscribePage() {
                     <span className="text-[10px] text-text-dim">{displayPeriod}</span>
                   )}
                 </div>
-                {isAnnual && tier.annualSave ? (
-                  <p className="text-[8px] text-green mb-6">{tier.annualSave}</p>
-                ) : !isAnnual && tier.annualSave ? (
+
+                {/* Billing note */}
+                {!isFree && isAnnual && tier.annualSave ? (
+                  <div className="mb-6">
+                    <p className="text-[8px] text-text-dim">
+                      Billed {tier.annualTotalPrice}/yr
+                    </p>
+                    <p className="text-[8px] text-green mt-1">
+                      {tier.annualSave}
+                    </p>
+                  </div>
+                ) : !isFree && !isAnnual && tier.annualSave ? (
                   <p className="text-[8px] text-text-dim mb-6">
-                    or {tier.annualPrice}/yr ({tier.annualSave.toLowerCase()})
+                    or {tier.annualMonthlyPrice}/mo billed annually
                   </p>
                 ) : (
                   <div className="mb-6" />
@@ -133,7 +132,7 @@ export default function SubscribePage() {
                 </ul>
 
                 {/* CTA */}
-                {tier.id === "free" ? (
+                {isFree ? (
                   <PixelButton variant="ghost" href="/download" className="w-full">
                     DOWNLOAD FREE
                   </PixelButton>
@@ -147,9 +146,9 @@ export default function SubscribePage() {
                   </PixelButton>
                 )}
 
-                {tier.id !== "free" && (
+                {!isFree && (
                   <p className="text-[7px] text-text-dim text-center mt-3">
-                    We&apos;ll email you when this tier launches.
+                    Subscribe in the Spiros desktop app.
                   </p>
                 )}
               </PixelBorder>

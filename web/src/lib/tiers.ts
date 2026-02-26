@@ -2,9 +2,10 @@ export interface Tier {
   id: string;
   name: string;
   subtitle: string;
-  price: string;
+  monthlyPrice: string;
   period: string;
-  annualPrice: string;
+  annualMonthlyPrice: string;
+  annualTotalPrice: string;
   annualSave: string;
   features: string[];
   cta: string;
@@ -16,20 +17,22 @@ export interface Tier {
 export const TIERS: Tier[] = [
   {
     id: "free",
-    name: "WANDERER",
-    subtitle: "Free Forever",
-    price: "$0",
+    name: "FREE",
+    subtitle: "Get Started",
+    monthlyPrice: "$0",
     period: "",
-    annualPrice: "$0",
+    annualMonthlyPrice: "$0",
+    annualTotalPrice: "$0",
     annualSave: "",
     features: [
-      "Local activity tracking",
-      "Full dashboard & charts",
-      "Core gamification & XP",
-      "Core village buildings",
-      "Local project scanner",
-      "7-day history",
-      "Community support",
+      "Unlimited activity tracking",
+      "Basic daily dashboard & charts",
+      "Gamification & XP",
+      "1 project",
+      "Friends leaderboard",
+      "General chat (50 msg/day)",
+      "Join guilds",
+      "90-day data retention",
     ],
     cta: "DOWNLOAD FREE",
     ctaHref: "/download",
@@ -37,54 +40,58 @@ export const TIERS: Tier[] = [
     color: "text-text-dim",
   },
   {
-    id: "champion",
-    name: "CHAMPION",
+    id: "pro",
+    name: "PRO",
     subtitle: "Pro Adventurer",
-    price: "$5",
+    monthlyPrice: "$5",
     period: "/mo",
-    annualPrice: "$48",
-    annualSave: "Save 20%",
+    annualMonthlyPrice: "$3.33",
+    annualTotalPrice: "$40",
+    annualSave: "Save 33%",
     features: [
+      "Everything in Free",
+      "Advanced analytics & trends",
+      "1.25x XP bonus",
+      "Unlimited projects",
       "Cloud sync & backup",
-      "Advanced analytics",
-      "All achievements unlocked",
-      "Full village (all buildings, raids)",
-      "Friends, leaderboards & community",
-      "Unlimited history",
-      "Past version downloads",
-      "Priority support",
+      "All chat channels + DMs & reactions",
+      "Global leaderboard",
+      "Weekly challenges",
+      "Streak freeze (1/week)",
+      "Profile customization",
+      "Data export (JSON & CSV)",
+      "Community submissions & voting",
+      "Friend stat comparison",
     ],
-    cta: "GET NOTIFIED",
-    ctaHref: "mailto:subscribe@spiros.app?subject=Champion%20Tier%20Waitlist",
+    cta: "UPGRADE TO PRO",
+    ctaHref: "/subscribe",
     highlight: true,
     color: "text-gold",
   },
   {
-    id: "guild",
-    name: "GUILD",
+    id: "team",
+    name: "TEAM",
     subtitle: "Team Adventurers",
-    price: "$8",
-    period: "/seat/mo",
-    annualPrice: "$72",
-    annualSave: "Save 25%",
+    monthlyPrice: "$12",
+    period: "/mo",
+    annualMonthlyPrice: "$8",
+    annualTotalPrice: "$96",
+    annualSave: "Save 33%",
     features: [
-      "Everything in Champion",
-      "Team dashboard & stats",
-      "Team activity aggregation",
-      "Shared guild village",
-      "Team project views",
-      "Team leaderboards & challenges",
-      "Custom team achievements",
-      "Manage seats & member activity",
-      "Dedicated support",
+      "Everything in Pro",
+      "1.5x XP bonus",
+      "Create & manage guilds",
+      "Guild analytics dashboard",
+      "Profile frames",
+      "2-year data retention",
     ],
-    cta: "GET NOTIFIED",
-    ctaHref: "mailto:subscribe@spiros.app?subject=Guild%20Tier%20Waitlist",
+    cta: "UPGRADE TO TEAM",
+    ctaHref: "/subscribe",
     highlight: false,
     color: "text-purple",
   },
 ];
 
 export function isPro(tier: string | null | undefined): boolean {
-  return tier === "champion" || tier === "guild";
+  return tier === "pro" || tier === "team";
 }

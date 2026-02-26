@@ -2016,7 +2016,9 @@ ipcMain.handle('auth:signup', (e, email, password, displayName) => authSignUp(em
 ipcMain.handle('auth:login', (e, email, password) => authLogin(email, password));
 ipcMain.handle('auth:resetPassword', async (e, email) => {
   try {
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://spiros.app/reset-password'
+    });
     if (error) return { success: false, error: error.message };
     return { success: true };
   } catch (err) {

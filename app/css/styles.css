@@ -1263,6 +1263,32 @@ canvas {
   border-bottom: var(--px) solid var(--border-dark);
 }
 
+/* Changelog */
+.changelog-type {
+  font-family: var(--pixel-font);
+  font-size: 7px;
+  color: var(--cyan);
+  text-transform: uppercase;
+  margin: 8px 0 4px;
+}
+.changelog-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 4px;
+}
+.changelog-list li {
+  font-size: 11px;
+  color: var(--text);
+  padding: 3px 0 3px 14px;
+  position: relative;
+}
+.changelog-list li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: var(--gold);
+}
+
 .setting-row {
   display: flex;
   align-items: center;

@@ -1,6 +1,6 @@
 {
   "name": "spiros-app",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Desktop Activity Tracker & Project Dashboard",
   "main": "electron-main.js",
   "scripts": {
@@ -24,7 +24,9 @@
       "repo": "spiros"
     },
     "win": {
-      "target": ["nsis"],
+      "target": [
+        "nsis"
+      ],
       "icon": "assets/icon.ico"
     },
     "nsis": {
@@ -42,7 +44,9 @@
       "shortcutName": "Spiros"
     },
     "mac": {
-      "target": ["dmg"],
+      "target": [
+        "dmg"
+      ],
       "icon": "assets/icon.icns",
       "category": "public.app-category.productivity"
     },

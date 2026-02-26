@@ -98,6 +98,7 @@ contextBridge.exposeInMainWorld('synchronAPI', {
   openExternalLink: (url) => ipcRenderer.invoke('app:openExternal', url),
 
   getAppVersion: () => ipcRenderer.invoke('app:version'),
+  getChangelog: () => ipcRenderer.invoke('app:getChangelog'),
 
   // Auto-update
   checkForUpdates: () => ipcRenderer.invoke('update:check'),

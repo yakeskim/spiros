@@ -2062,6 +2062,12 @@ ipcMain.handle('tracker:status', () => ({ isTracking, activityState: isTracking 
 ipcMain.handle('tracker:today', () => loadTodayData());
 ipcMain.handle('tracker:range', (e, startDate, endDate) => loadRange(startDate, endDate));
 
+// Changelog
+ipcMain.handle('app:getChangelog', () => {
+  try { return fs.readFileSync(path.join(__dirname, 'CHANGELOG.md'), 'utf8'); }
+  catch (e) { return ''; }
+});
+
 ipcMain.handle('projects:scan', (e, folder) => {
   const settings = loadSettings();
   const folderPath = folder || settings.projectsFolder;

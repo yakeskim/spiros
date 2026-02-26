@@ -14,3 +14,6 @@ Format: [Semantic Versioning](https://semver.org/) — MAJOR.MINOR.PATCH
 - Dashboard, Projects, Friends, Achievements, Settings tabs
 - Supabase cloud sync + offline support
 - Semantic versioning system
+
+## v1.1.0 — 2026-02-26
+**MINOR** — Changelog tab, auto-release CI/CD pipeline

@@ -209,6 +209,9 @@
       case 'settings':
         await Settings.render(container);
         break;
+      case 'changelog':
+        await Changelog.render(container);
+        break;
     }
   }
 

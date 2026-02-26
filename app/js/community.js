@@ -44,7 +44,7 @@ const Community = (() => {
       <div class="community-page">
         <div class="community-header">
           <h2 class="page-title">Community Projects</h2>
-          <button class="btn-pixel btn-sm${!(window.requiresTier && window.requiresTier('pro')) ? ' btn-locked' : ''}" id="btn-submit-project">${!(window.requiresTier && window.requiresTier('pro')) ? '&#x1F512; ' : ''}${showSubmitForm ? 'Cancel' : 'Submit Project'}</button>
+          <button class="btn-pixel btn-sm${!(window.requiresTier && window.requiresTier('starter')) ? ' btn-locked' : ''}" id="btn-submit-project">${!(window.requiresTier && window.requiresTier('starter')) ? '&#x1F512; ' : ''}${showSubmitForm ? 'Cancel' : 'Submit Project'}</button>
         </div>
 
         ${showSubmitForm ? renderSubmitForm() : ''}
@@ -156,8 +156,8 @@ const Community = (() => {
   function wireEvents(container, projects) {
     // Submit toggle (Pro required)
     container.querySelector('#btn-submit-project')?.addEventListener('click', () => {
-      if (!(window.requiresTier && window.requiresTier('pro'))) {
-        if (window.showUpgradeModal) window.showUpgradeModal('Submit Project', 'pro');
+      if (!(window.requiresTier && window.requiresTier('starter'))) {
+        if (window.showUpgradeModal) window.showUpgradeModal('Submit Project', 'starter');
         return;
       }
       showSubmitForm = !showSubmitForm;

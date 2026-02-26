@@ -211,7 +211,7 @@ const Profile = (() => {
 
         ${(function() {
           const isPro = window.requiresTier && window.requiresTier('pro');
-          const isTeam = window.requiresTier && window.requiresTier('team');
+          const isMax = window.requiresTier && window.requiresTier('max');
           if (!isPro) {
             return '<div class="settings-section glass" style="margin-top:16px"><h3 class="card-title">Customize Profile</h3><div class="empty-state" style="text-align:center;padding:16px"><p>&#x1F512; Profile customization requires Pro</p><button class="btn-pixel btn-sm" id="btn-upgrade-profile" style="margin-top:8px">Upgrade to Pro</button></div></div>';
           }
@@ -226,7 +226,7 @@ const Profile = (() => {
             AVATAR_COLORS.map(c => '<button class="guild-color-btn' + (currentColor === c ? ' active' : '') + '" data-color="' + c + '" style="background:' + c + '"></button>').join('') +
             '</div></div>' +
             '<div class="guild-form-field"><label>Custom Title</label><input type="text" id="profile-custom-title" class="input-pixel" placeholder="Enter custom title..." maxlength="30" value="' + escapeHtml(currentCustomTitle) + '"></div>' +
-            (isTeam ? '<div class="guild-form-field"><label>Profile Frame</label><div class="profile-frame-picker" id="profile-frame-picker">' +
+            (isMax ? '<div class="guild-form-field"><label>Profile Frame</label><div class="profile-frame-picker" id="profile-frame-picker">' +
             PROFILE_FRAMES.map(f => '<button class="frame-option' + (currentFrame === f ? ' active' : '') + '" data-frame="' + f + '">' + f + '</button>').join('') +
             '</div></div>' : '') +
             '<button class="btn-pixel" id="btn-save-profile-custom" style="margin-top:8px">Save</button>' +
@@ -280,7 +280,7 @@ const Profile = (() => {
       const customTitle = container.querySelector('#profile-custom-title')?.value.trim() || '';
       const msgEl = container.querySelector('#profile-custom-msg');
       const updates = { avatar_color: selectedColor, custom_title: customTitle };
-      if (window.requiresTier && window.requiresTier('team')) updates.profile_frame = selectedFrame;
+      if (window.requiresTier && window.requiresTier('max')) updates.profile_frame = selectedFrame;
       const result = await spirosAPI.updateProfile(updates);
       if (msgEl) {
         msgEl.textContent = result.success ? 'Saved!' : (result.error || 'Failed to save');

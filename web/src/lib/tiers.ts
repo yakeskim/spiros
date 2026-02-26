@@ -32,6 +32,7 @@ export const TIERS: Tier[] = [
       "Friends leaderboard",
       "General chat (50 msg/day)",
       "Join guilds",
+      "AAA Neutral theme only",
       "90-day data retention",
     ],
     cta: "DOWNLOAD FREE",
@@ -40,28 +41,47 @@ export const TIERS: Tier[] = [
     color: "text-text-dim",
   },
   {
+    id: "starter",
+    name: "STARTER",
+    subtitle: "Adventurer",
+    monthlyPrice: "$3.99",
+    period: "/mo",
+    annualMonthlyPrice: "$2.99",
+    annualTotalPrice: "$35.88",
+    annualSave: "Save 25%",
+    features: [
+      "Everything in Free",
+      "Unlimited projects",
+      "Cloud sync & backup",
+      "All chat channels (unlimited)",
+      "Data export (CSV/JSON)",
+      "Community submissions",
+      "Friend stat comparison",
+      "All 3 themes",
+    ],
+    cta: "UPGRADE TO STARTER",
+    ctaHref: "/subscribe",
+    highlight: false,
+    color: "text-green",
+  },
+  {
     id: "pro",
     name: "PRO",
     subtitle: "Pro Adventurer",
-    monthlyPrice: "$5",
+    monthlyPrice: "$9.99",
     period: "/mo",
-    annualMonthlyPrice: "$3.33",
-    annualTotalPrice: "$40",
-    annualSave: "Save 33%",
+    annualMonthlyPrice: "$7.49",
+    annualTotalPrice: "$89.88",
+    annualSave: "Save 25%",
     features: [
-      "Everything in Free",
+      "Everything in Starter",
       "Advanced analytics & trends",
       "1.25x XP bonus",
-      "Unlimited projects",
-      "Cloud sync & backup",
-      "All chat channels + DMs & reactions",
+      "DMs + chat reactions",
       "Global leaderboard",
       "Weekly challenges",
+      "Avatar color & custom title",
       "Streak freeze (1/week)",
-      "Profile customization",
-      "Data export (JSON & CSV)",
-      "Community submissions & voting",
-      "Friend stat comparison",
     ],
     cta: "UPGRADE TO PRO",
     ctaHref: "/subscribe",
@@ -69,23 +89,22 @@ export const TIERS: Tier[] = [
     color: "text-gold",
   },
   {
-    id: "team",
-    name: "TEAM",
-    subtitle: "Team Adventurers",
-    monthlyPrice: "$12",
+    id: "max",
+    name: "MAX",
+    subtitle: "Ultimate Adventurer",
+    monthlyPrice: "$19.99",
     period: "/mo",
-    annualMonthlyPrice: "$8",
-    annualTotalPrice: "$96",
-    annualSave: "Save 33%",
+    annualMonthlyPrice: "$14.99",
+    annualTotalPrice: "$179.88",
+    annualSave: "Save 25%",
     features: [
       "Everything in Pro",
       "1.5x XP bonus",
       "Create & manage guilds",
-      "Guild analytics dashboard",
       "Profile frames",
       "2-year data retention",
     ],
-    cta: "UPGRADE TO TEAM",
+    cta: "UPGRADE TO MAX",
     ctaHref: "/subscribe",
     highlight: false,
     color: "text-purple",
@@ -93,5 +112,18 @@ export const TIERS: Tier[] = [
 ];
 
 export function isPro(tier: string | null | undefined): boolean {
-  return tier === "pro" || tier === "team";
+  return tier === "starter" || tier === "pro" || tier === "max";
+}
+
+export function hasMinTier(
+  current: string | null | undefined,
+  required: string
+): boolean {
+  const order: Record<string, number> = {
+    free: 0,
+    starter: 1,
+    pro: 2,
+    max: 3,
+  };
+  return (order[current ?? "free"] ?? 0) >= (order[required] ?? 0);
 }

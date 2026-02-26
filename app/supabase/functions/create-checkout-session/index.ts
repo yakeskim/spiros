@@ -1,5 +1,5 @@
 // create-checkout-session — Supabase Edge Function
-// Creates a Stripe Checkout Session for Pro or Team subscription
+// Creates a Stripe Checkout Session for Starter, Pro, or Max subscription
 
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -8,18 +8,33 @@ import Stripe from 'https://esm.sh/stripe@13?target=deno'
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY')!, { apiVersion: '2023-10-16' })
 
 const PRICE_IDS: Record<string, string> = {
+  starter_monthly: Deno.env.get('STRIPE_PRICE_STARTER_MONTHLY')!,
+  starter_yearly: Deno.env.get('STRIPE_PRICE_STARTER_YEARLY')!,
   pro_monthly: Deno.env.get('STRIPE_PRICE_PRO_MONTHLY')!,
   pro_yearly: Deno.env.get('STRIPE_PRICE_PRO_YEARLY')!,
-  team_monthly: Deno.env.get('STRIPE_PRICE_TEAM_MONTHLY')!,
-  team_yearly: Deno.env.get('STRIPE_PRICE_TEAM_YEARLY')!,
+  max_monthly: Deno.env.get('STRIPE_PRICE_MAX_MONTHLY')!,
+  max_yearly: Deno.env.get('STRIPE_PRICE_MAX_YEARLY')!,
 }
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+const ALLOWED_ORIGINS = [
+  'https://spiros.app',
+  'https://www.spiros.app',
+  'https://getspiros.com',
+  'https://www.getspiros.com',
+]
+
+function getCorsHeaders(req: Request) {
+  const origin = req.headers.get('Origin') || ''
+  const allowed = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0]
+  return {
+    'Access-Control-Allow-Origin': allowed,
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  }
 }
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req)
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -75,8 +90,8 @@ serve(async (req) => {
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: 'subscription',
-      success_url: 'https://spiros.app/subscription/success',
-      cancel_url: 'https://spiros.app/subscription/cancel',
+      success_url: 'https://spiros.app/subscribe?status=success',
+      cancel_url: 'https://spiros.app/subscribe?status=cancel',
       metadata: { supabase_user_id: user.id },
     })
 

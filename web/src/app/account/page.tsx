@@ -248,18 +248,22 @@ export default function AccountPage() {
             <span className="text-[8px] text-text-dim w-24 shrink-0">Current Tier</span>
             <span
               className={`text-[10px] font-pixel ${
-                userTier === "champion"
-                  ? "text-gold"
-                  : userTier === "guild"
+                userTier === "max"
                   ? "text-purple"
+                  : userTier === "pro"
+                  ? "text-gold"
+                  : userTier === "starter"
+                  ? "text-green"
                   : "text-text-dim"
               }`}
             >
-              {userTier === "champion"
-                ? "CHAMPION"
-                : userTier === "guild"
-                ? "GUILD"
-                : "WANDERER"}
+              {userTier === "max"
+                ? "MAX"
+                : userTier === "pro"
+                ? "PRO"
+                : userTier === "starter"
+                ? "STARTER"
+                : "FREE"}
             </span>
           </div>
 

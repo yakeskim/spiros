@@ -34,6 +34,14 @@
   --hp-red: #e24040;
   --mp-blue: #4080e2;
   --pixel-font: 'Press Start 2P', monospace;
+  --font-primary: 'Press Start 2P', monospace;
+  --font-size-base: 8px;
+  --border-radius: 0px;
+  --shadow-panel: inset -2px -2px 0 var(--border-dark), inset 2px 2px 0 var(--border-light);
+  --animation-timing: steps(4);
+  --image-rendering: pixelated;
+  --scanline-opacity: 0;
+  --pixel-grid-opacity: 0;
   --sidebar-w: 228px;
   /* Pixel border = 2px solid lines */
   --px: 2px;
@@ -43,20 +51,20 @@
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 body {
-  font-family: var(--pixel-font);
+  font-family: var(--font-primary);
   background: var(--bg-darkest);
   color: var(--text);
   overflow: hidden;
   height: 100vh;
-  font-size: 8px;
+  font-size: var(--font-size-base);
   line-height: 1.6;
-  image-rendering: pixelated;
+  image-rendering: var(--image-rendering);
   -ms-overflow-style: none;
 }
 
-/* Kill all rounding globally */
+/* Global border radius from theme variable */
 *, *::before, *::after {
-  border-radius: 0 !important;
+  border-radius: var(--border-radius) !important;
 }
 
 /* ===== Pixel Panel Mixin (RPG dialog box style) ===== */
@@ -768,7 +776,7 @@ canvas {
   border-radius: 4px;
   padding: 6px 10px;
   pointer-events: none;
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 7px;
   line-height: 1.6;
   color: #fffffe;
@@ -2346,13 +2354,13 @@ canvas {
   border-radius: 4px;
 }
 .cloud-stat-value {
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 9px;
   color: var(--gold);
   margin-bottom: 4px;
 }
 .cloud-stat-label {
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 6px;
   color: var(--text-dim);
   text-transform: uppercase;
@@ -3184,7 +3192,7 @@ canvas {
   margin-bottom: 12px;
 }
 .lb-scope-btn {
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 7px;
   padding: 6px 16px;
   border: 1px solid var(--border);
@@ -3203,7 +3211,7 @@ canvas {
   border-color: var(--accent);
 }
 .lb-my-rank-banner {
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 8px;
   text-align: center;
   padding: 8px 12px;
@@ -3282,7 +3290,7 @@ canvas {
   font-size: 18px;
 }
 .showcase-ach-name {
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 5px;
   text-align: center;
   color: var(--text);
@@ -3305,7 +3313,7 @@ canvas {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 6px;
   padding: 3px 8px;
   background: rgba(245, 197, 66, 0.08);
@@ -3340,7 +3348,7 @@ canvas {
   min-width: 0;
 }
 .guild-card-name {
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 8px;
   color: var(--text);
   margin: 0;
@@ -3357,7 +3365,7 @@ canvas {
   display: flex;
   gap: 12px;
   margin-top: 8px;
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 6px;
   color: var(--text-dim);
 }
@@ -3374,7 +3382,7 @@ canvas {
   flex: 1;
 }
 .guild-header-name {
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 12px;
   color: var(--text);
   margin: 0;
@@ -3388,7 +3396,7 @@ canvas {
   display: flex;
   gap: 16px;
   margin-top: 6px;
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 6px;
   color: var(--text-dim);
 }
@@ -3415,16 +3423,16 @@ canvas {
 .guild-member-name {
   flex: 1;
   color: var(--text);
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 6px;
 }
 .guild-member-level {
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 5px;
   color: var(--text-dim);
 }
 .guild-role-badge {
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 5px;
   padding: 1px 5px;
   border: 1px solid var(--border);
@@ -3439,7 +3447,7 @@ canvas {
   border-color: #448aff;
 }
 .btn-role {
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 5px;
   padding: 2px 6px;
   background: transparent;
@@ -3459,7 +3467,7 @@ canvas {
 }
 .guild-form-field label {
   display: block;
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 6px;
   color: var(--text-dim);
   margin-bottom: 4px;
@@ -3617,7 +3625,7 @@ canvas {
   margin-top: 4px;
 }
 .detail-branch-tag {
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 5px;
   padding: 2px 6px;
   border: 1px solid var(--border);
@@ -3638,7 +3646,7 @@ canvas {
   padding: 2px 0;
 }
 .detail-status-type {
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 5px;
   width: 50px;
   text-transform: uppercase;
@@ -3683,7 +3691,7 @@ canvas {
   background: rgba(255,255,255,0.03);
   border: 1px solid var(--border);
   color: var(--text);
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 6px;
   padding: 6px;
   resize: vertical;
@@ -3718,7 +3726,7 @@ canvas {
   align-items: flex-start;
 }
 .challenge-card-title {
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 7px;
   color: var(--text);
 }
@@ -3726,7 +3734,7 @@ canvas {
   color: #00e676;
 }
 .challenge-reward {
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 6px;
   color: var(--accent);
   padding: 1px 5px;
@@ -3754,7 +3762,7 @@ canvas {
   background: #00e676;
 }
 .challenge-progress-label {
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 5px;
   color: var(--text-dim);
   margin-top: 2px;
@@ -3797,12 +3805,12 @@ canvas {
   margin-bottom: 14px;
 }
 .chat-profile-name {
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 9px;
   color: var(--text);
 }
 .chat-profile-title {
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 6px;
   color: var(--text-dim);
   margin-top: 3px;
@@ -3821,12 +3829,12 @@ canvas {
   border: 1px solid var(--border);
 }
 .chat-profile-stat-value {
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 8px;
   color: var(--accent);
 }
 .chat-profile-stat-label {
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   font-size: 5px;
   color: var(--text-dim);
   margin-top: 3px;
@@ -3845,9 +3853,15 @@ canvas {
   font-size: 6px;
   padding: 2px 6px;
   border: 2px solid;
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+}
+.tier-starter {
+  color: #2ee67a;
+  border-color: #2ee67a;
+  background: rgba(46, 230, 122, 0.1);
+  box-shadow: inset 0 0 8px rgba(46, 230, 122, 0.15);
 }
 .tier-pro {
   color: #f5c542;
@@ -3855,11 +3869,11 @@ canvas {
   background: rgba(245, 197, 66, 0.1);
   box-shadow: inset 0 0 8px rgba(245, 197, 66, 0.15);
 }
-.tier-team {
-  color: #e040fb;
-  border-color: #e040fb;
-  background: rgba(224, 64, 251, 0.1);
-  box-shadow: inset 0 0 8px rgba(224, 64, 251, 0.15);
+.tier-max {
+  color: #cc44ff;
+  border-color: #cc44ff;
+  background: rgba(204, 68, 255, 0.1);
+  box-shadow: inset 0 0 8px rgba(204, 68, 255, 0.15);
 }
 
 /* Lock indicator on buttons */
@@ -3896,7 +3910,7 @@ canvas {
 }
 .upgrade-modal-header {
   font-size: 9px;
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   color: var(--text);
   margin-bottom: 16px;
   text-align: center;
@@ -3926,13 +3940,13 @@ canvas {
 }
 .upgrade-plan-name {
   font-size: 8px;
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   color: var(--text);
   margin-bottom: 4px;
 }
 .upgrade-plan-price {
   font-size: 10px;
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   color: var(--green);
   margin-bottom: 2px;
 }
@@ -3949,7 +3963,7 @@ canvas {
   width: 100%;
   padding: 10px;
   font-size: 8px;
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   background: var(--green);
   color: var(--bg);
   border: 2px solid var(--green);
@@ -3968,7 +3982,7 @@ canvas {
   display: block;
   margin: 12px auto 0;
   font-size: 7px;
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   color: var(--text-dim);
   background: none;
   border: none;
@@ -3987,7 +4001,7 @@ canvas {
 }
 .subscription-plan-label {
   font-size: 10px;
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   margin-bottom: 8px;
 }
 .subscription-plan-status {
@@ -4007,12 +4021,12 @@ canvas {
 }
 .subscription-plan-card h4 {
   font-size: 8px;
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   margin-bottom: 8px;
 }
 .subscription-plan-card .plan-price {
   font-size: 10px;
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   color: var(--green);
   margin-bottom: 8px;
 }
@@ -4074,7 +4088,7 @@ canvas {
 }
 .frame-option {
   font-size: 6px;
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary);
   padding: 4px 8px;
   border: 2px solid var(--border);
   background: var(--surface);
@@ -4101,5 +4115,130 @@ canvas {
 .color-swatch.active {
   border-color: var(--text);
   box-shadow: 0 0 0 1px var(--text);
+}
+
+/* ===== Theme System ===== */
+
+/* --- AAA Neutral (default) --- */
+[data-theme="neutral"] {
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-size-base: 11px;
+  --border-radius: 6px;
+  --shadow-panel: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  --animation-timing: ease;
+  --image-rendering: auto;
+  --scanline-opacity: 0;
+  --pixel-grid-opacity: 0;
+  --px: 1px;
+  --gold: #d4a843;
+  --gold-dark: #b08a30;
+}
+
+/* --- Pixel Game --- */
+[data-theme="pixel"] {
+  --font-primary: 'Press Start 2P', monospace;
+  --font-size-base: 8px;
+  --border-radius: 0px;
+  --shadow-panel: inset -2px -2px 0 var(--border-dark), inset 2px 2px 0 var(--border-light);
+  --animation-timing: steps(4);
+  --image-rendering: pixelated;
+  --scanline-opacity: 0.06;
+  --pixel-grid-opacity: 0.03;
+  --px: 2px;
+}
+
+/* --- Matrix Hacker --- */
+[data-theme="matrix"] {
+  --font-primary: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  --font-size-base: 10px;
+  --border-radius: 2px;
+  --shadow-panel: 0 0 8px rgba(0, 255, 65, 0.1);
+  --animation-timing: linear;
+  --image-rendering: auto;
+  --scanline-opacity: 0;
+  --pixel-grid-opacity: 0;
+  --px: 1px;
+  --bg-darkest: #0a0a0a;
+  --bg-dark: #111111;
+  --bg-mid: #1a1a1a;
+  --bg-panel: #1e1e1e;
+  --bg-panel-light: #252525;
+  --border-dark: #0a0a0a;
+  --border-light: #00ff41;
+  --border-highlight: #33ff66;
+  --text: #00ff41;
+  --text-dim: #009926;
+  --text-bright: #66ff88;
+  --gold: #00ff41;
+  --gold-dark: #009926;
+  --green: #00ff41;
+  --green-dark: #009926;
+  --blue: #00ccff;
+  --red: #ff3333;
+  --purple: #cc44ff;
+}
+
+/* Matrix theme glow effects */
+[data-theme="matrix"] .panel,
+[data-theme="matrix"] .glass {
+  box-shadow: 0 0 8px rgba(0, 255, 65, 0.1), inset 0 0 8px rgba(0, 255, 65, 0.05);
+}
+[data-theme="matrix"] .btn-pixel {
+  text-shadow: 0 0 4px rgba(0, 255, 65, 0.5);
+}
+
+/* ===== Theme Picker (Settings) ===== */
+.theme-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 12px;
+}
+.theme-card {
+  background: var(--bg-panel);
+  border: var(--px) solid var(--border-light);
+  padding: 16px;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  text-align: center;
+}
+.theme-card:hover {
+  border-color: var(--gold);
+}
+.theme-card.active {
+  border-color: var(--gold);
+  box-shadow: 0 0 12px rgba(245, 197, 66, 0.2);
+}
+.theme-card.locked {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.theme-card.locked:hover {
+  border-color: var(--border-light);
+}
+.theme-card-name {
+  font-family: var(--font-primary);
+  font-size: 9px;
+  color: var(--text-bright);
+  margin-bottom: 6px;
+}
+.theme-card-desc {
+  font-size: 7px;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+.theme-card-preview {
+  height: 40px;
+  margin-bottom: 8px;
+  border: 1px solid var(--border-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+.theme-card-lock {
+  font-size: 7px;
+  color: var(--gold);
+  margin-top: 6px;
 }
 

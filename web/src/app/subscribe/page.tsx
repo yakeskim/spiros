@@ -14,7 +14,7 @@ export default function SubscribePage() {
   return (
     <>
       <Header />
-      <main className="max-w-5xl mx-auto px-4 py-16 space-y-12">
+      <main className="max-w-6xl mx-auto px-4 py-16 space-y-12">
         {/* Header */}
         <div className="text-center">
           <span className="text-[9px] text-gold border border-gold/40 bg-gold/10 px-3 py-1">
@@ -54,7 +54,7 @@ export default function SubscribePage() {
         </div>
 
         {/* Tier cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {TIERS.map((tier) => {
             const isFree = tier.id === "free";
             const displayPrice = isFree
@@ -73,8 +73,10 @@ export default function SubscribePage() {
                 className={`p-8 flex flex-col ${
                   tier.highlight
                     ? "border-gold/50"
-                    : tier.id === "guild"
+                    : tier.id === "max"
                     ? "border-purple/30"
+                    : tier.id === "starter"
+                    ? "border-green/30"
                     : ""
                 }`}
               >

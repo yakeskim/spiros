@@ -11,7 +11,7 @@ export default function Pricing() {
 
   return (
     <section id="pricing" className="px-4 w-full">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         {/* Section header */}
         <div className="text-center mb-8">
           <span className="text-[9px] text-gold border border-gold/40 bg-gold/10 px-3 py-1">
@@ -51,7 +51,7 @@ export default function Pricing() {
         </div>
 
         {/* Pricing cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
           {TIERS.map((tier) => {
             const isFree = tier.id === "free";
             const displayPrice = isFree
@@ -70,8 +70,10 @@ export default function Pricing() {
                 className={`p-8 flex flex-col ${
                   tier.highlight
                     ? "border-gold/50"
-                    : tier.id === "guild"
+                    : tier.id === "max"
                     ? "border-purple/30"
+                    : tier.id === "starter"
+                    ? "border-green/30"
                     : ""
                 }`}
               >

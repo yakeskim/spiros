@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { Press_Start_2P } from "next/font/google";
+import { Press_Start_2P, Inter, JetBrains_Mono } from "next/font/google";
 import AuthProvider from "@/components/AuthProvider";
+import ThemeProvider from "@/components/ThemeProvider";
 import CookieBanner from "@/components/CookieBanner";
 import "./globals.css";
 
@@ -8,6 +9,16 @@ const pixelFont = Press_Start_2P({
   weight: "400",
   subsets: ["latin"],
   variable: "--font-pixel",
+});
+
+const interFont = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
+
+const jetbrainsFont = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains",
 });
 
 export const metadata: Metadata = {
@@ -37,11 +48,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={pixelFont.variable}>
-      <body className="font-pixel text-text-default antialiased">
+    <html
+      lang="en"
+      data-theme="neutral"
+      className={`${pixelFont.variable} ${interFont.variable} ${jetbrainsFont.variable}`}
+    >
+      <body className="font-primary text-text-default antialiased">
         <AuthProvider>
-          {children}
-          <CookieBanner />
+          <ThemeProvider>
+            {children}
+            <CookieBanner />
+          </ThemeProvider>
         </AuthProvider>
       </body>
     </html>

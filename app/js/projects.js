@@ -113,21 +113,21 @@ const Projects = (() => {
     }
 
     // Free users: show 1 project + locked card
-    const isPro = window.requiresTier && window.requiresTier('pro');
-    const visibleProjects = isPro ? filtered : filtered.slice(0, 1);
+    const hasUnlimited = window.requiresTier && window.requiresTier('starter');
+    const visibleProjects = hasUnlimited ? filtered : filtered.slice(0, 1);
 
     grid.innerHTML = visibleProjects.map((p, i) => renderProjectCard(p, i)).join('');
 
-    if (!isPro && filtered.length > 1) {
+    if (!hasUnlimited && filtered.length > 1) {
       grid.innerHTML += `
         <div class="project-card glass project-locked" id="project-locked-card">
           <div class="lock-icon">&#x1F512;</div>
           <div style="font-size:8px;color:var(--text-dim);margin-top:8px">+${filtered.length - 1} more project${filtered.length - 1 > 1 ? 's' : ''}</div>
-          <div style="font-size:7px;color:var(--gold);margin-top:6px">Upgrade to Pro to see all projects</div>
+          <div style="font-size:7px;color:var(--gold);margin-top:6px">Upgrade to Starter to see all projects</div>
         </div>
       `;
       grid.querySelector('#project-locked-card')?.addEventListener('click', () => {
-        if (window.showUpgradeModal) window.showUpgradeModal('Unlimited Projects', 'pro');
+        if (window.showUpgradeModal) window.showUpgradeModal('Unlimited Projects', 'starter');
       });
     }
 

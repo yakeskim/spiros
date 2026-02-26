@@ -110,12 +110,15 @@ serve(async (req) => {
 })
 
 function determineTier(priceId: string): string {
+  const starterMonthly = Deno.env.get('STRIPE_PRICE_STARTER_MONTHLY')
+  const starterYearly = Deno.env.get('STRIPE_PRICE_STARTER_YEARLY')
   const proMonthly = Deno.env.get('STRIPE_PRICE_PRO_MONTHLY')
   const proYearly = Deno.env.get('STRIPE_PRICE_PRO_YEARLY')
-  const teamMonthly = Deno.env.get('STRIPE_PRICE_TEAM_MONTHLY')
-  const teamYearly = Deno.env.get('STRIPE_PRICE_TEAM_YEARLY')
+  const maxMonthly = Deno.env.get('STRIPE_PRICE_MAX_MONTHLY')
+  const maxYearly = Deno.env.get('STRIPE_PRICE_MAX_YEARLY')
 
+  if (priceId === starterMonthly || priceId === starterYearly) return 'starter'
   if (priceId === proMonthly || priceId === proYearly) return 'pro'
-  if (priceId === teamMonthly || priceId === teamYearly) return 'team'
+  if (priceId === maxMonthly || priceId === maxYearly) return 'max'
   return 'free'
 }

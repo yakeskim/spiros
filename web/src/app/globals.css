@@ -2,14 +2,117 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Kill all border-radius globally */
+/* ===== Theme Variables ===== */
+:root {
+  --bg-darkest: #0f0e17;
+  --bg-dark: #1a1a2e;
+  --bg-mid: #232946;
+  --bg-panel: #2d334a;
+  --bg-panel-light: #3a3f5c;
+  --border-dark: #111122;
+  --border-light: #4a4e6e;
+  --border-highlight: #6e72a0;
+  --text-default: #d4d4e0;
+  --text-dim: #8888aa;
+  --text-bright: #fffffe;
+  --gold: #f5c542;
+  --gold-dark: #c49a2a;
+  --green: #2ee67a;
+  --green-dark: #1a9e50;
+  --blue: #4488ff;
+  --red: #ff4455;
+  --red-dark: #bb2233;
+  --purple: #cc44ff;
+  --orange: #ff8844;
+  --cyan: #44ddee;
+  --brown: #8d6e52;
+  --stone: #6e7788;
+  --hp-red: #e24040;
+  --mp-blue: #4080e2;
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-size-base: 11px;
+  --border-radius: 6px;
+  --image-rendering: auto;
+  --scanline-opacity: 0;
+  --pixel-grid-opacity: 0;
+  --shadow-pixel: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-pixel-raised: 0 2px 6px rgba(0,0,0,0.3);
+  --shadow-pixel-gold: 0 2px 8px rgba(212, 168, 67, 0.3);
+  --shadow-pixel-pressed: inset 0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* --- AAA Neutral (default) --- */
+[data-theme="neutral"] {
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-size-base: 11px;
+  --border-radius: 6px;
+  --image-rendering: auto;
+  --scanline-opacity: 0;
+  --pixel-grid-opacity: 0;
+  --gold: #d4a843;
+  --gold-dark: #b08a30;
+  --shadow-pixel: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  --shadow-pixel-raised: 0 2px 6px rgba(0,0,0,0.3);
+  --shadow-pixel-gold: 0 2px 8px rgba(212, 168, 67, 0.3);
+  --shadow-pixel-pressed: inset 0 1px 3px rgba(0,0,0,0.3);
+}
+
+/* --- Pixel Game --- */
+[data-theme="pixel"] {
+  --font-primary: 'Press Start 2P', monospace;
+  --font-size-base: 8px;
+  --border-radius: 0px;
+  --image-rendering: pixelated;
+  --scanline-opacity: 0.06;
+  --pixel-grid-opacity: 0.03;
+  --gold: #f5c542;
+  --gold-dark: #c49a2a;
+  --shadow-pixel: inset -2px -2px 0 #111122, inset 2px 2px 0 #4a4e6e;
+  --shadow-pixel-raised: inset -2px -2px 0 #111122, inset 2px 2px 0 #6e72a0, 4px 4px 0 #0a0a14;
+  --shadow-pixel-gold: inset -2px -2px 0 #c49a2a, inset 2px 2px 0 #ffe066, 4px 4px 0 #0a0a14;
+  --shadow-pixel-pressed: inset 2px 2px 0 #111122, inset -2px -2px 0 #4a4e6e;
+}
+
+/* --- Matrix Hacker --- */
+[data-theme="matrix"] {
+  --font-primary: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace;
+  --font-size-base: 10px;
+  --border-radius: 2px;
+  --image-rendering: auto;
+  --scanline-opacity: 0;
+  --pixel-grid-opacity: 0;
+  --bg-darkest: #0a0a0a;
+  --bg-dark: #111111;
+  --bg-mid: #1a1a1a;
+  --bg-panel: #1e1e1e;
+  --bg-panel-light: #252525;
+  --border-dark: #0a0a0a;
+  --border-light: #00ff41;
+  --border-highlight: #33ff66;
+  --text-default: #00ff41;
+  --text-dim: #009926;
+  --text-bright: #66ff88;
+  --gold: #00ff41;
+  --gold-dark: #009926;
+  --green: #00ff41;
+  --green-dark: #009926;
+  --blue: #00ccff;
+  --red: #ff3333;
+  --purple: #cc44ff;
+  --shadow-pixel: 0 0 8px rgba(0, 255, 65, 0.1);
+  --shadow-pixel-raised: 0 0 12px rgba(0, 255, 65, 0.15);
+  --shadow-pixel-gold: 0 0 8px rgba(0, 255, 65, 0.2);
+  --shadow-pixel-pressed: inset 0 0 4px rgba(0, 255, 65, 0.1);
+}
+
+/* Global border radius from theme */
 *,
 *::before,
 *::after {
-  border-radius: 0 !important;
+  border-radius: var(--border-radius, 0px) !important;
 }
 
-/* Scanline overlay */
+/* Scanline overlay — only visible in pixel theme */
 body::after {
   content: "";
   position: fixed;
@@ -20,17 +123,17 @@ body::after {
     to bottom,
     transparent 0px,
     transparent 2px,
-    rgba(0, 0, 0, 0.06) 2px,
-    rgba(0, 0, 0, 0.06) 4px
+    rgba(0, 0, 0, var(--scanline-opacity, 0)) 2px,
+    rgba(0, 0, 0, var(--scanline-opacity, 0)) 4px
   );
 }
 
 /* Pixel grid background */
 body {
-  background-color: #0f0e17;
+  background-color: var(--bg-darkest, #0f0e17);
   background-image:
-    linear-gradient(rgba(68, 136, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(68, 136, 255, 0.03) 1px, transparent 1px);
+    linear-gradient(rgba(68, 136, 255, var(--pixel-grid-opacity, 0)) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(68, 136, 255, var(--pixel-grid-opacity, 0)) 1px, transparent 1px);
   background-size: 16px 16px;
 }
 
@@ -49,17 +152,17 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #1a1a2e;
-  border-left: 2px solid #111122;
+  background: var(--bg-dark, #1a1a2e);
+  border-left: 2px solid var(--border-dark, #111122);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #4a4e6e;
-  border: 2px solid #111122;
+  background: var(--border-light, #4a4e6e);
+  border: 2px solid var(--border-dark, #111122);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #6e72a0;
+  background: var(--border-highlight, #6e72a0);
 }
 
 /* Scroll-reveal animation */
@@ -96,8 +199,8 @@ body {
 
 /* Selection color */
 ::selection {
-  background: #f5c542;
-  color: #0f0e17;
+  background: var(--gold, #f5c542);
+  color: var(--bg-darkest, #0f0e17);
 }
 
 /* Snap scrolling */
@@ -143,23 +246,23 @@ body {
 .scroll-indicator-dot {
   width: 10px;
   height: 10px;
-  border: 2px solid #4a4e6e;
-  background: #1a1a2e;
+  border: 2px solid var(--border-light, #4a4e6e);
+  background: var(--bg-dark, #1a1a2e);
   cursor: pointer;
   position: relative;
   transition: background 0.15s steps(3), border-color 0.15s steps(3);
-  image-rendering: pixelated;
+  image-rendering: var(--image-rendering, auto);
   padding: 0;
 }
 
 .scroll-indicator-dot:hover {
-  border-color: #6e72a0;
-  background: #2d334a;
+  border-color: var(--border-highlight, #6e72a0);
+  background: var(--bg-panel, #2d334a);
 }
 
 .scroll-indicator-dot.active {
-  background: #f5c542;
-  border-color: #f5c542;
+  background: var(--gold, #f5c542);
+  border-color: var(--gold, #f5c542);
   box-shadow: 0 0 0 2px rgba(245, 197, 66, 0.2);
 }
 
@@ -169,11 +272,11 @@ body {
   right: calc(100% + 10px);
   top: 50%;
   transform: translateY(-50%);
-  font-family: 'Press Start 2P', monospace;
+  font-family: var(--font-primary, 'Press Start 2P', monospace);
   font-size: 7px;
-  color: #f5c542;
-  background: #1a1a2e;
-  border: 2px solid #4a4e6e;
+  color: var(--gold, #f5c542);
+  background: var(--bg-dark, #1a1a2e);
+  border: 2px solid var(--border-light, #4a4e6e);
   padding: 3px 6px;
   white-space: nowrap;
   opacity: 0;
@@ -186,8 +289,8 @@ body {
 }
 
 .scroll-indicator-dot.active .scroll-indicator-label {
-  color: #f5c542;
-  border-color: #f5c542;
+  color: var(--gold, #f5c542);
+  border-color: var(--gold, #f5c542);
 }
 
 /* Loading bar fill animation (Step 1 mockup) */
@@ -209,4 +312,9 @@ body {
 
 .animate-float {
   animation: float 3s steps(6) infinite;
+}
+
+/* Matrix theme glow */
+[data-theme="matrix"] .text-shadow-pixel {
+  text-shadow: 0 0 6px rgba(0, 255, 65, 0.5);
 }

@@ -403,9 +403,9 @@ const Gamification = (() => {
       xpGained += calcEntryXP(entry);
     }
 
-    // Tier XP multiplier: Free=1x, Pro=1.25x, Team=1.5x
+    // Tier XP multiplier: Free/Starter=1x, Pro=1.25x, Max=1.5x
     const tier = window._currentTier || 'free';
-    if (tier === 'team') xpGained = Math.round(xpGained * 1.5);
+    if (tier === 'max') xpGained = Math.round(xpGained * 1.5);
     else if (tier === 'pro') xpGained = Math.round(xpGained * 1.25);
 
     const oldLevel = gameState.level;

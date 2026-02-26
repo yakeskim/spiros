@@ -354,18 +354,18 @@ const Friends = (() => {
     const content = document.getElementById('compare-content');
     if (!section || !content) return;
 
-    // Pro required for stat comparison
-    if (!(window.requiresTier && window.requiresTier('pro'))) {
+    // Starter required for stat comparison
+    if (!(window.requiresTier && window.requiresTier('starter'))) {
       section.style.display = 'block';
       title.textContent = 'Compare Stats';
       content.innerHTML = `
         <div class="empty-state" style="text-align:center;padding:20px">
-          <p>&#x1F512; Friend stat comparison requires Pro</p>
-          <button class="btn-pixel btn-sm" id="btn-upgrade-compare" style="margin-top:8px">Upgrade to Pro</button>
+          <p>&#x1F512; Friend stat comparison requires Starter</p>
+          <button class="btn-pixel btn-sm" id="btn-upgrade-compare" style="margin-top:8px">Upgrade to Starter</button>
         </div>
       `;
       content.querySelector('#btn-upgrade-compare')?.addEventListener('click', () => {
-        if (window.showUpgradeModal) window.showUpgradeModal('Friend Comparison', 'pro');
+        if (window.showUpgradeModal) window.showUpgradeModal('Friend Comparison', 'starter');
       });
       return;
     }

@@ -107,7 +107,8 @@ function getDefaultSettings() {
       dataRetentionDays: 90
     },
     consentAccepted: false,
-    autoUpdate: true
+    autoUpdate: true,
+    theme: 'neutral'
   };
 }
 
@@ -1281,7 +1282,7 @@ async function getUserTier() {
 }
 
 function hasTier(required) {
-  const order = { free: 0, pro: 1, team: 2 };
+  const order = { free: 0, starter: 1, pro: 2, max: 3 };
   return (order[cachedTier] || 0) >= (order[required] || 0);
 }
 
@@ -1795,7 +1796,7 @@ async function sendChatMessage(channel, content) {
     if (!content || content.length < 1 || content.length > 500) return { success: false, error: 'Message must be 1-500 characters' };
 
     // Free users: 50 messages per day rate limit
-    if (!hasTier('pro')) {
+    if (!hasTier('starter')) {
       const today = new Date().toISOString().split('T')[0];
       const { data: rateRow } = await supabase.from('chat_rate_limits')
         .select('message_count')
@@ -1944,8 +1945,8 @@ async function syncActivityToCloud() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
-  // Pro+ only — free users don't get cloud sync
-  if (!hasTier('pro')) return;
+  // Starter+ only — free users don't get cloud sync
+  if (!hasTier('starter')) return;
 
   const settings = loadSettings();
   const privacy = settings.privacy || {};
@@ -2782,6 +2783,9 @@ async function getReactions(messageIds) {
 
 // ===== Projects: Git Integration =====
 function runGitCommand(projectPath, args) {
+  if (!projectPath || typeof projectPath !== 'string' || !path.isAbsolute(projectPath) || !fs.existsSync(projectPath)) {
+    return Promise.reject(new Error('Invalid project path'));
+  }
   return new Promise((resolve, reject) => {
     execFile('git', args, { cwd: projectPath, timeout: 10000 }, (err, stdout, stderr) => {
       if (err) reject(err);
@@ -3021,7 +3025,10 @@ ipcMain.handle('app:openFolder', async () => {
 
 ipcMain.handle('app:openInVSCode', (e, projPath) => {
   try {
-    exec(`code "${projPath}"`);
+    if (!projPath || typeof projPath !== 'string' || !path.isAbsolute(projPath) || !fs.existsSync(projPath)) {
+      return { success: false, error: 'Invalid project path' };
+    }
+    execFile('code', [projPath], { shell: true });
     return { success: true };
   } catch (err) {
     return { success: false, error: err.message };
@@ -3030,8 +3037,11 @@ ipcMain.handle('app:openInVSCode', (e, projPath) => {
 
 ipcMain.handle('app:openTerminal', (e, projPath) => {
   try {
-    exec(`wt -d "${projPath}"`, (err) => {
-      if (err) exec(`cmd /K cd /d "${projPath}"`, { detached: true });
+    if (!projPath || typeof projPath !== 'string' || !path.isAbsolute(projPath) || !fs.existsSync(projPath)) {
+      return { success: false, error: 'Invalid project path' };
+    }
+    execFile('wt', ['-d', projPath], { shell: true }, (err) => {
+      if (err) execFile('cmd', ['/K', 'cd', '/d', projPath], { shell: true, detached: true });
     });
     return { success: true };
   } catch (err) {
@@ -3041,7 +3051,7 @@ ipcMain.handle('app:openTerminal', (e, projPath) => {
 
 ipcMain.handle('app:exportData', async () => {
   try {
-    if (!hasTier('pro')) return { success: false, error: 'Data export requires a Pro subscription.' };
+    if (!hasTier('starter')) return { success: false, error: 'Data export requires a Starter subscription.' };
     const files = fs.readdirSync(activityDir).filter(f => f.endsWith('.json'));
     const allData = files.map(f => JSON.parse(fs.readFileSync(path.join(activityDir, f), 'utf8')));
     const result = await dialog.showSaveDialog(mainWindow, {

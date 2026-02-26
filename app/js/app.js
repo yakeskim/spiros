@@ -5,7 +5,7 @@ let currentTier = 'free';
 window._currentTier = 'free';
 
 function requiresTier(tier) {
-  const order = { free: 0, pro: 1, team: 2 };
+  const order = { free: 0, starter: 1, pro: 2, max: 3 };
   return (order[currentTier] || 0) >= (order[tier] || 0);
 }
 window.requiresTier = requiresTier;
@@ -18,17 +18,19 @@ function showUpgradeModal(featureName, requiredTier) {
   const priceMonthly = document.getElementById('upgrade-price-monthly');
   const priceYearly = document.getElementById('upgrade-price-yearly');
 
-  const tierLabel = requiredTier === 'team' ? 'Team' : 'Pro';
+  const tierLabels = { starter: 'Starter', pro: 'Pro', max: 'Max' };
+  const tierPrices = {
+    starter: { monthly: '$3.99/mo', yearly: '$35.88/yr' },
+    pro: { monthly: '$9.99/mo', yearly: '$89.88/yr' },
+    max: { monthly: '$19.99/mo', yearly: '$179.88/yr' }
+  };
+  const tier = requiredTier || 'starter';
+  const tierLabel = tierLabels[tier] || 'Starter';
+  const prices = tierPrices[tier] || tierPrices.starter;
   if (titleEl) titleEl.textContent = `Upgrade to ${tierLabel}`;
   if (descEl) descEl.textContent = featureName ? `"${featureName}" requires a ${tierLabel} subscription` : `This feature requires a ${tierLabel} subscription`;
-
-  if (requiredTier === 'team') {
-    if (priceMonthly) priceMonthly.textContent = '$12/mo';
-    if (priceYearly) priceYearly.textContent = '$96/yr';
-  } else {
-    if (priceMonthly) priceMonthly.textContent = '$5/mo';
-    if (priceYearly) priceYearly.textContent = '$40/yr';
-  }
+  if (priceMonthly) priceMonthly.textContent = prices.monthly;
+  if (priceYearly) priceYearly.textContent = prices.yearly;
 
   // Store required tier for subscribe button
   modal.dataset.requiredTier = requiredTier || 'pro';
@@ -48,8 +50,10 @@ function updateTierBadge() {
     const xpContainer = document.getElementById('xp-bar-container');
     if (xpContainer) xpContainer.insertAdjacentElement('afterend', badge);
   }
-  const tierClass = currentTier === 'team' ? 'tier-team' : 'tier-pro';
-  const tierLabel = currentTier === 'team' ? 'TEAM' : 'PRO';
+  const tierClasses = { starter: 'tier-starter', pro: 'tier-pro', max: 'tier-max' };
+  const tierLabels = { starter: 'STARTER', pro: 'PRO', max: 'MAX' };
+  const tierClass = tierClasses[currentTier] || 'tier-starter';
+  const tierLabel = tierLabels[currentTier] || 'STARTER';
   badge.className = `tier-badge ${tierClass}`;
   badge.textContent = tierLabel;
 }
@@ -397,6 +401,11 @@ function showConfirm(message) {
             <div class="stat-value">${gameState.streak.best}</div>
             <div class="stat-label">Best Streak</div>
           </div>
+          ${window.requiresTier && window.requiresTier('pro') ? `
+          <div class="stat-card glass" style="cursor:pointer" id="btn-streak-freeze" title="Use a streak freeze to protect your streak (1/week)">
+            <div class="stat-value">&#x2744;</div>
+            <div class="stat-label">Streak Freeze</div>
+          </div>` : ''}
         </div>
 
         <div class="ach-filters">
@@ -445,6 +454,19 @@ function showConfirm(message) {
         renderAchievements(container);
       });
     });
+
+    // Wire streak freeze button
+    const freezeBtn = container.querySelector('#btn-streak-freeze');
+    if (freezeBtn) {
+      freezeBtn.addEventListener('click', async () => {
+        const result = await spirosAPI.useStreakFreeze();
+        if (result.success) {
+          alert('Streak freeze activated! Your streak is protected for today.');
+        } else {
+          alert(result.error || 'Could not use streak freeze.');
+        }
+      });
+    }
   }
 
   // ===== XP Bar =====
@@ -636,6 +658,9 @@ function showConfirm(message) {
   async function initApp() {
     gameState = await spirosAPI.getGameState();
     settings = await spirosAPI.getSettings();
+
+    // Apply theme from settings
+    document.documentElement.dataset.theme = settings.theme || 'neutral';
 
     // Initialize tier state
     try {

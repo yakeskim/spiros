@@ -7,6 +7,7 @@ const Settings = (() => {
   const TABS = [
     { id: 'account',      icon: '◈', label: 'Account' },
     { id: 'subscription', icon: '★', label: 'Subscription' },
+    { id: 'theme',        icon: '◐', label: 'Theme' },
     { id: 'updates',      icon: '↻', label: 'Updates' },
     { id: 'tracking',     icon: '◎', label: 'Tracking' },
     { id: 'categories',   icon: '▣', label: 'Categories' },
@@ -54,6 +55,7 @@ const Settings = (() => {
     switch (activeTab) {
       case 'account':      await renderAccount(content); break;
       case 'subscription': await renderSubscription(content); break;
+      case 'theme':        renderTheme(content); break;
       case 'updates':      await renderUpdates(content); break;
       case 'tracking':     renderTracking(content); break;
       case 'categories':   renderCategories(content); break;
@@ -611,6 +613,10 @@ const Settings = (() => {
     });
 
     el.querySelector('#btn-export-data')?.addEventListener('click', async () => {
+      if (window.requiresTier && !window.requiresTier('starter')) {
+        if (window.showUpgradeModal) window.showUpgradeModal('Data Export', 'starter');
+        return;
+      }
       const result = await spirosAPI.exportData();
       if (result.success) alert('Data exported to ' + result.path);
     });
@@ -668,108 +674,158 @@ const Settings = (() => {
       details = await spirosAPI.getSubscriptionDetails();
     } catch (_) {}
 
-    const PRO_FEATURES = [
-      'Unlimited projects',
-      'Advanced analytics & trends',
-      '1.25x XP bonus',
-      'Cloud sync & backup',
-      'All chat channels + DMs',
-      'Chat reactions',
-      'Global leaderboard',
-      'Weekly challenges',
-      'Avatar color & custom title',
-      'Streak freeze (1/week)',
-      'Data export (CSV/JSON)',
-      'Community submissions',
-      'Friend stat comparison'
+    const TIER_PLANS = [
+      {
+        id: 'starter', label: 'STARTER', cssClass: 'tier-starter',
+        price: '$3.99/mo or $35.88/yr',
+        features: [
+          'Unlimited projects',
+          'Cloud sync & backup',
+          'All chat channels (unlimited)',
+          'Data export (CSV/JSON)',
+          'Community submissions',
+          'Friend stat comparison',
+          'All 3 themes'
+        ]
+      },
+      {
+        id: 'pro', label: 'PRO', cssClass: 'tier-pro',
+        price: '$9.99/mo or $89.88/yr',
+        features: [
+          'Everything in Starter',
+          'Advanced analytics & trends',
+          '1.25x XP bonus',
+          'DMs + chat reactions',
+          'Global leaderboard',
+          'Weekly challenges',
+          'Avatar color & custom title',
+          'Streak freeze (1/week)'
+        ]
+      },
+      {
+        id: 'max', label: 'MAX', cssClass: 'tier-max',
+        price: '$19.99/mo or $179.88/yr',
+        features: [
+          'Everything in Pro',
+          '1.5x XP bonus',
+          'Create & manage guilds',
+          'Profile frames',
+          '2-year data retention'
+        ]
+      }
     ];
 
-    const TEAM_FEATURES = [
-      'Everything in Pro',
-      '1.5x XP bonus',
-      'Create & manage guilds',
-      'Profile frames',
-      '2-year data retention'
-    ];
+    const tierOrder = { free: 0, starter: 1, pro: 2, max: 3 };
+    const currentOrder = tierOrder[tier] || 0;
 
-    if (tier === 'free') {
-      el.innerHTML = `
+    // Current plan info (for paid tiers)
+    let currentPlanHtml = '';
+    if (tier !== 'free') {
+      const statusText = details?.cancel_at_period_end ? 'Cancels at period end' : (details?.status || 'active');
+      const renewDate = details?.current_period_end ? new Date(details.current_period_end).toLocaleDateString() : 'Unknown';
+      const planInfo = TIER_PLANS.find(p => p.id === tier);
+      const planLabel = planInfo ? planInfo.label : tier.toUpperCase();
+      const planClass = planInfo ? planInfo.cssClass : 'tier-starter';
+      currentPlanHtml = `
+        <div class="settings-section glass">
+          <h3 class="section-title">Current Plan: <span class="tier-badge ${planClass}">${planLabel}</span></h3>
+          <div class="setting-row"><label>Status</label><span class="about-text">${escapeHtml(statusText)}</span></div>
+          <div class="setting-row"><label>Renews</label><span class="about-text">${escapeHtml(renewDate)}</span></div>
+          <div class="setting-row" style="margin-top:12px">
+            <button class="btn-pixel" id="btn-manage-sub">Manage Subscription</button>
+          </div>
+        </div>
+      `;
+    } else {
+      currentPlanHtml = `
         <div class="settings-section glass">
           <h3 class="section-title">Current Plan: Free</h3>
           <p class="setting-hint">Upgrade to unlock premium features</p>
         </div>
-        <div class="subscription-plans-grid">
-          <div class="subscription-plan-card glass">
-            <div class="sub-plan-header tier-pro">PRO</div>
-            <div class="sub-plan-price">$5/mo or $40/yr</div>
-            <ul class="sub-plan-features">
-              ${PRO_FEATURES.map(f => `<li>${escapeHtml(f)}</li>`).join('')}
-            </ul>
-            <button class="btn-pixel upgrade-btn" id="btn-upgrade-pro">Upgrade to Pro</button>
-          </div>
-          <div class="subscription-plan-card glass">
-            <div class="sub-plan-header tier-team">TEAM</div>
-            <div class="sub-plan-price">$12/mo or $96/yr</div>
-            <ul class="sub-plan-features">
-              ${TEAM_FEATURES.map(f => `<li>${escapeHtml(f)}</li>`).join('')}
-            </ul>
-            <button class="btn-pixel upgrade-btn" id="btn-upgrade-team">Upgrade to Team</button>
-          </div>
-        </div>
       `;
-      el.querySelector('#btn-upgrade-pro')?.addEventListener('click', () => showUpgradeModal('Pro features', 'pro'));
-      el.querySelector('#btn-upgrade-team')?.addEventListener('click', () => showUpgradeModal('Team features', 'team'));
-    } else if (tier === 'pro') {
-      const statusText = details?.cancel_at_period_end ? 'Cancels at period end' : (details?.status || 'active');
-      const renewDate = details?.current_period_end ? new Date(details.current_period_end).toLocaleDateString() : 'Unknown';
-      el.innerHTML = `
-        <div class="settings-section glass">
-          <h3 class="section-title">Current Plan: <span class="tier-badge tier-pro">PRO</span></h3>
-          <div class="setting-row"><label>Status</label><span class="about-text">${escapeHtml(statusText)}</span></div>
-          <div class="setting-row"><label>Renews</label><span class="about-text">${escapeHtml(renewDate)}</span></div>
-          <div class="setting-row" style="margin-top:12px">
-            <button class="btn-pixel" id="btn-manage-sub">Manage Subscription</button>
-          </div>
-        </div>
-        <div class="subscription-plans-grid">
-          <div class="subscription-plan-card glass">
-            <div class="sub-plan-header tier-team">TEAM</div>
-            <div class="sub-plan-price">$12/mo or $96/yr</div>
-            <ul class="sub-plan-features">
-              ${TEAM_FEATURES.map(f => `<li>${escapeHtml(f)}</li>`).join('')}
-            </ul>
-            <button class="btn-pixel upgrade-btn" id="btn-upgrade-team">Upgrade to Team</button>
-          </div>
-        </div>
-      `;
-      el.querySelector('#btn-manage-sub')?.addEventListener('click', async () => {
-        const btn = el.querySelector('#btn-manage-sub');
-        btn.textContent = 'Opening...'; btn.disabled = true;
-        await spirosAPI.openPortal();
-        btn.textContent = 'Manage Subscription'; btn.disabled = false;
-      });
-      el.querySelector('#btn-upgrade-team')?.addEventListener('click', () => showUpgradeModal('Team features', 'team'));
-    } else {
-      // team
-      const statusText = details?.cancel_at_period_end ? 'Cancels at period end' : (details?.status || 'active');
-      const renewDate = details?.current_period_end ? new Date(details.current_period_end).toLocaleDateString() : 'Unknown';
-      el.innerHTML = `
-        <div class="settings-section glass">
-          <h3 class="section-title">Current Plan: <span class="tier-badge tier-team">TEAM</span></h3>
-          <div class="setting-row"><label>Status</label><span class="about-text">${escapeHtml(statusText)}</span></div>
-          <div class="setting-row"><label>Renews</label><span class="about-text">${escapeHtml(renewDate)}</span></div>
-          <div class="setting-row" style="margin-top:12px">
-            <button class="btn-pixel" id="btn-manage-sub">Manage Subscription</button>
-          </div>
-        </div>
-      `;
-      el.querySelector('#btn-manage-sub')?.addEventListener('click', async () => {
-        const btn = el.querySelector('#btn-manage-sub');
-        btn.textContent = 'Opening...'; btn.disabled = true;
-        await spirosAPI.openPortal();
-        btn.textContent = 'Manage Subscription'; btn.disabled = false;
-      });
     }
+
+    // Show upgrade cards for tiers above current
+    const upgradePlans = TIER_PLANS.filter(p => (tierOrder[p.id] || 0) > currentOrder);
+    const upgradeCardsHtml = upgradePlans.length > 0 ? `
+      <div class="subscription-plans-grid">
+        ${upgradePlans.map(p => `
+          <div class="subscription-plan-card glass">
+            <div class="sub-plan-header ${p.cssClass}">${p.label}</div>
+            <div class="sub-plan-price">${p.price}</div>
+            <ul class="sub-plan-features">
+              ${p.features.map(f => `<li>${escapeHtml(f)}</li>`).join('')}
+            </ul>
+            <button class="btn-pixel upgrade-btn" data-upgrade-tier="${p.id}">Upgrade to ${p.label}</button>
+          </div>
+        `).join('')}
+      </div>
+    ` : '';
+
+    el.innerHTML = currentPlanHtml + upgradeCardsHtml;
+
+    // Wire manage subscription button
+    el.querySelector('#btn-manage-sub')?.addEventListener('click', async () => {
+      const btn = el.querySelector('#btn-manage-sub');
+      btn.textContent = 'Opening...'; btn.disabled = true;
+      await spirosAPI.openPortal();
+      btn.textContent = 'Manage Subscription'; btn.disabled = false;
+    });
+
+    // Wire upgrade buttons
+    el.querySelectorAll('[data-upgrade-tier]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetTier = btn.dataset.upgradeTier;
+        showUpgradeModal(targetTier.charAt(0).toUpperCase() + targetTier.slice(1) + ' features', targetTier);
+      });
+    });
+  }
+
+  // ===== Theme Tab =====
+  function renderTheme(el) {
+    const currentTheme = currentSettings.theme || 'neutral';
+    const canSwitch = window.requiresTier && window.requiresTier('starter');
+
+    const THEMES = [
+      { id: 'neutral', name: 'AAA Neutral', desc: 'Clean, modern interface with Inter font and soft shadows', preview: '◈', previewBg: '#1a1a2e', previewColor: '#d4a843' },
+      { id: 'pixel', name: 'Pixel Game', desc: 'Classic pixel art RPG with Press Start 2P font and scanlines', preview: '⚔', previewBg: '#0f0e17', previewColor: '#f5c542' },
+      { id: 'matrix', name: 'Matrix Hacker', desc: 'Green-on-black terminal aesthetic with JetBrains Mono', preview: '▓', previewBg: '#0a0a0a', previewColor: '#00ff41' }
+    ];
+
+    el.innerHTML = `
+      <div class="settings-section glass">
+        <h3 class="section-title">Theme</h3>
+        <p class="setting-hint">Choose your visual style</p>
+        <div class="theme-picker-grid">
+          ${THEMES.map(t => {
+            const isActive = currentTheme === t.id;
+            const isLocked = !canSwitch && t.id !== 'neutral';
+            return `
+              <div class="theme-card${isActive ? ' active' : ''}${isLocked ? ' locked' : ''}" data-theme-id="${t.id}">
+                <div class="theme-card-preview" style="background:${t.previewBg};color:${t.previewColor}">${t.preview}</div>
+                <div class="theme-card-name">${t.name}</div>
+                <div class="theme-card-desc">${t.desc}</div>
+                ${isLocked ? '<div class="theme-card-lock">&#x1F512; Starter+</div>' : ''}
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+
+    el.querySelectorAll('.theme-card').forEach(card => {
+      card.addEventListener('click', async () => {
+        const themeId = card.dataset.themeId;
+        if (card.classList.contains('locked')) {
+          if (window.showUpgradeModal) window.showUpgradeModal('Theme: ' + themeId, 'starter');
+          return;
+        }
+        currentSettings.theme = themeId;
+        document.documentElement.dataset.theme = themeId;
+        await saveCurrentSettings();
+        renderTheme(el);
+      });
+    });
   }
 
   // ===== About Tab =====

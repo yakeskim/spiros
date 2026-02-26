@@ -52,7 +52,8 @@ const Chat = (() => {
   }
 
   function buildDOM(container) {
-    const isPro = window.requiresTier && window.requiresTier('pro');
+    const hasChannels = window.requiresTier && window.requiresTier('starter');
+    const hasDMs = window.requiresTier && window.requiresTier('pro');
 
     container.innerHTML = `
       <div class="chat-page">
@@ -64,7 +65,7 @@ const Chat = (() => {
             <div class="chat-sidebar-section">
               <div class="chat-sidebar-title">Channels</div>
               ${CHANNELS.map(ch => {
-                const locked = !isPro && ch !== 'General';
+                const locked = !hasChannels && ch !== 'General';
                 return `
                 <button class="chat-channel-btn ${activeTab === 'channel' && activeChannel === ch ? 'active' : ''}${locked ? ' chat-locked' : ''}" data-channel="${escapeHtml(ch)}" ${locked ? 'data-locked="true"' : ''}>
                   <span class="chat-channel-icon">${locked ? '&#x1F512;' : (CHANNEL_ICONS[ch] || '📦')}</span>
@@ -74,7 +75,7 @@ const Chat = (() => {
             </div>
             <div class="chat-sidebar-section">
               <div class="chat-sidebar-title">Direct Messages</div>
-              ${!isPro
+              ${!hasDMs
                 ? '<div style="font-size:7px;color:var(--gold);padding:4px;cursor:pointer" id="chat-dm-upgrade">&#x1F512; Upgrade to Pro for DMs</div>'
                 : (friends.length === 0
                   ? '<div style="font-size:6px;color:var(--text-dim);padding:4px">No friends yet</div>'
@@ -387,7 +388,7 @@ const Chat = (() => {
     container.querySelectorAll('.chat-channel-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         if (btn.dataset.locked === 'true') {
-          if (window.showUpgradeModal) window.showUpgradeModal('Chat Channels', 'pro');
+          if (window.showUpgradeModal) window.showUpgradeModal('Chat Channels', 'starter');
           return;
         }
         if (activeTab === 'channel' && activeChannel === btn.dataset.channel) return;

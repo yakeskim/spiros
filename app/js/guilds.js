@@ -29,7 +29,7 @@ const Guilds = (() => {
           <h2 class="page-title">Guilds</h2>
           <div class="projects-controls">
             <button class="btn-pixel" id="btn-my-guild">My Guild</button>
-            <button class="btn-pixel${!(window.requiresTier && window.requiresTier('team')) ? ' btn-locked' : ''}" id="btn-create-guild">${!(window.requiresTier && window.requiresTier('team')) ? '&#x1F512; ' : ''}+ Create Guild</button>
+            <button class="btn-pixel${!(window.requiresTier && window.requiresTier('max')) ? ' btn-locked' : ''}" id="btn-create-guild">${!(window.requiresTier && window.requiresTier('max')) ? '&#x1F512; ' : ''}+ Create Guild</button>
           </div>
         </div>
         <div class="guild-search-bar">
@@ -50,8 +50,8 @@ const Guilds = (() => {
       render(container);
     });
     container.querySelector('#btn-create-guild').addEventListener('click', () => {
-      if (!(window.requiresTier && window.requiresTier('team'))) {
-        if (window.showUpgradeModal) window.showUpgradeModal('Create Guild', 'team');
+      if (!(window.requiresTier && window.requiresTier('max'))) {
+        if (window.showUpgradeModal) window.showUpgradeModal('Create Guild', 'max');
         return;
       }
       currentView = 'create';
@@ -183,9 +183,9 @@ const Guilds = (() => {
           </div>
         </div>
 
-        ${isOwner && (window.requiresTier && window.requiresTier('team')) ? `
+        ${isOwner && (window.requiresTier && window.requiresTier('max')) ? `
         <div class="settings-section glass" style="margin-top:12px">
-          <h3 class="card-title">Guild Analytics (Team)</h3>
+          <h3 class="card-title">Guild Analytics (Max)</h3>
           <div id="guild-analytics" class="lb-loading">Loading analytics...</div>
         </div>
         ` : ''}
@@ -193,7 +193,7 @@ const Guilds = (() => {
     `;
 
     // Load guild analytics for Team owners
-    if (isOwner && (window.requiresTier && window.requiresTier('team'))) {
+    if (isOwner && (window.requiresTier && window.requiresTier('max'))) {
       renderGuildAnalytics(guild, members);
     }
 

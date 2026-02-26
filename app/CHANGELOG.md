@@ -15,5 +15,8 @@ Format: [Semantic Versioning](https://semver.org/) — MAJOR.MINOR.PATCH
 - Supabase cloud sync + offline support
 - Semantic versioning system
 
+## v1.2.0 — 2026-02-26
+**MINOR** — Forgot password, auto-update toggle, cookie banner, CI release fixes
+
 ## v1.1.0 — 2026-02-26
 **MINOR** — Changelog tab, auto-release CI/CD pipeline

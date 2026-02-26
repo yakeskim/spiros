@@ -463,7 +463,7 @@
     }
     lastGameProcess = now;
 
-    // Re-read fresh state so we don't overwrite village/other changes
+    // Re-read fresh state so we don't overwrite concurrent changes
     gameState = await synchronAPI.getGameState();
 
     const todayData = await synchronAPI.getToday();

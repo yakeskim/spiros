@@ -161,8 +161,7 @@ function getDefaultGameState() {
     streak: { current: 0, best: 0, lastDate: null },
     achievements: [],
     resources: { gold: 0, gems: 0, wood: 0, stone: 0 },
-    buildings: [],
-    village: null
+    buildings: []
   };
 }
 

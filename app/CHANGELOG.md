@@ -15,6 +15,9 @@ Format: [Semantic Versioning](https://semver.org/) — MAJOR.MINOR.PATCH
 - Supabase cloud sync + offline support
 - Semantic versioning system
 
+## v1.2.1 — 2026-02-26
+**PATCH** — Rebrand Synchron to Spiros, remove unused village code
+
 ## v1.2.0 — 2026-02-26
 **MINOR** — Forgot password, auto-update toggle, cookie banner, CI release fixes
 

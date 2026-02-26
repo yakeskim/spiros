@@ -1,5 +1,28 @@
 // app.js — Main renderer: routing, state, init, auth
 
+// Global confirm modal (replaces native confirm())
+function showConfirm(message) {
+  return new Promise((resolve) => {
+    const overlay = document.getElementById('confirm-modal');
+    const msg = document.getElementById('confirm-modal-msg');
+    const btnYes = document.getElementById('confirm-modal-yes');
+    const btnNo = document.getElementById('confirm-modal-no');
+    msg.textContent = message;
+    overlay.classList.remove('hidden');
+
+    function cleanup(result) {
+      overlay.classList.add('hidden');
+      btnYes.removeEventListener('click', onYes);
+      btnNo.removeEventListener('click', onNo);
+      resolve(result);
+    }
+    function onYes() { cleanup(true); }
+    function onNo() { cleanup(false); }
+    btnYes.addEventListener('click', onYes);
+    btnNo.addEventListener('click', onNo);
+  });
+}
+
 (async function() {
   let currentView = 'dashboard';
   let gameState = null;
@@ -34,7 +57,21 @@
     authScreen.style.display = 'flex';
     consentScreen.style.display = 'none';
     appEl.style.display = 'none';
+    // Reset forms to login state
+    loginForm.style.display = 'block';
+    signupForm.style.display = 'none';
+    forgotForm.style.display = 'none';
+    authError.style.display = 'none';
+    // Reset input values
+    loginForm.reset();
+    // Fix Electron focus issue after returning to auth
+    setTimeout(() => {
+      const emailInput = document.getElementById('login-email');
+      if (emailInput) emailInput.focus();
+    }, 100);
   }
+  // Expose for settings.js
+  window.showAuth = showAuth;
 
   function showConsent() {
     authScreen.style.display = 'none';

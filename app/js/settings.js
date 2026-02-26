@@ -84,11 +84,12 @@ const Settings = (() => {
         <div class="settings-section glass">
           <h3 class="section-title">Account</h3>
           <div id="account-info"></div>
-          <div class="setting-row" style="gap:8px;margin-top:8px">
+          <div id="account-btns" class="setting-row" style="gap:8px;margin-top:8px">
             <button class="btn-pixel" id="btn-sync-now">Sync Now</button>
             <button class="btn-pixel btn-danger" id="btn-logout">Logout</button>
             <button class="btn-pixel btn-danger" id="btn-delete-account">Delete Account</button>
           </div>
+          <button class="btn-pixel" id="btn-sign-in" style="display:none;margin-top:8px">Sign In</button>
         </div>
 
         <div class="settings-section glass">
@@ -248,8 +249,10 @@ const Settings = (() => {
   async function renderAccountInfo() {
     const el = document.getElementById('account-info');
     if (!el) return;
+    const btnsRow = document.getElementById('account-btns');
     try {
       const { user } = await synchronAPI.getUser();
+      const signInBtn = document.getElementById('btn-sign-in');
       if (user && user.email) {
         const name = user.profile?.display_name || user.email;
         el.innerHTML = `
@@ -262,11 +265,18 @@ const Settings = (() => {
             <span class="about-text">${escapeHtml(user.email)}</span>
           </div>
         `;
+        if (btnsRow) btnsRow.style.display = '';
+        if (signInBtn) signInBtn.style.display = 'none';
       } else {
         el.innerHTML = '<p class="about-text">Not signed in — using offline mode</p>';
+        if (btnsRow) btnsRow.style.display = 'none';
+        if (signInBtn) signInBtn.style.display = '';
       }
     } catch (e) {
       el.innerHTML = '<p class="about-text">Not signed in — using offline mode</p>';
+      if (btnsRow) btnsRow.style.display = 'none';
+      const signInBtn = document.getElementById('btn-sign-in');
+      if (signInBtn) signInBtn.style.display = '';
     }
   }
 
@@ -403,9 +413,9 @@ const Settings = (() => {
     });
 
     container.querySelector('#btn-clear-history')?.addEventListener('click', async () => {
-      if (confirm('Are you sure? This will delete ALL activity history.')) {
+      if (await showConfirm('Are you sure? This will delete ALL activity history.')) {
         await synchronAPI.clearHistory();
-        alert('History cleared.');
+        await showConfirm('History cleared.');
       }
     });
 
@@ -420,31 +430,35 @@ const Settings = (() => {
       } catch (e) {
         btn.textContent = 'Sync Now';
         btn.disabled = false;
-        alert('Sync failed: ' + (e.message || 'Unknown error'));
+        await showConfirm('Sync failed: ' + (e.message || 'Unknown error'));
       }
     });
 
     container.querySelector('#btn-logout')?.addEventListener('click', async () => {
-      if (confirm('Are you sure you want to logout?')) {
+      if (await showConfirm('Are you sure you want to logout?')) {
         await synchronAPI.logout();
-        window.location.reload();
+        window.showAuth();
       }
     });
 
+    container.querySelector('#btn-sign-in')?.addEventListener('click', () => {
+      window.showAuth();
+    });
+
     container.querySelector('#btn-delete-account')?.addEventListener('click', async () => {
-      if (confirm('DELETE YOUR ACCOUNT?\n\nThis will permanently delete ALL your data from Spiros servers and locally. This cannot be undone.')) {
-        if (confirm('Are you REALLY sure? Type OK to the next prompt to confirm.')) {
+      if (await showConfirm('DELETE YOUR ACCOUNT?\n\nThis will permanently delete ALL your data from Spiros servers and locally. This cannot be undone.')) {
+        if (await showConfirm('Are you REALLY sure?')) {
           const btn = container.querySelector('#btn-delete-account');
           btn.textContent = 'Deleting...';
           btn.disabled = true;
           const result = await synchronAPI.deleteAccount();
           if (result.success) {
-            alert('Account data deleted. The app will now restart.');
-            window.location.reload();
+            await showConfirm('Account data deleted.');
+            window.showAuth();
           } else {
             btn.textContent = 'Delete Account';
             btn.disabled = false;
-            alert('Failed to delete account: ' + (result.error || 'Unknown error'));
+            await showConfirm('Failed to delete account: ' + (result.error || 'Unknown error'));
           }
         }
       }

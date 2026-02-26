@@ -1647,6 +1647,38 @@ canvas {
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
 }
 
+/* ===== Confirm Modal ===== */
+.confirm-modal {
+  width: 320px;
+  padding: 24px;
+  text-align: center;
+}
+
+.confirm-msg {
+  font-size: 9px;
+  color: var(--text-bright);
+  line-height: 1.8;
+  margin-bottom: 16px;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
+}
+
+.confirm-btns {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+}
+
+.confirm-btns .btn-muted {
+  background: var(--bg-panel);
+  color: var(--text-dim);
+  border-color: var(--border-light);
+}
+
+.confirm-btns .btn-muted:hover {
+  background: var(--bg-dark);
+  color: var(--text);
+}
+
 /* ===== Level Up Modal — RPG style ===== */
 .modal-overlay {
   position: fixed;

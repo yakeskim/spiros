@@ -43,6 +43,7 @@ const Gamification = (() => {
     { id: 'level',      name: 'Leveling',        icon: '⭐' },
     { id: 'input',      name: 'Input',           icon: '⌨' },
     { id: 'milestones', name: 'Milestones',      icon: '🏆' },
+    { id: 'referral',   name: 'Referrals',       icon: '🤝' },
   ];
 
   // Helper: ms to hours
@@ -326,6 +327,14 @@ const Gamification = (() => {
     { id: 'halloween',     cat: 'milestones', name: 'Spooky Coder',    desc: 'Track on October 31st',            icon: '🎃', check: s => s.isHalloween },
     { id: 'friday_13',     cat: 'milestones', name: 'Fearless',         desc: 'Track on a Friday the 13th',       icon: '🖤', check: s => s.isFriday13 },
     { id: 'leap_day',      cat: 'milestones', name: 'Leap Day Logger',  desc: 'Track on February 29th',           icon: '🐸', check: s => s.isLeapDay },
+
+    // ── Referrals (6) ──
+    { id: 'ref_1',   cat: 'referral', name: 'Recruiter',        desc: 'Refer 1 friend who subscribes',   icon: '🤝', check: s => (s.referralCount || 0) >= 1 },
+    { id: 'ref_3',   cat: 'referral', name: 'Squad Builder',    desc: 'Refer 3 friends who subscribe',   icon: '👥', check: s => (s.referralCount || 0) >= 3 },
+    { id: 'ref_5',   cat: 'referral', name: 'Team Captain',     desc: 'Refer 5 friends who subscribe',   icon: '🏅', check: s => (s.referralCount || 0) >= 5 },
+    { id: 'ref_10',  cat: 'referral', name: 'Commander',        desc: 'Refer 10 friends who subscribe',  icon: '⭐', check: s => (s.referralCount || 0) >= 10 },
+    { id: 'ref_25',  cat: 'referral', name: 'Ambassador',       desc: 'Refer 25 friends who subscribe',  icon: '👑', check: s => (s.referralCount || 0) >= 25 },
+    { id: 'ref_50',  cat: 'referral', name: 'Legend Recruiter',  desc: 'Refer 50 friends who subscribe',  icon: '🏆', check: s => (s.referralCount || 0) >= 50 },
   ];
 
   // ===== Core Functions =====
@@ -607,6 +616,7 @@ const Gamification = (() => {
       commStreak: (gameState.stats.categoryStreaks.communication || {}).current || 0,
       codeApps: (gameState.stats.uniqueCodeApps || []).length,
       codedPastMidnight: hasTrackedPastMidnight && (dayCatMs.coding || 0) > 0,
+      referralCount: gameState.stats.referralCount || 0,
     };
 
     const newAchievements = checkAchievements(gameState, stats);

@@ -2,7 +2,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('spirosAPI', {
   // Auth
-  signUp: (email, password, displayName) => ipcRenderer.invoke('auth:signup', email, password, displayName),
+  signUp: (email, password, displayName, referralCode) => ipcRenderer.invoke('auth:signup', email, password, displayName, referralCode),
   login: (email, password) => ipcRenderer.invoke('auth:login', email, password),
   resetPassword: (email) => ipcRenderer.invoke('auth:resetPassword', email),
   logout: () => ipcRenderer.invoke('auth:logout'),
@@ -141,6 +141,12 @@ contextBridge.exposeInMainWorld('spirosAPI', {
   // Achievement & Stats Sync
   syncAchievements: () => ipcRenderer.invoke('achievements:sync'),
   syncGameStats: () => ipcRenderer.invoke('gamestats:sync'),
+
+  // Referrals
+  validateReferralCode: (code) => ipcRenderer.invoke('referral:validate', code),
+  getReferralStats: () => ipcRenderer.invoke('referral:getStats'),
+  getReferralCode: () => ipcRenderer.invoke('referral:getCode'),
+  claimReferralRewards: () => ipcRenderer.invoke('referral:claimRewards'),
 
   // Subscriptions
   getTier: () => ipcRenderer.invoke('subscription:getTier'),

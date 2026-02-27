@@ -1,10 +1,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+
+const SUPABASE_URL = "https://acdjnobbiwiobvmijans.supabase.co";
 
 const TITLE_COLORS: Record<string, string> = {
   Novice: "text-text-dim",
@@ -20,8 +23,18 @@ function xpForLevel(level: number): number {
   return Math.floor(100 * Math.pow(1.15, level - 1));
 }
 
+const MILESTONES = [
+  { count: 1, label: "Recruiter", reward: '500 XP + "Recruiter" achievement' },
+  { count: 3, label: "Squad Builder", reward: '"Referral Blue" avatar color' },
+  { count: 5, label: "Team Captain", reward: '"Recruiter" profile frame + 1,000 XP' },
+  { count: 10, label: "Commander", reward: "1 month free Starter" },
+  { count: 25, label: "Ambassador", reward: '1 month free Pro + "Ambassador" title' },
+  { count: 50, label: "Legend", reward: '"Legend" profile frame + permanent badge' },
+];
+
 export default function AccountPage() {
   const { user, profile, loading, signOut, refreshProfile } = useAuth();
+  const searchParams = useSearchParams();
 
   // Profile editing
   const [editingName, setEditingName] = useState(false);
@@ -40,6 +53,16 @@ export default function AccountPage() {
   // Social stats
   const [friendsCount, setFriendsCount] = useState<number | null>(null);
 
+  // Referral
+  const [referralCode, setReferralCode] = useState<string | null>(null);
+  const [referralCount, setReferralCount] = useState(0);
+  const [codeCopied, setCodeCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
+
+  // Trial prompt
+  const [showTrialPrompt, setShowTrialPrompt] = useState(false);
+  const [trialLoading, setTrialLoading] = useState(false);
+
   useEffect(() => {
     if (!loading && !user) {
       window.location.href = "/login";
@@ -57,6 +80,70 @@ export default function AccountPage() {
         setFriendsCount(count ?? 0);
       });
   }, [user]);
+
+  // Fetch referral data
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("referral_code, referral_count, referred_by")
+      .eq("id", user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setReferralCode(data.referral_code);
+          setReferralCount(data.referral_count ?? 0);
+        }
+      });
+  }, [user]);
+
+  // Show trial prompt if redirected from referral signup
+  useEffect(() => {
+    if (searchParams.get("trial") === "starter" && profile?.referred_by) {
+      setShowTrialPrompt(true);
+    }
+  }, [searchParams, profile]);
+
+  async function handleStartTrial() {
+    if (!user) return;
+    setTrialLoading(true);
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setTrialLoading(false); return; }
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/create-checkout-session`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: session.access_token,
+        },
+        body: JSON.stringify({ planKey: "starter_monthly", referralTrial: true }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch {
+      // silently fail
+    }
+    setTrialLoading(false);
+  }
+
+  async function handleCopyCode() {
+    if (!referralCode) return;
+    await navigator.clipboard.writeText(referralCode);
+    setCodeCopied(true);
+    setTimeout(() => setCodeCopied(false), 2000);
+  }
+
+  async function handleCopyLink() {
+    if (!referralCode) return;
+    await navigator.clipboard.writeText(`https://spiros.app/signup?ref=${referralCode}`);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  }
 
   async function handleNameSave() {
     if (!user || !newName.trim()) return;
@@ -123,12 +210,41 @@ export default function AccountPage() {
   const xpPercent = Math.min(100, Math.round((xp / xpNeeded) * 100));
   const titleColor = TITLE_COLORS[profile?.title ?? ""] ?? "text-text-dim";
   const userTier = profile?.tier ?? "free";
+  const nextMilestone = MILESTONES.find(m => referralCount < m.count);
 
   return (
     <>
       <Header />
       <main className="max-w-2xl mx-auto px-4 py-16 space-y-8">
         <h1 className="text-gold text-lg text-shadow-pixel text-center">Account</h1>
+
+        {/* Trial Prompt Banner */}
+        {showTrialPrompt && (
+          <section className="bg-bg-dark border-2 border-gold shadow-pixel p-6 text-center space-y-3">
+            <h2 className="text-[11px] text-gold">Welcome! Start Your Free Trial</h2>
+            <p className="text-[8px] text-text-bright">
+              You were referred by a friend! Enjoy 7 days of Starter for free.
+            </p>
+            <p className="text-[7px] text-text-dim">
+              Card required. Auto-charges $3.99/mo after trial if not cancelled.
+            </p>
+            <div className="flex items-center justify-center gap-3 pt-2">
+              <button
+                onClick={handleStartTrial}
+                disabled={trialLoading}
+                className="text-[9px] text-bg-darkest bg-gold px-6 py-2 hover:bg-gold/80 cursor-pointer disabled:opacity-50"
+              >
+                {trialLoading ? "Loading..." : "Start 7-Day Free Trial"}
+              </button>
+              <button
+                onClick={() => setShowTrialPrompt(false)}
+                className="text-[8px] text-text-dim hover:text-text-bright cursor-pointer"
+              >
+                Maybe later
+              </button>
+            </div>
+          </section>
+        )}
 
         {/* Profile Card */}
         <section className="bg-bg-dark border-2 border-border-dark shadow-pixel p-6 space-y-4">
@@ -274,6 +390,70 @@ export default function AccountPage() {
             {userTier === "free" ? "Upgrade your tier" : "Manage subscription"} &#8594;
           </a>
         </section>
+
+        {/* Referral Program */}
+        {referralCode && (
+          <section className="bg-bg-dark border-2 border-border-dark shadow-pixel p-6 space-y-4">
+            <h2 className="text-[11px] text-text-bright mb-4">Referral Program</h2>
+
+            {/* Referral Code */}
+            <div className="flex items-center gap-3">
+              <span className="text-[8px] text-text-dim w-24 shrink-0">Your Code</span>
+              <span className="text-[11px] text-gold tracking-widest">{referralCode}</span>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleCopyCode}
+                className="text-[8px] text-bg-darkest bg-gold px-3 py-1 hover:bg-gold/80 cursor-pointer"
+              >
+                {codeCopied ? "Copied!" : "Copy Code"}
+              </button>
+              <button
+                onClick={handleCopyLink}
+                className="text-[8px] text-text-dim border border-border-dark px-3 py-1 hover:text-gold hover:border-gold cursor-pointer"
+              >
+                {linkCopied ? "Copied!" : "Share Link"}
+              </button>
+            </div>
+
+            {/* Stats */}
+            <div className="flex items-center gap-6 pt-2">
+              <div>
+                <p className="text-[7px] text-text-dim">Total Referrals</p>
+                <p className="text-gold text-sm text-shadow-pixel">{referralCount}</p>
+              </div>
+              {nextMilestone && (
+                <div>
+                  <p className="text-[7px] text-text-dim">Next Reward</p>
+                  <p className="text-[8px] text-text-bright">
+                    {nextMilestone.count - referralCount} more for {nextMilestone.label}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Milestone preview */}
+            <div className="pt-2 space-y-1">
+              {MILESTONES.map((m) => (
+                <div
+                  key={m.count}
+                  className={`flex items-center gap-2 text-[7px] ${
+                    referralCount >= m.count ? "text-green-400" : "text-text-dim opacity-60"
+                  }`}
+                >
+                  <span>{referralCount >= m.count ? "[x]" : "[ ]"}</span>
+                  <span className="w-6 text-right">{m.count}</span>
+                  <span>- {m.reward}</span>
+                </div>
+              ))}
+            </div>
+
+            <p className="text-[7px] text-text-dim text-center pt-2">
+              Open the Spiros app for full milestone details and rewards.
+            </p>
+          </section>
+        )}
 
         {/* Stats Panel */}
         <section className="bg-bg-dark border-2 border-border-dark shadow-pixel p-6 space-y-4">

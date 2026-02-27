@@ -5233,3 +5233,144 @@ canvas {
   margin-top: 6px;
 }
 
+/* ===== Referral Section ===== */
+.referral-code-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-darkest);
+  border: var(--px) solid var(--border-light);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.referral-code-label {
+  font-size: 7px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+.referral-code-value {
+  font-family: var(--font-primary);
+  font-size: 16px;
+  color: var(--gold);
+  letter-spacing: 4px;
+  text-shadow: 0 0 8px rgba(245, 197, 66, 0.4);
+}
+.referral-code-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+.referral-code-actions .btn-outline {
+  background: transparent;
+  border: var(--px) solid var(--border-light);
+  color: var(--text-dim);
+}
+.referral-code-actions .btn-outline:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+.referral-stats-row {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.referral-stat {
+  text-align: center;
+  min-width: 100px;
+}
+.referral-stat .stat-value {
+  font-size: 18px;
+}
+.referral-stat .stat-label {
+  font-size: 7px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.referral-progress-bar {
+  height: 8px;
+  background: var(--bg-darkest);
+  border: var(--px) solid var(--border-light);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.referral-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold) 0%, #ffdd57 100%);
+  transition: width 0.5s ease;
+}
+
+.referral-milestones {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.referral-milestone {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: var(--px) solid var(--border-light);
+  background: var(--bg-darkest);
+  opacity: 0.4;
+  transition: opacity 0.2s, background 0.2s;
+}
+.referral-milestone.reached,
+.referral-milestone.claimed {
+  opacity: 1;
+}
+.referral-milestone.reached {
+  background: rgba(245, 197, 66, 0.08);
+  border-color: var(--gold);
+}
+.referral-milestone.claimed {
+  background: rgba(0, 230, 118, 0.06);
+  border-color: var(--green);
+}
+
+.milestone-icon {
+  font-size: 14px;
+  width: 24px;
+  text-align: center;
+  flex-shrink: 0;
+}
+.milestone-info {
+  flex: 1;
+  min-width: 0;
+}
+.milestone-label {
+  display: block;
+  font-size: 8px;
+  color: var(--text-bright);
+  font-family: var(--font-primary);
+}
+.milestone-reward {
+  display: block;
+  font-size: 7px;
+  color: var(--text-dim);
+  margin-top: 1px;
+}
+.milestone-status {
+  font-size: 7px;
+  font-family: var(--font-primary);
+  color: var(--text-dim);
+  flex-shrink: 0;
+  padding: 2px 8px;
+}
+.milestone-status.reached {
+  color: var(--gold);
+  border: var(--px) solid var(--gold);
+  cursor: pointer;
+}
+.milestone-status.reached:hover {
+  background: var(--gold);
+  color: var(--bg-darkest);
+}
+.milestone-status.claimed {
+  color: var(--green);
+}
+

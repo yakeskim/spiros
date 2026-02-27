@@ -637,6 +637,8 @@ function handlePollResult(result) {
       // Not focused and no input — idle
       userActivityState = now - lastUserInputTime < inputIdleMs ? 'bg' : 'idle';
     }
+    // Sync presence to DB when activity state changes
+    syncPresenceIfChanged();
     if (totalInput === 0 && !isExempt) {
       noInputCount++;
       if (noInputCount * settings.pollIntervalMs >= inputIdleMs) {
@@ -922,6 +924,7 @@ function startTracking() {
   startBgScanner();
   isTracking = true;
   updateTrayMenu();
+  writePresence('online');
 }
 
 function stopTracking() {
@@ -930,6 +933,7 @@ function stopTracking() {
   stopBgScanner();
   isTracking = false;
   updateTrayMenu();
+  syncPresenceIfChanged();
 }
 
 // ===== Load activity for date range =====
@@ -1299,33 +1303,24 @@ function hasTier(required) {
 
 function subscribeToTierChanges() {
   if (tierSubscription) return;
-  supabase.auth.getUser().then(({ data: { user } }) => {
-    if (!user) return;
-    tierSubscription = supabase
-      .channel('subscription-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'subscriptions',
-        filter: `user_id=eq.${user.id}`
-      }, async (payload) => {
-        const newTier = payload.new?.tier || 'free';
-        cachedTier = newTier;
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.webContents.send('subscription:tierChanged', newTier);
-        }
-        // Keep profiles table in sync with subscription tier
-        try {
-          await supabase.from('profiles').update({ tier: newTier }).eq('id', user.id);
-        } catch (_) {}
-      })
-      .subscribe();
-  });
+  // Poll for tier changes every 5 minutes instead of Realtime subscription
+  tierSubscription = setInterval(async () => {
+    try {
+      const oldTier = cachedTier;
+      await getUserTier();
+      if (cachedTier !== oldTier && mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('subscription:tierChanged', cachedTier);
+        // Keep profiles table in sync
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) await supabase.from('profiles').update({ tier: cachedTier }).eq('id', user.id);
+      }
+    } catch (_) {}
+  }, 5 * 60 * 1000);
 }
 
 function unsubscribeTierChanges() {
   if (tierSubscription) {
-    supabase.removeChannel(tierSubscription);
+    clearInterval(tierSubscription);
     tierSubscription = null;
   }
 }
@@ -1471,11 +1466,31 @@ supabase.auth.onAuthStateChange((event, session) => {
 });
 
 // ===== Auth Handlers =====
-async function authSignUp(email, password, displayName) {
+async function authSignUp(email, password, displayName, referralCode) {
+  const signupMeta = { display_name: displayName };
+
+  // Validate referral code if provided
+  if (referralCode && referralCode.trim()) {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/validate-referral`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+        body: JSON.stringify({ code: referralCode.trim().toUpperCase() })
+      });
+      const result = await res.json();
+      if (!result.valid) {
+        return { success: false, error: result.error || 'Invalid referral code' };
+      }
+      signupMeta.referred_by = result.referrer_id;
+    } catch (err) {
+      return { success: false, error: 'Could not validate referral code' };
+    }
+  }
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { display_name: displayName } }
+    options: { data: signupMeta }
   });
   if (error) return { success: false, error: error.message };
   if (data.session) startSyncInterval();
@@ -2220,105 +2235,129 @@ async function getFriendStats(friendId, startDate, endDate) {
   }));
 }
 
-// ===== Online Presence =====
-let presenceChannel = null;
-let lastSeenInterval = null;
-let onlineUsers = {}; // { visitorKey: { user_id, display_name, level, title, activity_state } }
+// ===== Online Presence (DB-based, no Realtime) =====
+// Writes presence_status ('online'|'afk'|'offline') to profiles on state changes.
+// - Online: app running + user active or background
+// - AFK: app running but idle (no input for 2+ min)
+// - Offline: app quit / logged out
+// Heartbeat every 2 min as crash safety. Friends page queries on demand.
+
+let presenceInterval = null;
+let lastPresenceStatus = null; // track to only write on change
+let lastPresenceWrite = 0;     // throttle writes
 
 async function joinPresence() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return;
-
-  // Fetch our profile for display info
-  const { data: profile } = await supabase
-    .from('profiles').select('display_name, level, title').eq('id', user.id).single();
-
-  presenceChannel = supabase.channel('online-users', {
-    config: { presence: { key: user.id } }
-  });
-
-  presenceChannel
-    .on('presence', { event: 'sync' }, () => {
-      const state = presenceChannel.presenceState();
-      onlineUsers = {};
-      for (const [key, entries] of Object.entries(state)) {
-        if (entries && entries.length > 0) {
-          onlineUsers[key] = entries[0];
-        }
-      }
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('presence:sync', onlineUsers);
-      }
-    })
-    .on('presence', { event: 'join' }, ({ key, newPresences }) => {
-      if (newPresences && newPresences.length > 0) {
-        onlineUsers[key] = newPresences[0];
-      }
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('presence:join', { key, data: newPresences?.[0] });
-      }
-    })
-    .on('presence', { event: 'leave' }, ({ key }) => {
-      delete onlineUsers[key];
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.webContents.send('presence:leave', { key });
-      }
-    })
-    .subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') {
-        await presenceChannel.track({
-          user_id: user.id,
-          display_name: profile?.display_name || 'Unknown',
-          level: profile?.level || 1,
-          title: profile?.title || 'Novice',
-          activity_state: userActivityState,
-          online_at: new Date().toISOString()
-        });
-      }
-    });
-
-  // Update last_seen_at every 60s
-  await updateLastSeen();
-  lastSeenInterval = setInterval(updateLastSeen, 60000);
+  // Mark online on login
+  await writePresence('online');
+  // Heartbeat every 2 min — syncs current state + crash safety
+  presenceInterval = setInterval(() => {
+    const status = mapActivityToPresence();
+    writePresence(status);
+  }, 2 * 60 * 1000);
 }
 
 async function leavePresence() {
-  if (lastSeenInterval) { clearInterval(lastSeenInterval); lastSeenInterval = null; }
-  if (presenceChannel) {
-    await presenceChannel.untrack();
-    supabase.removeChannel(presenceChannel);
-    presenceChannel = null;
-  }
-  onlineUsers = {};
+  if (presenceInterval) { clearInterval(presenceInterval); presenceInterval = null; }
+  await writePresence('offline');
+  lastPresenceStatus = null;
 }
 
-async function updateLastSeen() {
+function mapActivityToPresence() {
+  if (!isTracking && userActivityState === 'idle') return 'afk';
+  if (userActivityState === 'idle') return 'afk';
+  return 'online'; // active or bg
+}
+
+// Called from the activity scan loop when state changes
+function syncPresenceIfChanged() {
+  const status = mapActivityToPresence();
+  const now = Date.now();
+  // Only write if status changed OR 2 min since last write (heartbeat)
+  if (status !== lastPresenceStatus || now - lastPresenceWrite >= 2 * 60 * 1000) {
+    writePresence(status);
+  }
+}
+
+async function writePresence(status) {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    await supabase.from('profiles').update({ last_seen_at: new Date().toISOString() }).eq('id', user.id);
+    await supabase.from('profiles').update({
+      presence_status: status,
+      last_seen_at: new Date().toISOString()
+    }).eq('id', user.id);
+    lastPresenceStatus = status;
+    lastPresenceWrite = Date.now();
   } catch (e) {
-    logError('updateLastSeen', e);
+    logError('writePresence', e);
   }
 }
 
-function getOnlineFriends() {
-  return onlineUsers;
+async function getOnlineFriends() {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return {};
+
+    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+
+    // Get accepted friend IDs
+    const { data: friendships } = await supabase
+      .from('friendships')
+      .select('requester_id, addressee_id')
+      .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`)
+      .eq('status', 'accepted');
+
+    if (!friendships || friendships.length === 0) return {};
+
+    const friendIds = friendships.map(f =>
+      f.requester_id === user.id ? f.addressee_id : f.requester_id
+    );
+
+    // Get friends who are online or afk (with staleness check)
+    const { data: onlineFriends } = await supabase
+      .from('profiles')
+      .select('id, display_name, level, title, presence_status, last_seen_at')
+      .in('id', friendIds)
+      .in('presence_status', ['online', 'afk'])
+      .gte('last_seen_at', fiveMinAgo);
+
+    const result = {};
+    for (const f of (onlineFriends || [])) {
+      result[f.id] = {
+        user_id: f.id,
+        display_name: f.display_name,
+        level: f.level || 1,
+        title: f.title || 'Novice',
+        activity_state: f.presence_status,
+        online_at: f.last_seen_at
+      };
+    }
+    return result;
+  } catch (e) {
+    logError('getOnlineFriends', e);
+    return {};
+  }
 }
 
 async function getCommunityStats() {
   try {
-    const onlineCount = Object.keys(onlineUsers).length;
+    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
     const oneWeekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
-    const { count, error } = await supabase
-      .from('profiles')
-      .select('*', { count: 'exact', head: true })
-      .gte('last_seen_at', oneWeekAgo);
-    const activeUsers = error ? 0 : (count || 0);
-    return { onlineCount, totalUsers: activeUsers };
+
+    const [onlineRes, activeRes] = await Promise.all([
+      supabase.from('profiles').select('*', { count: 'exact', head: true })
+        .in('presence_status', ['online', 'afk']).gte('last_seen_at', fiveMinAgo),
+      supabase.from('profiles').select('*', { count: 'exact', head: true })
+        .gte('last_seen_at', oneWeekAgo)
+    ]);
+
+    return {
+      onlineCount: onlineRes.error ? 0 : (onlineRes.count || 0),
+      totalUsers: activeRes.error ? 0 : (activeRes.count || 0)
+    };
   } catch (e) {
     logError('getCommunityStats', e);
-    return { onlineCount: Object.keys(onlineUsers).length, totalUsers: 0 };
+    return { onlineCount: 0, totalUsers: 0 };
   }
 }
 
@@ -2885,7 +2924,7 @@ async function getGitStatus(projectPath) {
 
 // ===== IPC Handlers =====
 // Auth
-ipcMain.handle('auth:signup', (e, email, password, displayName) => authSignUp(email, password, displayName));
+ipcMain.handle('auth:signup', (e, email, password, displayName, referralCode) => authSignUp(email, password, displayName, referralCode));
 ipcMain.handle('auth:login', (e, email, password) => authLogin(email, password));
 ipcMain.handle('auth:resetPassword', async (e, email) => {
   try {
@@ -2905,6 +2944,64 @@ ipcMain.handle('auth:updateProfile', (e, updates) => updateProfile(updates));
 // Profile
 ipcMain.handle('profile:changeName', (e, newName) => changeDisplayName(newName));
 ipcMain.handle('profile:getPublic', (e, userId) => getPublicProfile(userId));
+
+// Referrals
+ipcMain.handle('referral:validate', async (e, code) => {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/validate-referral`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+      body: JSON.stringify({ code })
+    });
+    return await res.json();
+  } catch (err) {
+    return { valid: false, error: err.message };
+  }
+});
+
+ipcMain.handle('referral:getCode', async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { code: null };
+  const { data } = await supabase
+    .from('profiles').select('referral_code').eq('id', user.id).single();
+  return { code: data?.referral_code || null };
+});
+
+ipcMain.handle('referral:getStats', async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { referral_count: 0, referrals: [], rewards: [] };
+  const [profileRes, referralsRes, rewardsRes] = await Promise.all([
+    supabase.from('profiles').select('referral_code, referral_count, referred_by').eq('id', user.id).single(),
+    supabase.from('referrals').select('id, referred_id, status, created_at, completed_at').eq('referrer_id', user.id).order('created_at', { ascending: false }),
+    supabase.from('referral_rewards').select('milestone, reward_type, claimed_at').eq('user_id', user.id)
+  ]);
+  return {
+    referral_code: profileRes.data?.referral_code,
+    referral_count: profileRes.data?.referral_count || 0,
+    referred_by: profileRes.data?.referred_by,
+    referrals: referralsRes.data || [],
+    rewards: rewardsRes.data || []
+  };
+});
+
+ipcMain.handle('referral:claimRewards', async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) return { error: 'Not logged in' };
+  try {
+    const res = await fetch(`${SUPABASE_URL}/functions/v1/claim-referral-reward`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({})
+    });
+    return await res.json();
+  } catch (err) {
+    return { error: err.message };
+  }
+});
 
 // Friends
 ipcMain.handle('friends:search', (e, query) => searchUsers(query));

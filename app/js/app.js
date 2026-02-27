@@ -291,11 +291,12 @@ function showConfirm(message) {
     const name = document.getElementById('signup-name').value;
     const email = document.getElementById('signup-email').value;
     const password = document.getElementById('signup-password').value;
+    const referralCode = document.getElementById('signup-referral').value.trim().toUpperCase();
     const btn = document.getElementById('signup-btn');
     btn.textContent = 'Creating...';
     btn.disabled = true;
 
-    const result = await spirosAPI.signUp(email, password, name);
+    const result = await spirosAPI.signUp(email, password, name, referralCode || undefined);
     btn.textContent = 'Create Account';
     btn.disabled = false;
 

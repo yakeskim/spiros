@@ -1,19 +1,78 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/lib/supabase";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
+const SUPABASE_URL = "https://acdjnobbiwiobvmijans.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjZGpub2JiaXdpb2J2bWlqYW5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MjA4NDAsImV4cCI6MjA4NzQ5Njg0MH0.DGdR8JhI5MeRduDaTuz6jIHz-kwCzaRThfwK9vOUS_g";
+
 export default function SignupPage() {
   const { user, loading } = useAuth();
+  const searchParams = useSearchParams();
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [referralCode, setReferralCode] = useState("");
+  const [referralValid, setReferralValid] = useState<null | { referrer_id: string; referrer_name: string }>(null);
+  const [referralError, setReferralError] = useState("");
+  const [referralChecking, setReferralChecking] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  // Auto-fill referral code from ?ref= URL param
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (ref) {
+      setReferralCode(ref.toUpperCase());
+    }
+  }, [searchParams]);
+
+  // Debounced referral code validation
+  const validateReferral = useCallback(async (code: string) => {
+    if (!code || code.length !== 8) {
+      setReferralValid(null);
+      setReferralError("");
+      return;
+    }
+
+    setReferralChecking(true);
+    setReferralError("");
+    setReferralValid(null);
+
+    try {
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/validate-referral`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", apikey: SUPABASE_ANON_KEY },
+        body: JSON.stringify({ code }),
+      });
+      const result = await res.json();
+      if (result.valid) {
+        setReferralValid({ referrer_id: result.referrer_id, referrer_name: result.referrer_name });
+      } else {
+        setReferralError(result.error || "Invalid code");
+      }
+    } catch {
+      setReferralError("Could not validate code");
+    }
+    setReferralChecking(false);
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (referralCode.length === 8) {
+        validateReferral(referralCode);
+      } else {
+        setReferralValid(null);
+        setReferralError("");
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [referralCode, validateReferral]);
 
   useEffect(() => {
     if (!loading && user) {
@@ -32,12 +91,19 @@ export default function SignupPage() {
 
     setSubmitting(true);
 
+    const signupMeta: Record<string, string> = { display_name: displayName };
+    const isReferred = referralValid !== null;
+
+    if (isReferred) {
+      signupMeta.referred_by = referralValid.referrer_id;
+    }
+
     const { error: err } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { display_name: displayName },
-        emailRedirectTo: "https://spiros.app/auth/callback",
+        data: signupMeta,
+        emailRedirectTo: `https://spiros.app/auth/callback${isReferred ? "?referred=true" : ""}`,
       },
     });
 
@@ -110,6 +176,28 @@ export default function SignupPage() {
                 placeholder="6+ characters"
                 className="w-full bg-bg-dark border-2 border-border-dark text-text-bright text-[9px] px-3 py-2 focus:border-gold outline-none"
               />
+            </div>
+            <div>
+              <label className="block text-[9px] text-text-dim mb-2">Referral Code (optional)</label>
+              <input
+                type="text"
+                value={referralCode}
+                onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
+                maxLength={8}
+                placeholder="e.g. ABCD1234"
+                className="w-full bg-bg-dark border-2 border-border-dark text-text-bright text-[9px] px-3 py-2 focus:border-gold outline-none uppercase"
+              />
+              {referralChecking && (
+                <p className="text-[7px] text-text-dim mt-1">Checking code...</p>
+              )}
+              {referralValid && (
+                <p className="text-[7px] text-green-400 mt-1">
+                  Referred by {referralValid.referrer_name} — You&apos;ll get 7 days free Starter!
+                </p>
+              )}
+              {referralError && (
+                <p className="text-[7px] text-red-400 mt-1">{referralError}</p>
+              )}
             </div>
             <button
               type="submit"

@@ -13,6 +13,10 @@ export default function AuthCallbackPage() {
     const params = new URLSearchParams(hash);
     const type = params.get("type");
 
+    // Check if user was referred (set during signup redirect URL)
+    const searchParams = new URLSearchParams(window.location.search);
+    const referred = searchParams.get("referred") === "true";
+
     // Give Supabase client a moment to process the hash tokens
     supabase.auth.getSession().then(({ data: { session }, error: err }) => {
       if (err) {
@@ -23,7 +27,7 @@ export default function AuthCallbackPage() {
       if (type === "recovery") {
         window.location.href = "/reset-password";
       } else if (type === "signup" || type === "email_change") {
-        window.location.href = "/account";
+        window.location.href = referred ? "/account?trial=starter" : "/account";
       } else if (session) {
         window.location.href = "/account";
       } else {

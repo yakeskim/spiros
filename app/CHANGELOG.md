@@ -3,6 +3,23 @@
 All notable changes to Spiros are documented here.
 Format: [Semantic Versioning](https://semver.org/) — MAJOR.MINOR.PATCH
 
+## v1.4.0 — 2026-02-27
+**MINOR** — Referral Program + Presence Optimization
+- Referral system: invite friends with your unique 8-character code, earn milestone rewards
+- 6 referral milestones: XP bonuses, exclusive "Referral Blue" avatar color, profile frames, free subscription months, Ambassador title
+- Referred users get a 7-day free Starter trial (card required, auto-charges if not cancelled)
+- Referral code input on signup (desktop app + website), auto-fills from ?ref= share links
+- Profile page: referral code display, copy/share buttons, progress bar, milestone tracker with claim buttons
+- Website account page: referral section with code, stats, and milestone preview
+- Website signup: live referral code validation with "Referred by [name]" confirmation
+- Trial checkout flow: referred users redirected to start 7-day Starter trial after email confirmation
+- 6 new referral achievements: Recruiter, Squad Builder, Team Captain, Commander, Ambassador, Legend Recruiter
+- "Recruiter" and "Legend" profile frames added to customization options
+- Anti-abuse: server-generated codes, server-side validation, one referral per account, completes only after Stripe subscription
+- Replaced Realtime Presence WebSocket with DB-based presence (online/afk/offline status)
+- Replaced Realtime subscription-changes channel with 5-minute polling
+- Presence updates on activity state changes instead of constant heartbeats — massive reduction in database calls
+
 ## v1.3.1 — 2026-02-26
 **PATCH** — 4-Tier Pricing + 3-Theme System
 - Restructured pricing: Free / Starter ($3.99/mo) / Pro ($9.99/mo) / Max ($19.99/mo) with 25% annual discount

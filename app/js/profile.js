@@ -216,7 +216,7 @@ const Profile = (() => {
             return '<div class="settings-section glass" style="margin-top:16px"><h3 class="card-title">Customize Profile</h3><div class="empty-state" style="text-align:center;padding:16px"><p>&#x1F512; Profile customization requires Pro</p><button class="btn-pixel btn-sm" id="btn-upgrade-profile" style="margin-top:8px">Upgrade to Pro</button></div></div>';
           }
           const AVATAR_COLORS = ['#f5c542', '#ff5252', '#00e676', '#448aff', '#e040fb', '#ff6e40', '#26c6da', '#ffd740'];
-          const PROFILE_FRAMES = ['none', 'gold', 'diamond', 'flame', 'frost', 'neon'];
+          const PROFILE_FRAMES = ['none', 'gold', 'diamond', 'flame', 'frost', 'neon', 'recruiter', 'legend'];
           const currentColor = profile.avatar_color || '';
           const currentCustomTitle = profile.custom_title || '';
           const currentFrame = profile.profile_frame || 'none';
@@ -233,11 +233,19 @@ const Profile = (() => {
             '<div id="profile-custom-msg" style="font-size:7px;margin-top:4px;display:none"></div>' +
             '</div>';
         })()}
+
+        <div class="settings-section glass" style="margin-top:16px" id="referral-section">
+          <h3 class="card-title">Referral Program</h3>
+          <div id="referral-content" style="text-align:center;padding:8px">
+            <p style="color:var(--text-dim);font-size:7px">Loading referral info...</p>
+          </div>
+        </div>
       </div>
     `;
 
     wireProfileEvents(container);
     loadGuildBadge();
+    loadReferralSection();
   }
 
   async function loadGuildBadge() {
@@ -249,6 +257,133 @@ const Profile = (() => {
         badge.innerHTML = `<span style="color:${guild.color || '#f5c542'}">${guild.icon || '⚔'}</span> ${escapeHtml(guild.name)}`;
       }
     } catch (_) {}
+  }
+
+  const REFERRAL_MILESTONES = [
+    { count: 1, icon: '🤝', label: 'Recruiter', reward: '500 XP + "Recruiter" achievement' },
+    { count: 3, icon: '🎨', label: 'Squad Builder', reward: '"Referral Blue" avatar color (#00bfff)' },
+    { count: 5, icon: '🖼', label: 'Team Captain', reward: '"Recruiter" frame + 1,000 XP' },
+    { count: 10, icon: '⭐', label: 'Commander', reward: '1 month free Starter' },
+    { count: 25, icon: '👑', label: 'Ambassador', reward: '1 month free Pro + "Ambassador" title' },
+    { count: 50, icon: '🏆', label: 'Legend', reward: '"Legend" frame + permanent badge' },
+  ];
+
+  async function loadReferralSection() {
+    const content = document.getElementById('referral-content');
+    if (!content) return;
+
+    try {
+      const stats = await spirosAPI.getReferralStats();
+      const code = stats.referral_code;
+      const count = stats.referral_count || 0;
+      const claimedMilestones = new Set((stats.rewards || []).map(r => r.milestone));
+
+      // Update game state with referral count for achievement checks
+      try {
+        const gs = await spirosAPI.getGameState();
+        if (gs) {
+          gs.stats = gs.stats || {};
+          if (gs.stats.referralCount !== count) {
+            gs.stats.referralCount = count;
+            await spirosAPI.setGameState(gs);
+          }
+        }
+      } catch (_) {}
+
+      const nextMilestone = REFERRAL_MILESTONES.find(m => count < m.count);
+      const nextNeeded = nextMilestone ? nextMilestone.count - count : 0;
+      const progressPercent = nextMilestone
+        ? Math.min(100, Math.round((count / nextMilestone.count) * 100))
+        : 100;
+
+      content.innerHTML = `
+        <div class="referral-code-box">
+          <span class="referral-code-label">Your Code</span>
+          <span class="referral-code-value">${code || '---'}</span>
+          <div class="referral-code-actions">
+            <button class="btn-pixel btn-sm" id="btn-copy-referral">Copy Code</button>
+            <button class="btn-pixel btn-sm btn-outline" id="btn-share-referral">Share Link</button>
+          </div>
+        </div>
+
+        <div class="referral-stats-row">
+          <div class="referral-stat">
+            <div class="stat-value" style="color:var(--gold)">${count}</div>
+            <div class="stat-label">Total Referrals</div>
+          </div>
+          ${nextMilestone ? `
+          <div class="referral-stat">
+            <div class="stat-value" style="color:var(--text-bright)">${nextNeeded}</div>
+            <div class="stat-label">Until ${escapeHtml(nextMilestone.label)}</div>
+          </div>
+          ` : `
+          <div class="referral-stat">
+            <div class="stat-value" style="color:var(--green)">MAX</div>
+            <div class="stat-label">All Claimed!</div>
+          </div>
+          `}
+        </div>
+
+        <div class="referral-progress-bar">
+          <div class="referral-progress-fill" style="width:${progressPercent}%"></div>
+        </div>
+
+        <div class="referral-milestones">
+          ${REFERRAL_MILESTONES.map(m => {
+            const reached = count >= m.count;
+            const claimed = claimedMilestones.has(m.count);
+            const stateClass = claimed ? 'claimed' : reached ? 'reached' : '';
+            const statusText = claimed ? 'Claimed' : reached ? 'Claim' : 'Locked';
+            return `
+              <div class="referral-milestone ${stateClass}">
+                <span class="milestone-icon">${m.icon}</span>
+                <div class="milestone-info">
+                  <span class="milestone-label">${m.count} - ${escapeHtml(m.label)}</span>
+                  <span class="milestone-reward">${escapeHtml(m.reward)}</span>
+                </div>
+                <span class="milestone-status ${stateClass}"${reached && !claimed ? ' data-milestone="' + m.count + '"' : ''}>${statusText}</span>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+
+      // Wire copy/share buttons
+      content.querySelector('#btn-copy-referral')?.addEventListener('click', async () => {
+        if (!code) return;
+        try {
+          await navigator.clipboard.writeText(code);
+          const btn = content.querySelector('#btn-copy-referral');
+          if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Copy Code'; }, 2000); }
+        } catch (_) {}
+      });
+
+      content.querySelector('#btn-share-referral')?.addEventListener('click', async () => {
+        if (!code) return;
+        const link = 'https://spiros.app/signup?ref=' + code;
+        try {
+          await navigator.clipboard.writeText(link);
+          const btn = content.querySelector('#btn-share-referral');
+          if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Share Link'; }, 2000); }
+        } catch (_) {}
+      });
+
+      // Wire claim buttons
+      content.querySelectorAll('.milestone-status.reached').forEach(btn => {
+        btn.style.cursor = 'pointer';
+        btn.addEventListener('click', async () => {
+          btn.textContent = '...';
+          const result = await spirosAPI.claimReferralRewards();
+          if (result.newly_claimed && result.newly_claimed.length > 0) {
+            loadReferralSection(); // Refresh
+          } else {
+            btn.textContent = 'Claim';
+          }
+        });
+      });
+    } catch (_) {
+      content.innerHTML = '<p style="color:var(--text-dim);font-size:7px">Could not load referral data</p>';
+    }
   }
 
   function wireProfileEvents(container) {

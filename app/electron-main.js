@@ -5,6 +5,23 @@ const { exec, execFile, execSync, spawn } = require('child_process');
 const { createClient } = require('@supabase/supabase-js');
 const { autoUpdater } = require('electron-updater');
 
+// ===== Security Helpers =====
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const ALLOWED_PROFILE_FIELDS = ['avatar_color', 'custom_title', 'profile_frame', 'bio'];
+const DEV_USER_IDS = ['14ce86d3-9acb-4db8-839c-8f7c2d210918'];
+const ALLOWED_EXTERNAL_DOMAINS = ['spiros.app', 'getspiros.com', 'github.com', 'stripe.com', 'supabase.com'];
+
+// ===== Cached User ID =====
+let cachedUserId = null;
+let cachedUserIdTime = 0;
+async function getCachedUserId() {
+  const now = Date.now();
+  if (cachedUserId && now - cachedUserIdTime < 5 * 60 * 1000) return cachedUserId;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) { cachedUserId = user.id; cachedUserIdTime = now; }
+  return cachedUserId;
+}
+
 // Set app identity early — makes Task Manager show "Spiros" instead of "Electron"
 app.setAppUserModelId('com.jrbay.spiros');
 
@@ -1267,13 +1284,8 @@ async function getUserTier() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { cachedTier = 'free'; return 'free'; }
 
-    // Check if user is yakeskim — always max tier
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('display_name')
-      .eq('id', user.id)
-      .single();
-    if (profile && profile.display_name === 'yakeskim') {
+    // Dev accounts — always max tier
+    if (DEV_USER_IDS.includes(user.id)) {
       cachedTier = 'max';
       return 'max';
     }
@@ -1481,7 +1493,7 @@ async function authSignUp(email, password, displayName, referralCode) {
       if (!result.valid) {
         return { success: false, error: result.error || 'Invalid referral code' };
       }
-      signupMeta.referred_by = result.referrer_id;
+      signupMeta.referred_by_code = referralCode.trim().toUpperCase();
     } catch (err) {
       return { success: false, error: 'Could not validate referral code' };
     }
@@ -1533,8 +1545,13 @@ async function authGetUser() {
 async function updateProfile(updates) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not logged in' };
+  const sanitized = {};
+  for (const key of ALLOWED_PROFILE_FIELDS) {
+    if (updates[key] !== undefined) sanitized[key] = updates[key];
+  }
+  if (Object.keys(sanitized).length === 0) return { success: false, error: 'No valid fields' };
   const { error } = await supabase
-    .from('profiles').update(updates).eq('id', user.id);
+    .from('profiles').update(sanitized).eq('id', user.id);
   if (error) return { success: false, error: error.message };
   return { success: true };
 }
@@ -1862,6 +1879,7 @@ async function sendChatMessage(channel, content) {
 
 async function getDirectMessages(friendId) {
   try {
+    if (!UUID_RE.test(friendId)) return [];
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return [];
 
@@ -1885,6 +1903,7 @@ async function getDirectMessages(friendId) {
 
 async function sendDirectMessage(receiverId, content) {
   try {
+    if (!UUID_RE.test(receiverId)) return { success: false, error: 'Invalid receiver' };
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not logged in' };
     if (!content || content.length < 1 || content.length > 500) return { success: false, error: 'Message must be 1-500 characters' };
@@ -1982,7 +2001,8 @@ async function syncActivityToCloud() {
   const privacy = settings.privacy || {};
   const now = new Date();
 
-  for (let i = 0; i < 7; i++) {
+  // Only sync today on each interval — reduces DB writes
+  for (let i = 0; i < 1; i++) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
     const dateStr = d.toISOString().split('T')[0];
@@ -2037,12 +2057,13 @@ async function pullCloudToLocal() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return;
 
-  // Fetch all activity days from cloud
+  // Fetch recent activity days from cloud (capped at 90 days)
   const { data: cloudDays, error } = await supabase
     .from('activity_days')
     .select('date, summary, entries')
     .eq('user_id', user.id)
-    .order('date', { ascending: false });
+    .order('date', { ascending: false })
+    .limit(90);
 
   if (error || !cloudDays || cloudDays.length === 0) return;
 
@@ -2100,18 +2121,21 @@ function stopSyncInterval() {
 
 // ===== Friends =====
 async function searchUsers(query) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
+  const userId = await getCachedUserId();
+  if (!userId) return [];
+  const user = { id: userId };
+  const escaped = query.replace(/%/g, '\\%').replace(/_/g, '\\_');
   const { data } = await supabase
     .from('profiles')
     .select('id, display_name, avatar_url, level, title')
-    .ilike('display_name', `%${query}%`)
+    .ilike('display_name', `%${escaped}%`)
     .neq('id', user.id)
     .limit(20);
   return data || [];
 }
 
 async function sendFriendRequest(addresseeId) {
+  if (!UUID_RE.test(addresseeId)) return { success: false, error: 'Invalid user ID' };
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { success: false, error: 'Not logged in' };
 
@@ -2136,15 +2160,22 @@ async function sendFriendRequest(addresseeId) {
 }
 
 async function respondFriendRequest(friendshipId, accept) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not logged in' };
   const { error } = await supabase.from('friendships')
     .update({ status: accept ? 'accepted' : 'declined' })
-    .eq('id', friendshipId);
+    .eq('id', friendshipId)
+    .eq('addressee_id', user.id);  // Only addressee can respond
   if (error) return { success: false, error: error.message };
   return { success: true };
 }
 
 async function removeFriend(friendshipId) {
-  const { error } = await supabase.from('friendships').delete().eq('id', friendshipId);
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { success: false, error: 'Not logged in' };
+  const { error } = await supabase.from('friendships').delete()
+    .eq('id', friendshipId)
+    .or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`);
   if (error) return { success: false, error: error.message };
   return { success: true };
 }
@@ -2280,12 +2311,12 @@ function syncPresenceIfChanged() {
 
 async function writePresence(status) {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const userId = await getCachedUserId();
+    if (!userId) return;
     await supabase.from('profiles').update({
       presence_status: status,
       last_seen_at: new Date().toISOString()
-    }).eq('id', user.id);
+    }).eq('id', userId);
     lastPresenceStatus = status;
     lastPresenceWrite = Date.now();
   } catch (e) {
@@ -2295,8 +2326,9 @@ async function writePresence(status) {
 
 async function getOnlineFriends() {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return {};
+    const userId = await getCachedUserId();
+    if (!userId) return {};
+    const user = { id: userId };
 
     const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
 
@@ -2410,12 +2442,11 @@ async function syncProfileToCloud() {
 
 async function getGlobalLeaderboard(metric, limit) {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { players: [], myRank: null };
+    const userId = await getCachedUserId();
+    if (!userId) return { players: [], myRank: null };
+    const user = { id: userId };
 
-    // Ensure current user's stats are fresh in profiles table
-    await syncProfileToCloud();
-
+    // Rely on the 5-minute sync interval to keep profile stats fresh
     const validMetrics = ['level', 'xp', 'streak_current'];
     const col = validMetrics.includes(metric) ? metric : 'level';
     const topN = Math.min(Math.max(limit || 50, 10), 100);
@@ -2468,7 +2499,10 @@ async function getGuilds(sort, search) {
     if (!user) return [];
 
     let query = supabase.from('guilds').select('*');
-    if (search) query = query.ilike('name', `%${search}%`);
+    if (search) {
+      const escapedSearch = search.replace(/%/g, '\\%').replace(/_/g, '\\_');
+      query = query.ilike('name', `%${escapedSearch}%`);
+    }
     if (sort === 'xp') query = query.order('total_xp', { ascending: false });
     else query = query.order('member_count', { ascending: false });
     query = query.limit(50);
@@ -3159,7 +3193,15 @@ ipcMain.handle('tracker:start', () => { startTracking(); return { success: true 
 ipcMain.handle('tracker:stop', () => { stopTracking(); return { success: true }; });
 ipcMain.handle('tracker:status', () => ({ isTracking, activityState: isTracking ? userActivityState : 'idle' }));
 ipcMain.handle('tracker:today', () => loadTodayData());
-ipcMain.handle('tracker:range', (e, startDate, endDate) => loadRange(startDate, endDate));
+ipcMain.handle('tracker:range', (e, startDate, endDate) => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  if (isNaN(start.getTime()) || isNaN(end.getTime())) return [];
+  // Cap range to 365 days
+  const maxRange = 365 * 86400000;
+  if (end - start > maxRange) return [];
+  return loadRange(startDate, endDate);
+});
 
 // Changelog
 ipcMain.handle('app:getChangelog', () => {
@@ -3171,6 +3213,10 @@ ipcMain.handle('projects:scan', async (e, folder) => {
   const settings = loadSettings();
   const folderPath = folder || settings.projectsFolder;
   if (!folderPath) return [];
+  // Only allow scanning within the configured projects folder
+  const resolved = path.resolve(folderPath);
+  const allowed = path.resolve(settings.projectsFolder || '');
+  if (allowed && !resolved.startsWith(allowed)) return [];
   try {
     return await scanProjects(folderPath);
   } catch (err) {
@@ -3181,6 +3227,14 @@ ipcMain.handle('projects:scan', async (e, folder) => {
 
 ipcMain.handle('settings:get', () => loadSettings());
 ipcMain.handle('settings:set', (e, newSettings) => {
+  if (!newSettings || typeof newSettings !== 'object') return { success: false };
+  // Enforce safe ranges
+  if (newSettings.pollIntervalMs !== undefined) {
+    newSettings.pollIntervalMs = Math.max(3000, Math.min(newSettings.pollIntervalMs, 60000));
+  }
+  if (newSettings.idleTimeoutMs !== undefined) {
+    newSettings.idleTimeoutMs = Math.max(60000, Math.min(newSettings.idleTimeoutMs, 3600000));
+  }
   saveSettings(newSettings);
   if (newSettings.autoUpdate !== undefined) {
     autoUpdater.autoDownload = newSettings.autoUpdate !== false;
@@ -3203,6 +3257,14 @@ ipcMain.handle('settings:setCategoryOverride', (e, appPattern, category) => {
 
 ipcMain.handle('game:get', () => loadGameState());
 ipcMain.handle('game:set', (e, state) => {
+  if (!state || typeof state !== 'object') return { success: false };
+  // Cap values to prevent impossible states in leaderboards
+  if (state.xp !== undefined) state.xp = Math.max(0, Math.min(state.xp, 10000000));
+  if (state.level !== undefined) state.level = Math.max(1, Math.min(state.level, 100));
+  if (state.streak) {
+    if (state.streak.current !== undefined) state.streak.current = Math.max(0, Math.min(state.streak.current, 3650));
+    if (state.streak.best !== undefined) state.streak.best = Math.max(0, Math.min(state.streak.best, 3650));
+  }
   saveGameState(state);
   return { success: true };
 });
@@ -3222,7 +3284,7 @@ ipcMain.handle('app:openInVSCode', (e, projPath) => {
     if (!projPath || typeof projPath !== 'string' || !path.isAbsolute(projPath) || !fs.existsSync(projPath)) {
       return { success: false, error: 'Invalid project path' };
     }
-    execFile('code', [projPath], { shell: true });
+    spawn('code', [projPath], { detached: true, stdio: 'ignore' }).unref();
     return { success: true };
   } catch (err) {
     return { success: false, error: err.message };
@@ -3234,9 +3296,11 @@ ipcMain.handle('app:openTerminal', (e, projPath) => {
     if (!projPath || typeof projPath !== 'string' || !path.isAbsolute(projPath) || !fs.existsSync(projPath)) {
       return { success: false, error: 'Invalid project path' };
     }
-    execFile('wt', ['-d', projPath], { shell: true }, (err) => {
-      if (err) execFile('cmd', ['/K', 'cd', '/d', projPath], { shell: true, detached: true });
+    const wt = spawn('wt', ['-d', projPath], { detached: true, stdio: 'ignore' });
+    wt.on('error', () => {
+      spawn('cmd', ['/K', 'cd', '/d', projPath], { detached: true, stdio: 'ignore' }).unref();
     });
+    wt.unref();
     return { success: true };
   } catch (err) {
     return { success: false, error: err.message };
@@ -3328,6 +3392,8 @@ ipcMain.handle('app:deleteAccount', async () => {
     // Delete all user data from cloud tables
     await supabase.from('activity_days').delete().eq('user_id', user.id);
     await supabase.from('friendships').delete().or(`requester_id.eq.${user.id},addressee_id.eq.${user.id}`);
+    await supabase.from('referral_rewards').delete().eq('user_id', user.id);
+    await supabase.from('referrals').delete().or(`referrer_id.eq.${user.id},referred_id.eq.${user.id}`);
     await supabase.from('profiles').delete().eq('id', user.id);
     // Clear local data
     const files = fs.readdirSync(activityDir).filter(f => f.endsWith('.json'));
@@ -3345,12 +3411,16 @@ ipcMain.handle('app:deleteAccount', async () => {
 });
 
 ipcMain.handle('app:openExternal', (e, url) => {
-  // Only allow http/https URLs
   if (typeof url === 'string' && (url.startsWith('https://') || url.startsWith('http://'))) {
-    shell.openExternal(url);
-    return { success: true };
+    try {
+      const hostname = new URL(url).hostname;
+      if (ALLOWED_EXTERNAL_DOMAINS.some(d => hostname === d || hostname.endsWith('.' + d))) {
+        shell.openExternal(url);
+        return { success: true };
+      }
+    } catch (_) {}
   }
-  return { success: false, error: 'Invalid URL' };
+  return { success: false, error: 'URL not allowed' };
 });
 
 ipcMain.handle('app:version', () => {

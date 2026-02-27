@@ -52,12 +52,20 @@ const Profile = (() => {
     let daysTracked = 0;
     try {
       rangeData = await spirosAPI.getRange(startStr, endStr);
-      // Also compute total hours ever
-      const allData = await spirosAPI.getRange('2020-01-01', endStr);
-      for (const day of allData) {
-        const ms = day.summary?.totalMs || 0;
-        totalHoursTracked += ms;
-        if (ms >= 3600000) daysTracked++;
+      // Use game state stats if available, else fall back to last 365 days
+      const gs = await spirosAPI.getGameState();
+      if (gs.stats?.totalTrackedMs) {
+        totalHoursTracked = gs.stats.totalTrackedMs;
+        daysTracked = gs.stats.daysTracked || 0;
+      } else {
+        const statsStart = new Date(heatmapEnd);
+        statsStart.setDate(statsStart.getDate() - 364);
+        const allData = await spirosAPI.getRange(statsStart.toISOString().split('T')[0], endStr);
+        for (const day of allData) {
+          const ms = day.summary?.totalMs || 0;
+          totalHoursTracked += ms;
+          if (ms >= 3600000) daysTracked++;
+        }
       }
     } catch (_) {}
 

@@ -300,8 +300,8 @@ const Dashboard = (() => {
                       const displayKeys = (privacySettings && !privacySettings.trackKeystrokes) ? '-' : (e.keys || 0);
                       return '<tr class="' + rowClass + '">' +
                         '<td>' + hh + ':' + mm + '</td>' +
-                        '<td>' + bgBadge + (e.app || 'Unknown') + '</td>' +
-                        '<td class="activity-log-cat"><span class="cat-dot" style="background:' + catColor + '"></span>' + (e.cat || 'unknown') + '</td>' +
+                        '<td>' + bgBadge + escapeHtml(e.app || 'Unknown') + '</td>' +
+                        '<td class="activity-log-cat"><span class="cat-dot" style="background:' + catColor + '"></span>' + escapeHtml(e.cat || 'unknown') + '</td>' +
                         '<td>' + durStr + '</td>' +
                         '<td>' + ((e.clicks || 0) + (e.rightClicks || 0)) + '</td>' +
                         '<td>' + displayKeys + '</td></tr>';
@@ -369,8 +369,8 @@ const Dashboard = (() => {
               const app = entry.app || 'Unknown';
               const cat = entry.cat || 'other';
 
-              tooltip.innerHTML = `<span class="tt-app">${app}</span>` +
-                `<span class="tt-cat"><span class="cat-dot" style="background:${hit.catColor}"></span>${cat}</span>` +
+              tooltip.innerHTML = `<span class="tt-app">${escapeHtml(app)}</span>` +
+                `<span class="tt-cat"><span class="cat-dot" style="background:${hit.catColor}"></span>${escapeHtml(cat)}</span>` +
                 `<span class="tt-time">${startTime} – ${endTime}</span>` +
                 `<span class="tt-dur">${durStr}</span>`;
               tooltip.style.display = 'block';
@@ -406,7 +406,7 @@ const Dashboard = (() => {
         legendEl.innerHTML = donutData.map(d => `
           <div class="legend-item">
             <span class="legend-dot" style="background:${d.color}"></span>
-            <span class="legend-label">${d.label}</span>
+            <span class="legend-label">${escapeHtml(d.label)}</span>
             <span class="legend-value">${formatHours(d.value)}</span>
           </div>
         `).join('');
@@ -423,7 +423,7 @@ const Dashboard = (() => {
           return `
             <div class="app-item">
               <div class="app-info">
-                <span class="app-name">${app}</span>
+                <span class="app-name">${escapeHtml(app)}</span>
                 <span class="app-time">${formatHours(ms)}</span>
               </div>
               <div class="app-bar"><div class="app-bar-fill" style="width:${pct}%;background:${color}"></div></div>
@@ -441,7 +441,7 @@ const Dashboard = (() => {
           return `
             <div class="app-item">
               <div class="app-info">
-                <span class="app-name">${site}</span>
+                <span class="app-name">${escapeHtml(site)}</span>
                 <span class="app-time">${formatHours(ms)}</span>
               </div>
               <div class="app-bar"><div class="app-bar-fill" style="width:${pct}%;background:#448aff"></div></div>
@@ -605,7 +605,7 @@ const Dashboard = (() => {
         legendEl.innerHTML = catBarData.map(d => `
           <div class="legend-item">
             <span class="legend-dot" style="background:${d.color}"></span>
-            <span class="legend-label">${d.label}</span>
+            <span class="legend-label">${escapeHtml(d.label)}</span>
             <span class="legend-value">${formatHours(d.value)}</span>
           </div>
         `).join('');
@@ -769,7 +769,7 @@ const Dashboard = (() => {
         legendEl.innerHTML = catDonutData.map(d => `
           <div class="legend-item">
             <span class="legend-dot" style="background:${d.color}"></span>
-            <span class="legend-label">${d.label}</span>
+            <span class="legend-label">${escapeHtml(d.label)}</span>
             <span class="legend-value">${formatHours(d.value)}</span>
           </div>
         `).join('');

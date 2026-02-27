@@ -17,7 +17,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [referralCode, setReferralCode] = useState("");
-  const [referralValid, setReferralValid] = useState<null | { referrer_id: string; referrer_name: string }>(null);
+  const [referralValid, setReferralValid] = useState<null | { referrer_name: string }>(null);
   const [referralError, setReferralError] = useState("");
   const [referralChecking, setReferralChecking] = useState(false);
   const [error, setError] = useState("");
@@ -84,8 +84,8 @@ export default function SignupPage() {
     e.preventDefault();
     setError("");
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
       return;
     }
 
@@ -95,7 +95,7 @@ export default function SignupPage() {
     const isReferred = referralValid !== null;
 
     if (isReferred) {
-      signupMeta.referred_by = referralValid.referrer_id;
+      signupMeta.referred_by_code = referralCode.trim().toUpperCase();
     }
 
     const { error: err } = await supabase.auth.signUp({

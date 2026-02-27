@@ -147,12 +147,35 @@ export default function AccountPage() {
 
   async function handleNameSave() {
     if (!user || !newName.trim()) return;
+    if (newName.trim().length > 24) { setNameError("Name must be 1-24 characters"); setNameSaving(false); return; }
     setNameError("");
     setNameSaving(true);
 
+    // Check rate limit
+    const { data: rateProfile } = await supabase
+      .from("profiles")
+      .select("display_name_changed_count, display_name_changed_month")
+      .eq("id", user.id)
+      .single();
+
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    let count = rateProfile?.display_name_changed_count || 0;
+    if ((rateProfile?.display_name_changed_month || "") !== currentMonth) count = 0;
+
+    if (count >= 2) {
+      setNameError("You can only change your name 2 times per month.");
+      setNameSaving(false);
+      return;
+    }
+
     const { error } = await supabase
       .from("profiles")
-      .update({ display_name: newName.trim() })
+      .update({
+        display_name: newName.trim(),
+        display_name_changed_count: count + 1,
+        display_name_changed_month: currentMonth,
+      })
       .eq("id", user.id);
 
     setNameSaving(false);
@@ -169,8 +192,8 @@ export default function AccountPage() {
     setPasswordError("");
     setPasswordSuccess(false);
 
-    if (newPassword.length < 6) {
-      setPasswordError("Password must be at least 6 characters.");
+    if (newPassword.length < 8) {
+      setPasswordError("Password must be at least 8 characters.");
       return;
     }
     if (newPassword !== confirmPassword) {

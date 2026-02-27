@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/lib/supabase";
@@ -32,7 +32,15 @@ const MILESTONES = [
   { count: 50, label: "Legend", reward: '"Legend" profile frame + permanent badge' },
 ];
 
-export default function AccountPage() {
+export default function AccountPageWrapper() {
+  return (
+    <Suspense fallback={<><Header /><main className="max-w-2xl mx-auto px-4 py-16"><p className="text-[9px] text-text-dim text-center">Loading...</p></main><Footer /></>}>
+      <AccountPage />
+    </Suspense>
+  );
+}
+
+function AccountPage() {
   const { user, profile, loading, signOut, refreshProfile } = useAuth();
   const searchParams = useSearchParams();
 

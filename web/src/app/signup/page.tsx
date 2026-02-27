@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/lib/supabase";
@@ -10,7 +10,15 @@ import Footer from "@/components/Footer";
 const SUPABASE_URL = "https://acdjnobbiwiobvmijans.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFjZGpub2JiaXdpb2J2bWlqYW5zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5MjA4NDAsImV4cCI6MjA4NzQ5Njg0MH0.DGdR8JhI5MeRduDaTuz6jIHz-kwCzaRThfwK9vOUS_g";
 
-export default function SignupPage() {
+export default function SignupPageWrapper() {
+  return (
+    <Suspense fallback={<><Header /><main className="max-w-md mx-auto px-4 py-16"><p className="text-[9px] text-text-dim text-center">Loading...</p></main><Footer /></>}>
+      <SignupPage />
+    </Suspense>
+  );
+}
+
+function SignupPage() {
   const { user, loading } = useAuth();
   const searchParams = useSearchParams();
   const [displayName, setDisplayName] = useState("");
@@ -52,7 +60,7 @@ export default function SignupPage() {
       });
       const result = await res.json();
       if (result.valid) {
-        setReferralValid({ referrer_id: result.referrer_id, referrer_name: result.referrer_name });
+        setReferralValid({ referrer_name: result.referrer_name });
       } else {
         setReferralError(result.error || "Invalid code");
       }

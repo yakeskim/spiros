@@ -13,6 +13,7 @@ interface Profile {
   streak_best: number;
   last_seen_at: string | null;
   tier: string | null;
+  referred_by: string | null;
 }
 
 interface AuthContextValue {

@@ -434,11 +434,13 @@ const Settings = (() => {
     el.querySelector('#setting-poll-interval')?.addEventListener('change', (e) => {
       currentSettings.pollIntervalMs = parseInt(e.target.value);
       saveCurrentSettings();
+      if (window.showToast) window.showToast('Tracking interval updated', 'success');
     });
 
     el.querySelector('#setting-idle-timeout')?.addEventListener('change', (e) => {
       currentSettings.idleTimeoutMs = parseInt(e.target.value);
       saveCurrentSettings();
+      if (window.showToast) window.showToast('Idle timeout updated', 'success');
     });
 
     el.querySelector('#btn-add-blocked')?.addEventListener('click', () => {
@@ -451,6 +453,7 @@ const Settings = (() => {
       input.value = '';
       saveCurrentSettings();
       renderBlockedApps();
+      if (window.showToast) window.showToast('App blocked', 'success');
     });
 
     el.querySelector('#blocked-app-input')?.addEventListener('keydown', (e) => {
@@ -481,6 +484,7 @@ const Settings = (() => {
         currentSettings.blockedApps.splice(idx, 1);
         saveCurrentSettings();
         renderBlockedApps();
+        if (window.showToast) window.showToast('App unblocked', 'success');
       });
     });
   }
@@ -530,12 +534,14 @@ const Settings = (() => {
       row.querySelector('.cat-patterns')?.addEventListener('change', (e) => {
         currentSettings.categories[catName].patterns = e.target.value.split(',').map(s => s.trim()).filter(Boolean);
         saveCurrentSettings();
+        if (window.showToast) window.showToast('Category updated', 'success');
       });
 
       row.querySelector('.cat-color-picker')?.addEventListener('change', (e) => {
         currentSettings.categories[catName].color = e.target.value;
         row.querySelector('.cat-color-dot').style.background = e.target.value;
         saveCurrentSettings();
+        if (window.showToast) window.showToast('Category updated', 'success');
       });
 
       row.querySelector('.btn-remove-cat')?.addEventListener('click', () => {
@@ -605,6 +611,7 @@ const Settings = (() => {
         const updated = {};
         updated[checkbox.dataset.key] = checkbox.checked;
         await spirosAPI.setPrivacySettings(updated);
+        if (window.showToast) window.showToast('Privacy setting saved', 'success');
       });
     });
 
@@ -677,7 +684,7 @@ const Settings = (() => {
     const TIER_PLANS = [
       {
         id: 'starter', label: 'STARTER', cssClass: 'tier-starter',
-        price: '$3.99/mo or $35.88/yr',
+        monthly: '$3.99', yearly: '$35.88',
         features: [
           'Unlimited projects',
           'Cloud sync & backup',
@@ -690,7 +697,7 @@ const Settings = (() => {
       },
       {
         id: 'pro', label: 'PRO', cssClass: 'tier-pro',
-        price: '$9.99/mo or $89.88/yr',
+        monthly: '$9.99', yearly: '$89.88',
         features: [
           'Everything in Starter',
           'Advanced analytics & trends',
@@ -704,7 +711,7 @@ const Settings = (() => {
       },
       {
         id: 'max', label: 'MAX', cssClass: 'tier-max',
-        price: '$19.99/mo or $179.88/yr',
+        monthly: '$19.99', yearly: '$179.88',
         features: [
           'Everything in Pro',
           '1.5x XP bonus',
@@ -718,65 +725,80 @@ const Settings = (() => {
     const tierOrder = { free: 0, starter: 1, pro: 2, max: 3 };
     const currentOrder = tierOrder[tier] || 0;
 
-    // Current plan info (for paid tiers)
-    let currentPlanHtml = '';
-    if (tier !== 'free') {
-      const statusText = details?.cancel_at_period_end ? 'Cancels at period end' : (details?.status || 'active');
-      const renewDate = details?.current_period_end ? new Date(details.current_period_end).toLocaleDateString() : 'Unknown';
-      const planInfo = TIER_PLANS.find(p => p.id === tier);
-      const planLabel = planInfo ? planInfo.label : tier.toUpperCase();
-      const planClass = planInfo ? planInfo.cssClass : 'tier-starter';
-      currentPlanHtml = `
-        <div class="settings-section glass">
-          <h3 class="section-title">Current Plan: <span class="tier-badge ${planClass}">${planLabel}</span></h3>
-          <div class="setting-row"><label>Status</label><span class="about-text">${escapeHtml(statusText)}</span></div>
-          <div class="setting-row"><label>Renews</label><span class="about-text">${escapeHtml(renewDate)}</span></div>
-          <div class="setting-row" style="margin-top:12px">
-            <button class="btn-pixel" id="btn-manage-sub">Manage Subscription</button>
-          </div>
-        </div>
-      `;
-    } else {
-      currentPlanHtml = `
-        <div class="settings-section glass">
-          <h3 class="section-title">Current Plan: Free</h3>
-          <p class="setting-hint">Upgrade to unlock premium features</p>
+    function buildPlanCard(p, ctaLabel) {
+      return `
+        <div class="subscription-plan-card glass">
+          <div class="sub-plan-header ${p.cssClass}">${p.label}</div>
+          <div class="sub-plan-price">${p.monthly}<span class="sub-plan-period">/mo</span></div>
+          <div class="sub-plan-yearly">${p.yearly}/yr</div>
+          <ul class="sub-plan-features">
+            ${p.features.map(f => `<li>${escapeHtml(f)}</li>`).join('')}
+          </ul>
+          <button class="btn-pixel upgrade-btn" data-upgrade-tier="${p.id}">${ctaLabel}</button>
         </div>
       `;
     }
 
-    // Show upgrade cards for tiers above current
-    const upgradePlans = TIER_PLANS.filter(p => (tierOrder[p.id] || 0) > currentOrder);
-    const upgradeCardsHtml = upgradePlans.length > 0 ? `
-      <div class="subscription-plans-grid">
-        ${upgradePlans.map(p => `
-          <div class="subscription-plan-card glass">
-            <div class="sub-plan-header ${p.cssClass}">${p.label}</div>
-            <div class="sub-plan-price">${p.price}</div>
-            <ul class="sub-plan-features">
-              ${p.features.map(f => `<li>${escapeHtml(f)}</li>`).join('')}
-            </ul>
-            <button class="btn-pixel upgrade-btn" data-upgrade-tier="${p.id}">Upgrade to ${p.label}</button>
+    let html = '';
+
+    if (tier === 'free') {
+      // Free plan: full 3-column comparison grid
+      html = `
+        <div class="settings-section glass">
+          <h3 class="section-title">Choose Your Plan</h3>
+          <p class="setting-hint">You're currently on the <strong>Free</strong> plan</p>
+          <div class="subscription-plans-grid">
+            ${TIER_PLANS.map(p => buildPlanCard(p, 'Get ' + p.label.charAt(0) + p.label.slice(1).toLowerCase())).join('')}
           </div>
-        `).join('')}
-      </div>
-    ` : '';
+        </div>
+      `;
+    } else {
+      // Paid plan: current plan info + manage link
+      const statusText = details?.cancel_at_period_end ? 'Cancels at period end' : (details?.status || 'Active');
+      const renewLabel = details?.cancel_at_period_end ? 'Expires' : 'Renews';
+      const renewDate = details?.current_period_end
+        ? new Date(details.current_period_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+        : 'Unknown';
+      const planInfo = TIER_PLANS.find(p => p.id === tier);
+      const planLabel = planInfo ? planInfo.label : tier.toUpperCase();
+      const planClass = planInfo ? planInfo.cssClass : 'tier-starter';
 
-    el.innerHTML = currentPlanHtml + upgradeCardsHtml;
+      html = `
+        <div class="settings-section glass sub-current-plan-card">
+          <h3 class="section-title">Your Plan</h3>
+          <div class="sub-current-plan-info">
+            <span class="tier-badge ${planClass}">${planLabel}</span>
+            <span class="sub-current-status">Status: ${escapeHtml(statusText)}</span>
+          </div>
+          <div class="sub-current-renew">${renewLabel}: ${escapeHtml(renewDate)}</div>
+          <button class="btn-pixel sub-manage-link" id="btn-manage-external">Manage on spiros.app &rarr;</button>
+        </div>
+      `;
 
-    // Wire manage subscription button
-    el.querySelector('#btn-manage-sub')?.addEventListener('click', async () => {
-      const btn = el.querySelector('#btn-manage-sub');
-      btn.textContent = 'Opening...'; btn.disabled = true;
-      await spirosAPI.openPortal();
-      btn.textContent = 'Manage Subscription'; btn.disabled = false;
+      // Show upgrade cards for tiers above current
+      const upgradePlans = TIER_PLANS.filter(p => (tierOrder[p.id] || 0) > currentOrder);
+      if (upgradePlans.length > 0) {
+        html += `
+          <div class="subscription-plans-grid" style="margin-top:16px">
+            ${upgradePlans.map(p => buildPlanCard(p, 'Upgrade to ' + p.label.charAt(0) + p.label.slice(1).toLowerCase())).join('')}
+          </div>
+        `;
+      }
+    }
+
+    el.innerHTML = html;
+
+    // Wire "Manage on spiros.app" button (paid users)
+    el.querySelector('#btn-manage-external')?.addEventListener('click', () => {
+      spirosAPI.openExternalLink('https://spiros.app/settings/subscription');
     });
 
-    // Wire upgrade buttons
+    // Wire upgrade/get buttons
     el.querySelectorAll('[data-upgrade-tier]').forEach(btn => {
       btn.addEventListener('click', () => {
         const targetTier = btn.dataset.upgradeTier;
-        showUpgradeModal(targetTier.charAt(0).toUpperCase() + targetTier.slice(1) + ' features', targetTier);
+        const label = targetTier.charAt(0).toUpperCase() + targetTier.slice(1);
+        showUpgradeModal(label, targetTier);
       });
     });
   }
@@ -824,6 +846,7 @@ const Settings = (() => {
         document.documentElement.dataset.theme = themeId;
         await saveCurrentSettings();
         renderTheme(el);
+        if (window.showToast) window.showToast('Theme applied', 'success');
       });
     });
   }

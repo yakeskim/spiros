@@ -3,10 +3,21 @@
 
 const Charts = (() => {
   const PIXEL_FONT = '"Press Start 2P", monospace';
+  const NEUTRAL_FONT = '"Inter", sans-serif';
   const GRID_COLOR = 'rgba(255,255,255,0.06)';
   const LABEL_COLOR = '#8888aa';
   const BORDER_COLOR = '#4a4e6e';
   const BG_INSET = '#0f0e17';
+
+  function getFont() {
+    const theme = document.documentElement.dataset.theme;
+    return theme === 'neutral' ? NEUTRAL_FONT : PIXEL_FONT;
+  }
+
+  function getInnerCircleFill() {
+    const theme = document.documentElement.dataset.theme;
+    return theme === 'neutral' ? '#1e1e2e' : '#1a1a2e';
+  }
 
   function clearCanvas(ctx, w, h) {
     ctx.clearRect(0, 0, w, h);
@@ -223,7 +234,7 @@ const Charts = (() => {
     // Inner circle dark fill
     ctx.beginPath();
     ctx.arc(cx, cy, innerRadius - 1, 0, Math.PI * 2);
-    ctx.fillStyle = '#1a1a2e';
+    ctx.fillStyle = getInnerCircleFill();
     ctx.fill();
     ctx.strokeStyle = '#111122';
     ctx.lineWidth = 2;
@@ -239,14 +250,14 @@ const Charts = (() => {
     // Center text
     if (opts.centerLabel) {
       ctx.fillStyle = '#fffffe';
-      ctx.font = `10px ${PIXEL_FONT}`;
+      ctx.font = `10px ${getFont()}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(opts.centerLabel, cx, cy - 6);
     }
     if (opts.centerSub) {
       ctx.fillStyle = LABEL_COLOR;
-      ctx.font = `7px ${PIXEL_FONT}`;
+      ctx.font = `7px ${getFont()}`;
       ctx.textAlign = 'center';
       ctx.fillText(opts.centerSub, cx, cy + 8);
     }

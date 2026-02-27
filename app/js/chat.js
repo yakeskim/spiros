@@ -174,6 +174,7 @@ const Chat = (() => {
       }
     } catch (err) {
       console.error('Chat loadMessages error:', err);
+      if (window.showToast) window.showToast('Failed to load messages', 'error');
       messages = [];
     }
 
@@ -441,11 +442,13 @@ const Chat = (() => {
         await loadMessages();
       } else {
         console.error('Chat send failed:', result?.error);
+        if (window.showToast) window.showToast('Message failed to send', 'error');
         input.style.borderColor = 'var(--red)';
         setTimeout(() => { input.style.borderColor = ''; }, 2000);
       }
     } catch (err) {
       console.error('Chat send error:', err);
+      if (window.showToast) window.showToast('Message failed to send', 'error');
       input.style.borderColor = 'var(--red)';
       setTimeout(() => { input.style.borderColor = ''; }, 2000);
     }

@@ -63,7 +63,7 @@ const Changelog = (() => {
   }
 
   async function render(container) {
-    const md = await synchronAPI.getChangelog();
+    const md = await spirosAPI.getChangelog();
 
     container.innerHTML = `
       <div class="settings-page">

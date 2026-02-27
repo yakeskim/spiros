@@ -2,8 +2,20 @@
 
 const Projects = (() => {
   let projectsData = [];
-  let sortBy = 'recent'; // recent | name | commits | lines
+  let sortBy = 'recent'; // recent | name | commits | lines | favorites
   let filterLang = '';
+
+  function getFavorites() {
+    try { return JSON.parse(localStorage.getItem('project_favorites') || '[]'); } catch { return []; }
+  }
+  function saveFavorites(favs) { localStorage.setItem('project_favorites', JSON.stringify(favs)); }
+  function isFavorite(name) { return getFavorites().includes(name); }
+  function toggleFavorite(name) {
+    const favs = getFavorites();
+    const idx = favs.indexOf(name);
+    if (idx >= 0) favs.splice(idx, 1); else favs.push(name);
+    saveFavorites(favs);
+  }
 
   async function render(container) {
     container.innerHTML = `
@@ -15,6 +27,7 @@ const Projects = (() => {
             <button class="btn-pixel" id="btn-scan-projects">⟳ Refresh</button>
             <select id="sort-projects" class="select-pixel">
               <option value="recent">Recent</option>
+              <option value="favorites">Favorites First</option>
               <option value="name">Name</option>
               <option value="commits">Commits</option>
               <option value="lines">Lines</option>
@@ -70,6 +83,7 @@ const Projects = (() => {
       projectsData = await spirosAPI.scanProjects();
     } catch (e) {
       console.error('scanProjects error:', e);
+      if (window.showToast) window.showToast('Failed to scan projects', 'error');
       projectsData = [];
     }
     updateLanguageFilter();
@@ -102,7 +116,14 @@ const Projects = (() => {
     }
 
     // Sort
-    if (sortBy === 'name') filtered.sort((a, b) => a.name.localeCompare(b.name));
+    if (sortBy === 'favorites') {
+      const favs = getFavorites();
+      filtered.sort((a, b) => {
+        const af = favs.includes(a.name) ? 0 : 1;
+        const bf = favs.includes(b.name) ? 0 : 1;
+        return af - bf;
+      });
+    } else if (sortBy === 'name') filtered.sort((a, b) => a.name.localeCompare(b.name));
     else if (sortBy === 'commits') filtered.sort((a, b) => b.commitCount - a.commitCount);
     else if (sortBy === 'lines') filtered.sort((a, b) => b.lineCount - a.lineCount);
     // 'recent' is default sort from scanner
@@ -130,6 +151,15 @@ const Projects = (() => {
         if (window.showUpgradeModal) window.showUpgradeModal('Unlimited Projects', 'starter');
       });
     }
+
+    // Wire favorite buttons
+    grid.querySelectorAll('.btn-fav-project').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleFavorite(btn.dataset.projectName);
+        renderGrid();
+      });
+    });
 
     // Wire up buttons (stop propagation so card click doesn't fire)
     grid.querySelectorAll('.btn-vscode').forEach(btn => {
@@ -165,10 +195,13 @@ const Projects = (() => {
     const dirtyBadge = project.dirty ? '<span class="badge dirty">modified</span>' : '';
     const typeBadge = !project.hasGit ? `<span class="badge project-type-badge">${escapeHtml(project.projectType)}</span>` : '';
 
+    const fav = isFavorite(project.name);
+
     return `
       <div class="project-card glass" data-index="${index}">
         <div class="project-header">
           <h3 class="project-name">${escapeHtml(project.name)}</h3>
+          <button class="btn-fav-project${fav ? ' fav-active' : ''}" data-project-name="${escapeAttr(project.name)}" title="${fav ? 'Unfavorite' : 'Favorite'}">${fav ? '★' : '☆'}</button>
           ${dirtyBadge}
           ${typeBadge}
         </div>

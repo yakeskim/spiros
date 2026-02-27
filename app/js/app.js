@@ -15,28 +15,65 @@ function showUpgradeModal(featureName, requiredTier) {
   if (!modal) return;
   const titleEl = document.getElementById('upgrade-modal-title');
   const descEl = document.getElementById('upgrade-modal-desc');
-  const priceMonthly = document.getElementById('upgrade-price-monthly');
-  const priceYearly = document.getElementById('upgrade-price-yearly');
 
-  const tierLabels = { starter: 'Starter', pro: 'Pro', max: 'Max' };
-  const tierPrices = {
-    starter: { monthly: '$3.99/mo', yearly: '$35.88/yr' },
-    pro: { monthly: '$9.99/mo', yearly: '$89.88/yr' },
-    max: { monthly: '$19.99/mo', yearly: '$179.88/yr' }
-  };
   const tier = requiredTier || 'starter';
+  const tierLabels = { starter: 'Starter', pro: 'Pro', max: 'Max' };
   const tierLabel = tierLabels[tier] || 'Starter';
-  const prices = tierPrices[tier] || tierPrices.starter;
-  if (titleEl) titleEl.textContent = `Upgrade to ${tierLabel}`;
-  if (descEl) descEl.textContent = featureName ? `"${featureName}" requires a ${tierLabel} subscription` : `This feature requires a ${tierLabel} subscription`;
-  if (priceMonthly) priceMonthly.textContent = prices.monthly;
-  if (priceYearly) priceYearly.textContent = prices.yearly;
 
-  // Store required tier for subscribe button
-  modal.dataset.requiredTier = requiredTier || 'pro';
+  if (titleEl) titleEl.textContent = 'Subscribe Now';
+  if (descEl) descEl.textContent = featureName ? `"${featureName}" requires ${tierLabel}` : `Unlock ${tierLabel} features`;
+
+  // Store required tier
+  modal.dataset.requiredTier = tier;
+
+  // Update plan card states
+  const tierOrder = { free: 0, starter: 1, pro: 2, max: 3 };
+  const currentOrder = tierOrder[currentTier] || 0;
+  const requiredOrder = tierOrder[tier] || 1;
+
+  document.querySelectorAll('.upgrade-plan-card').forEach(card => {
+    const cardTier = card.dataset.tier;
+    const cardOrder = tierOrder[cardTier] || 0;
+
+    card.classList.remove('selected', 'recommended', 'disabled');
+
+    if (cardOrder <= currentOrder) {
+      card.classList.add('disabled');
+    } else if (cardOrder === requiredOrder) {
+      card.classList.add('selected', 'recommended');
+    }
+  });
+
+  // Reset billing toggle to monthly
+  document.querySelectorAll('.upgrade-billing-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.billing === 'monthly');
+  });
+  document.querySelectorAll('.upgrade-plan-price').forEach(el => {
+    if (el.dataset.monthly) el.textContent = el.dataset.monthly;
+  });
+
   modal.classList.remove('hidden');
 }
 window.showUpgradeModal = showUpgradeModal;
+
+// ===== General Toast =====
+let _toastTimer = null;
+function showToast(message, type = 'info') {
+  const el = document.getElementById('general-toast');
+  if (!el) return;
+  clearTimeout(_toastTimer);
+  el.classList.remove('hidden', 'show', 'toast-success', 'toast-error', 'toast-warning', 'toast-info');
+  el.textContent = message;
+  el.classList.add('toast-' + type);
+  // Force reflow then show
+  void el.offsetWidth;
+  el.classList.add('show');
+  _toastTimer = setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => el.classList.add('hidden'), 200);
+  }, 3500);
+}
+window.showToast = showToast;
 
 function updateTierBadge() {
   let badge = document.getElementById('tier-badge');
@@ -47,8 +84,8 @@ function updateTierBadge() {
   if (!badge) {
     badge = document.createElement('div');
     badge.id = 'tier-badge';
-    const xpContainer = document.getElementById('xp-bar-container');
-    if (xpContainer) xpContainer.insertAdjacentElement('afterend', badge);
+    const footer = document.querySelector('.sidebar-footer');
+    if (footer) footer.insertAdjacentElement('beforebegin', badge);
   }
   const tierClasses = { starter: 'tier-starter', pro: 'tier-pro', max: 'tier-max' };
   const tierLabels = { starter: 'STARTER', pro: 'PRO', max: 'MAX' };
@@ -310,6 +347,7 @@ function showConfirm(message) {
       await renderView(view);
     } catch (e) {
       console.error('renderView error:', e);
+      showToast('Failed to load view', 'error');
     }
 
     hideLoader();
@@ -577,6 +615,7 @@ function showConfirm(message) {
   let lastGameProcess = 0;
 
   spirosAPI.onActivityUpdate(async (entry) => {
+    if (!entry || !entry.dur) return;
     try {
       pendingXP += Gamification.calcEntryXP(entry);
 
@@ -612,6 +651,7 @@ function showConfirm(message) {
       Dashboard.refreshIfDaily();
     } catch (e) {
       console.error('onActivityUpdate error:', e);
+      showToast('Activity update failed', 'error');
     }
   });
 
@@ -624,18 +664,32 @@ function showConfirm(message) {
     closeBtn?.addEventListener('click', () => modal?.classList.add('hidden'));
     modal?.addEventListener('click', (e) => { if (e.target === modal) modal.classList.add('hidden'); });
 
-    // Plan selection
-    document.querySelectorAll('.upgrade-plan').forEach(plan => {
-      plan.addEventListener('click', () => {
-        document.querySelectorAll('.upgrade-plan').forEach(p => p.classList.remove('active'));
-        plan.classList.add('active');
+    // Billing toggle (monthly/yearly)
+    document.querySelectorAll('.upgrade-billing-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const billing = btn.dataset.billing;
+        document.querySelectorAll('.upgrade-billing-btn').forEach(b => b.classList.toggle('active', b === btn));
+        document.querySelectorAll('.upgrade-plan-price').forEach(el => {
+          if (el.dataset[billing]) el.textContent = el.dataset[billing];
+        });
+      });
+    });
+
+    // Plan card selection
+    document.querySelectorAll('.upgrade-plan-card').forEach(card => {
+      card.addEventListener('click', () => {
+        if (card.classList.contains('disabled')) return;
+        document.querySelectorAll('.upgrade-plan-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
       });
     });
 
     subscribeBtn?.addEventListener('click', async () => {
-      const tier = modal?.dataset.requiredTier || 'pro';
-      const activePlan = document.querySelector('.upgrade-plan.active');
-      const billing = activePlan?.dataset.plan || 'yearly';
+      const selectedCard = document.querySelector('.upgrade-plan-card.selected');
+      if (!selectedCard) return;
+      const tier = selectedCard.dataset.tier;
+      const activeBilling = document.querySelector('.upgrade-billing-btn.active');
+      const billing = activeBilling?.dataset.billing || 'monthly';
       const planKey = `${tier}_${billing}`;
 
       subscribeBtn.textContent = 'Opening checkout...';

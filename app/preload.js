@@ -138,6 +138,10 @@ contextBridge.exposeInMainWorld('spirosAPI', {
   getGitBranches: (projectPath) => ipcRenderer.invoke('projects:gitBranches', projectPath),
   getGitStatus: (projectPath) => ipcRenderer.invoke('projects:gitStatus', projectPath),
 
+  // Achievement & Stats Sync
+  syncAchievements: () => ipcRenderer.invoke('achievements:sync'),
+  syncGameStats: () => ipcRenderer.invoke('gamestats:sync'),
+
   // Subscriptions
   getTier: () => ipcRenderer.invoke('subscription:getTier'),
   getCachedTier: () => ipcRenderer.invoke('subscription:getCached'),

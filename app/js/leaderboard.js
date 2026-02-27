@@ -75,7 +75,7 @@ const Leaderboard = (() => {
 
         <div class="lb-scope-toggle">
           <button class="lb-scope-btn ${activeScope === 'friends' ? 'active' : ''}" data-scope="friends">Friends</button>
-          <button class="lb-scope-btn ${activeScope === 'global' ? 'active' : ''}${!(window.requiresTier && window.requiresTier('pro')) ? ' btn-locked' : ''}" data-scope="global">${!(window.requiresTier && window.requiresTier('pro')) ? '&#x1F512; ' : ''}Global</button>
+          <button class="lb-scope-btn ${activeScope === 'global' ? 'active' : ''}" data-scope="global">Global</button>
         </div>
 
         <div class="ach-filters" id="lb-filters">
@@ -100,10 +100,6 @@ const Leaderboard = (() => {
     // Wire scope toggle
     container.querySelectorAll('.lb-scope-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        if (btn.dataset.scope === 'global' && !(window.requiresTier && window.requiresTier('pro'))) {
-          if (window.showUpgradeModal) window.showUpgradeModal('Global Leaderboard', 'pro');
-          return;
-        }
         activeScope = btn.dataset.scope;
         // Reset filter if switching to global with weekly selected
         if (activeScope === 'global' && activeFilter === 'weekly') activeFilter = 'level';

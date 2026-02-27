@@ -63,7 +63,11 @@ const Community = (() => {
 
         <div class="community-projects-list" id="community-list">
           ${projects.length === 0
-            ? '<div class="community-empty">No projects yet. Be the first to share!</div>'
+            ? `<div class="empty-state">
+                <div class="empty-state-icon">🌍</div>
+                <p>No projects yet</p>
+                <p class="empty-state-hint">Be the first to share a project with the community!</p>
+              </div>`
             : projects.map(p => renderProjectCard(p)).join('')
           }
         </div>
@@ -79,9 +83,11 @@ const Community = (() => {
         <h3 class="section-title">Share Your Project</h3>
         <div class="setting-row">
           <input type="text" id="submit-title" class="input-pixel" placeholder="Project title" maxlength="100">
+          <span class="char-count" id="submit-title-count">0/100</span>
         </div>
         <div class="setting-row">
           <textarea id="submit-desc" class="input-pixel" placeholder="Brief description" maxlength="500"></textarea>
+          <span class="char-count" id="submit-desc-count">0/500</span>
         </div>
         <div class="setting-row">
           <input type="url" id="submit-url" class="input-pixel" placeholder="https://your-project.com">
@@ -164,6 +170,16 @@ const Community = (() => {
       render(container);
     });
 
+    // Character count indicators
+    container.querySelector('#submit-title')?.addEventListener('input', (e) => {
+      const cnt = container.querySelector('#submit-title-count');
+      if (cnt) cnt.textContent = `${e.target.value.length}/100`;
+    });
+    container.querySelector('#submit-desc')?.addEventListener('input', (e) => {
+      const cnt = container.querySelector('#submit-desc-count');
+      if (cnt) cnt.textContent = `${e.target.value.length}/500`;
+    });
+
     // Submit form
     container.querySelector('#btn-do-submit')?.addEventListener('click', async () => {
       const title = container.querySelector('#submit-title')?.value.trim();
@@ -177,8 +193,8 @@ const Community = (() => {
         errEl.style.display = 'block';
         return;
       }
-      if (!/^https?:\/\//.test(url)) {
-        errEl.textContent = 'URL must start with http:// or https://';
+      if (!/^https?:\/\/[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+/.test(url)) {
+        errEl.textContent = 'Enter a valid URL (e.g. https://example.com)';
         errEl.style.display = 'block';
         return;
       }

@@ -506,6 +506,49 @@ const Gamification = (() => {
     gameState.stats.totalApps = Array.from(new Set([...(gameState.stats.totalAppsSet || []), ...dayApps]));
     gameState.stats.totalAppsSet = gameState.stats.totalApps;
 
+    // Category streak tracking (consecutive days per category)
+    const today = new Date(dayData.date || new Date()).toISOString().split('T')[0];
+    const yesterday = new Date(new Date(today).getTime() - 86400000).toISOString().split('T')[0];
+    gameState.stats.categoryStreaks = gameState.stats.categoryStreaks || {};
+    const catStreakNames = ['coding', 'music', 'design', 'browsing', 'gaming', 'communication'];
+    for (const cat of catStreakNames) {
+      const cs = gameState.stats.categoryStreaks[cat] || { current: 0, lastDate: null };
+      if ((dayCatMs[cat] || 0) > 0) {
+        if (cs.lastDate === today) {
+          // Already counted today
+        } else if (cs.lastDate === yesterday) {
+          cs.current += 1;
+        } else {
+          cs.current = 1;
+        }
+        cs.lastDate = today;
+      }
+      gameState.stats.categoryStreaks[cat] = cs;
+    }
+
+    // Unique code editor tracking
+    gameState.stats.uniqueCodeApps = gameState.stats.uniqueCodeApps || [];
+    for (const entry of dayData.entries) {
+      if (entry.cat === 'coding' && entry.app && !gameState.stats.uniqueCodeApps.includes(entry.app)) {
+        gameState.stats.uniqueCodeApps.push(entry.app);
+      }
+    }
+
+    // Weekly coverage tracking
+    gameState.stats.weekTracking = gameState.stats.weekTracking || { weekStart: null, daysTracked: [] };
+    const dayDateObj = new Date(today);
+    const mondayOffset = (dayDateObj.getDay() + 6) % 7; // 0=Mon...6=Sun
+    const weekStart = new Date(dayDateObj.getTime() - mondayOffset * 86400000).toISOString().split('T')[0];
+    if (gameState.stats.weekTracking.weekStart !== weekStart) {
+      gameState.stats.weekTracking = { weekStart, daysTracked: [] };
+    }
+    if (!gameState.stats.weekTracking.daysTracked.includes(dayOfWeek)) {
+      gameState.stats.weekTracking.daysTracked.push(dayOfWeek);
+    }
+    const wt = gameState.stats.weekTracking.daysTracked;
+    const hasFullWorkWeek = [1, 2, 3, 4, 5].every(d => wt.includes(d));
+    const hasFullWeek = wt.length >= 7;
+
     // Build full stats object for achievement checks
     const stats = {
       totalMs: gameState.stats.totalMs,
@@ -548,21 +591,21 @@ const Gamification = (() => {
       trackedPast4am: hasTrackedPast4am,
       trackedWeekend: isWeekend && dayData.summary.totalMs > 0,
       codedAtLunch,
-      fullWorkWeek: false, // TODO: track across the week
-      fullWeek: false,     // TODO: track across the week
+      fullWorkWeek: hasFullWorkWeek,
+      fullWeek: hasFullWeek,
       balancedDay,
       productiveDay,
       isNewYear,
       isHalloween,
       isFriday13,
       isLeapDay,
-      codeStreak: 0,   // TODO: per-category streak tracking
-      musicStreak: 0,
-      designStreak: 0,
-      browseStreak: 0,
-      gameStreak: 0,
-      commStreak: 0,
-      codeApps: 0,      // TODO: unique code editor tracking
+      codeStreak: (gameState.stats.categoryStreaks.coding || {}).current || 0,
+      musicStreak: (gameState.stats.categoryStreaks.music || {}).current || 0,
+      designStreak: (gameState.stats.categoryStreaks.design || {}).current || 0,
+      browseStreak: (gameState.stats.categoryStreaks.browsing || {}).current || 0,
+      gameStreak: (gameState.stats.categoryStreaks.gaming || {}).current || 0,
+      commStreak: (gameState.stats.categoryStreaks.communication || {}).current || 0,
+      codeApps: (gameState.stats.uniqueCodeApps || []).length,
       codedPastMidnight: hasTrackedPastMidnight && (dayCatMs.coding || 0) > 0,
     };
 

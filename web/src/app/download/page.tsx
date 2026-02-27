@@ -256,7 +256,7 @@ export default function DownloadPage() {
                   href="/subscribe"
                   className="text-[9px] text-gold hover:underline transition-colors"
                 >
-                  Upgrade to Champion or Guild to unlock past versions &#8594;
+                  Upgrade to Pro or Team to unlock past versions &#8594;
                 </a>
               </p>
             )}

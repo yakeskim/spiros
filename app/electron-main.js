@@ -1263,6 +1263,17 @@ async function getUserTier() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { cachedTier = 'free'; return 'free'; }
 
+    // Check if user is yakeskim — always max tier
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('display_name')
+      .eq('id', user.id)
+      .single();
+    if (profile && profile.display_name === 'yakeskim') {
+      cachedTier = 'max';
+      return 'max';
+    }
+
     const { data } = await supabase
       .from('subscriptions')
       .select('tier, status')
@@ -1981,6 +1992,25 @@ async function syncActivityToCloud() {
 
   // Also sync game state + profile to cloud
   await syncProfileToCloud();
+
+  // Sync achievements and game stats
+  try {
+    const gs = loadGameState();
+    const localAch = gs.achievements || [];
+    if (localAch.length > 0) {
+      const { data: { user: syncUser } } = await supabase.auth.getUser();
+      if (syncUser) {
+        const rows = localAch.map(id => ({ user_id: syncUser.id, achievement_id: id }));
+        await supabase.from('user_achievements').upsert(rows, { onConflict: 'user_id,achievement_id' });
+        if (gs.stats) {
+          await supabase.from('user_game_stats').upsert(
+            { user_id: syncUser.id, stats: gs.stats, updated_at: new Date().toISOString() },
+            { onConflict: 'user_id' }
+          );
+        }
+      }
+    }
+  } catch (e) { logError('syncAchievements', e); }
 }
 
 // Download cloud data to local (runs on login / startup)
@@ -2958,6 +2988,67 @@ ipcMain.handle('profile:localStats', () => {
     streak: gs.streak?.current || 0,
     bestStreak: gs.streak?.best || 0
   };
+});
+
+// Achievement Sync
+ipcMain.handle('achievements:sync', async () => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not logged in' };
+
+    const gs = loadGameState();
+    const localAchievements = gs.achievements || [];
+
+    // Fetch cloud achievements
+    const { data: cloudRows, error: fetchErr } = await supabase
+      .from('user_achievements')
+      .select('achievement_id, earned_at')
+      .eq('user_id', user.id);
+
+    if (fetchErr) return { success: false, error: fetchErr.message };
+
+    const cloudIds = new Set((cloudRows || []).map(r => r.achievement_id));
+    const localSet = new Set(localAchievements);
+
+    // Upload local-only achievements to cloud
+    const toUpload = localAchievements.filter(id => !cloudIds.has(id));
+    if (toUpload.length > 0) {
+      const rows = toUpload.map(id => ({ user_id: user.id, achievement_id: id }));
+      await supabase.from('user_achievements').upsert(rows, { onConflict: 'user_id,achievement_id' });
+    }
+
+    // Merge cloud-only achievements into local
+    const fromCloud = (cloudRows || []).filter(r => !localSet.has(r.achievement_id)).map(r => r.achievement_id);
+    if (fromCloud.length > 0) {
+      gs.achievements = [...localAchievements, ...fromCloud];
+      saveGameState(gs);
+    }
+
+    return { success: true, uploaded: toUpload.length, downloaded: fromCloud.length };
+  } catch (e) {
+    logError('achievements:sync', e);
+    return { success: false, error: e.message };
+  }
+});
+
+ipcMain.handle('gamestats:sync', async () => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { success: false, error: 'Not logged in' };
+
+    const gs = loadGameState();
+    const stats = gs.stats || {};
+
+    const { error } = await supabase
+      .from('user_game_stats')
+      .upsert({ user_id: user.id, stats, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  } catch (e) {
+    logError('gamestats:sync', e);
+    return { success: false, error: e.message };
+  }
 });
 
 // Tracker

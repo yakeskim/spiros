@@ -84,7 +84,11 @@ const Guilds = (() => {
 
   function renderGuildGrid(grid, guilds) {
     if (!guilds || guilds.length === 0) {
-      grid.innerHTML = '<div class="empty-state">No guilds found. Be the first to create one!</div>';
+      grid.innerHTML = `<div class="empty-state">
+        <div class="empty-state-icon">🏰</div>
+        <p>No guilds found</p>
+        <p class="empty-state-hint">Be the first to create a guild and recruit members!</p>
+      </div>`;
       return;
     }
 
@@ -243,6 +247,7 @@ const Guilds = (() => {
           <div class="guild-form-field">
             <label>Guild Name</label>
             <input type="text" id="guild-name" class="input-pixel" placeholder="Enter guild name" maxlength="30">
+            <span class="char-count" id="guild-name-count">0/30</span>
           </div>
           <div class="guild-form-field">
             <label>Description</label>
@@ -267,11 +272,41 @@ const Guilds = (() => {
           <div id="guild-create-error" style="color:var(--red);font-size:7px;margin-top:6px;display:none"></div>
           <button class="btn-pixel" id="btn-submit-guild" style="margin-top:12px;width:100%">Create Guild</button>
         </div>
+
+        <div class="settings-section glass" style="margin-top:12px">
+          <h3 class="section-title">Preview</h3>
+          <div class="guild-preview-card" id="guild-preview">
+            <span class="guild-preview-icon" id="guild-preview-icon" style="font-size:24px">${GUILD_ICONS[0]}</span>
+            <div>
+              <div class="guild-preview-name" id="guild-preview-name" style="font-size:9px;color:var(--text-bright);font-family:var(--pixel-font)">Guild Name</div>
+              <div class="guild-preview-desc" id="guild-preview-desc" style="font-size:7px;color:var(--text-dim);margin-top:2px">Description goes here</div>
+            </div>
+          </div>
+        </div>
       </div>
     `;
 
     let selectedIcon = GUILD_ICONS[0];
     let selectedColor = GUILD_COLORS[0];
+
+    function updatePreview() {
+      const nameEl = container.querySelector('#guild-preview-name');
+      const descEl = container.querySelector('#guild-preview-desc');
+      const iconEl = container.querySelector('#guild-preview-icon');
+      const card = container.querySelector('#guild-preview');
+      if (nameEl) nameEl.textContent = container.querySelector('#guild-name')?.value.trim() || 'Guild Name';
+      if (descEl) descEl.textContent = container.querySelector('#guild-desc')?.value.trim() || 'Description goes here';
+      if (iconEl) iconEl.textContent = selectedIcon;
+      if (card) card.style.borderColor = selectedColor;
+      if (nameEl) nameEl.style.color = selectedColor;
+    }
+
+    container.querySelector('#guild-name')?.addEventListener('input', (e) => {
+      const cnt = container.querySelector('#guild-name-count');
+      if (cnt) cnt.textContent = `${e.target.value.length}/30`;
+      updatePreview();
+    });
+    container.querySelector('#guild-desc')?.addEventListener('input', () => updatePreview());
 
     container.querySelector('#btn-back-guilds').addEventListener('click', () => {
       currentView = 'browse';
@@ -283,6 +318,7 @@ const Guilds = (() => {
         container.querySelectorAll('.guild-icon-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         selectedIcon = btn.dataset.icon;
+        updatePreview();
       });
     });
 
@@ -291,6 +327,7 @@ const Guilds = (() => {
         container.querySelectorAll('.guild-color-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         selectedColor = btn.dataset.color;
+        updatePreview();
       });
     });
 

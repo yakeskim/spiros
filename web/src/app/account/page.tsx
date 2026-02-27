@@ -267,14 +267,12 @@ export default function AccountPage() {
             </span>
           </div>
 
-          {userTier === "free" && (
-            <a
-              href="/subscribe"
-              className="text-[9px] text-gold hover:underline transition-colors inline-block"
-            >
-              Upgrade your tier &#8594;
-            </a>
-          )}
+          <a
+            href="/settings/subscription"
+            className="text-[9px] text-gold hover:underline transition-colors inline-block"
+          >
+            {userTier === "free" ? "Upgrade your tier" : "Manage subscription"} &#8594;
+          </a>
         </section>
 
         {/* Stats Panel */}

@@ -228,7 +228,11 @@ const Friends = (() => {
 
     const { friends } = friendsData;
     if (friends.length === 0) {
-      el.innerHTML = '<div class="empty-state">No friends yet — search to add some!</div>';
+      el.innerHTML = `<div class="empty-state">
+        <div class="empty-state-icon">👥</div>
+        <p>No friends yet</p>
+        <p class="empty-state-hint">Use the search above to find and add friends.</p>
+      </div>`;
       return;
     }
 
@@ -360,7 +364,9 @@ const Friends = (() => {
       title.textContent = 'Compare Stats';
       content.innerHTML = `
         <div class="empty-state" style="text-align:center;padding:20px">
-          <p>&#x1F512; Friend stat comparison requires Starter</p>
+          <div class="empty-state-icon">&#x1F512;</div>
+          <p>Friend stat comparison requires a Starter subscription</p>
+          <p class="empty-state-hint">Upgrade to compare weekly activity, category breakdowns, and more with your friends.</p>
           <button class="btn-pixel btn-sm" id="btn-upgrade-compare" style="margin-top:8px">Upgrade to Starter</button>
         </div>
       `;

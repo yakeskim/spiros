@@ -23,6 +23,7 @@ out/
 .DS_Store
 Thumbs.db
 desktop.ini
+launch.vbs
 
 # IDE
 .vscode/
@@ -32,3 +33,18 @@ desktop.ini
 .env
 .env.local
 .env*.local
+
+# Dev-only scripts & build tools
+app/generate-icon.js
+app/scripts/
+app/package-lock.json
+
+# Supabase Edge Functions (belong in backend deploy, not desktop app)
+app/supabase/
+
+# Root SQL migrations (already applied)
+supabase-migration-*.sql
+supabase-schema.sql
+
+# TS build info
+*.tsbuildinfo

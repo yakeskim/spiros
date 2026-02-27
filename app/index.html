@@ -60,7 +60,7 @@
         <p class="auth-subtitle">Privacy & Tracking Consent</p>
       </div>
 
-      <div style="text-align:left;font-size:10px;line-height:1.8;color:#8888aa;margin:12px 0">
+      <div style="text-align:left;font-size:11px;line-height:1.8;color:#8888aa;margin:12px 0">
         <p>Spiros tracks your desktop activity to power its features:</p>
         <ul style="margin:8px 0;padding-left:16px">
           <li>Which apps you use and for how long</li>
@@ -216,6 +216,9 @@
     </div>
   </div>
 
+  <!-- General Toast -->
+  <div id="general-toast" class="general-toast hidden"></div>
+
   <!-- Confirm Modal (replaces native confirm()) -->
   <div id="confirm-modal" class="modal-overlay hidden">
     <div class="confirm-modal glass">
@@ -244,21 +247,54 @@
       <button class="project-detail-close" id="upgrade-modal-close">&times;</button>
       <div class="upgrade-modal-header">
         <div class="upgrade-lock-icon">&#x1F512;</div>
-        <h2 id="upgrade-modal-title">Upgrade to Pro</h2>
-        <p id="upgrade-modal-desc" class="upgrade-modal-desc">This feature requires a Pro subscription</p>
+        <h2 id="upgrade-modal-title">Subscribe Now</h2>
+        <p id="upgrade-modal-desc" class="upgrade-modal-desc">Unlock premium features</p>
       </div>
+
+      <div class="upgrade-billing-toggle">
+        <button class="upgrade-billing-btn active" data-billing="monthly">Monthly</button>
+        <button class="upgrade-billing-btn" data-billing="yearly">Yearly <span class="upgrade-save-tag">Save 25%+</span></button>
+      </div>
+
       <div class="upgrade-plans" id="upgrade-plans">
-        <div class="upgrade-plan" data-plan="monthly">
-          <div class="upgrade-plan-name">Monthly</div>
-          <div class="upgrade-plan-price" id="upgrade-price-monthly">$5/mo</div>
+        <div class="upgrade-plan-card" data-tier="starter">
+          <div class="upgrade-plan-name">Starter</div>
+          <div class="upgrade-plan-price" data-monthly="$3.99/mo" data-yearly="$35.88/yr">$3.99/mo</div>
+          <ul class="upgrade-plan-features">
+            <li>Unlimited projects</li>
+            <li>Cloud sync & backup</li>
+            <li>All chat channels</li>
+            <li>Data export</li>
+            <li>All 3 themes</li>
+          </ul>
         </div>
-        <div class="upgrade-plan active" data-plan="yearly">
-          <div class="upgrade-plan-name">Yearly</div>
-          <div class="upgrade-plan-price" id="upgrade-price-yearly">$40/yr</div>
-          <div class="upgrade-plan-save">Save 33%</div>
+        <div class="upgrade-plan-card" data-tier="pro">
+          <div class="upgrade-plan-name">Pro</div>
+          <div class="upgrade-plan-price" data-monthly="$9.99/mo" data-yearly="$89.88/yr">$9.99/mo</div>
+          <ul class="upgrade-plan-features">
+            <li>Everything in Starter</li>
+            <li>Advanced analytics</li>
+            <li>1.25x XP bonus</li>
+            <li>DMs + reactions</li>
+            <li>Global leaderboard</li>
+            <li>Streak freeze</li>
+          </ul>
+        </div>
+        <div class="upgrade-plan-card" data-tier="max">
+          <div class="upgrade-plan-name">Max</div>
+          <div class="upgrade-plan-price" data-monthly="$19.99/mo" data-yearly="$179.88/yr">$19.99/mo</div>
+          <ul class="upgrade-plan-features">
+            <li>Everything in Pro</li>
+            <li>1.5x XP bonus</li>
+            <li>Create guilds</li>
+            <li>Profile frames</li>
+            <li>2-year retention</li>
+          </ul>
         </div>
       </div>
+
       <button class="btn-pixel upgrade-btn" id="upgrade-modal-subscribe">Subscribe</button>
+      <p class="upgrade-hint">Opens secure checkout in your browser</p>
     </div>
   </div>
 

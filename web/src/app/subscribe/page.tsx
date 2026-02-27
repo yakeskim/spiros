@@ -17,13 +17,13 @@ export default function SubscribePage() {
       <main className="max-w-6xl mx-auto px-4 py-16 space-y-12">
         {/* Header */}
         <div className="text-center">
-          <span className="text-[9px] text-gold border border-gold/40 bg-gold/10 px-3 py-1">
+          <span className="text-[11px] text-gold border border-gold/40 bg-gold/10 px-3 py-1">
             &#9876; SUBSCRIBE
           </span>
           <h1 className="text-lg sm:text-xl text-text-bright mt-6 text-shadow-pixel">
             CHOOSE YOUR CLASS
           </h1>
-          <p className="text-[10px] text-text-dim mt-4 max-w-md mx-auto leading-loose">
+          <p className="text-[12px] text-text-dim mt-4 max-w-md mx-auto leading-loose">
             Start free. Upgrade when you&apos;re ready for the full adventure.
           </p>
         </div>
@@ -32,18 +32,18 @@ export default function SubscribePage() {
         <div className="flex items-center justify-center gap-4">
           <button
             onClick={() => setBilling("annual")}
-            className={`font-pixel text-[9px] px-4 py-2 border-2 cursor-pointer transition-all ${
+            className={`font-pixel text-[11px] px-4 py-2 border-2 cursor-pointer transition-all ${
               isAnnual
                 ? "bg-gold text-bg-darkest border-gold-dark shadow-pixel-gold"
                 : "bg-transparent text-text-dim border-border-dark shadow-pixel hover:text-text-bright"
             }`}
           >
             ANNUAL
-            {isAnnual && <span className="ml-2 text-[9px] text-green">SAVE</span>}
+            {isAnnual && <span className="ml-2 text-[11px] text-green">SAVE</span>}
           </button>
           <button
             onClick={() => setBilling("monthly")}
-            className={`font-pixel text-[9px] px-4 py-2 border-2 cursor-pointer transition-all ${
+            className={`font-pixel text-[11px] px-4 py-2 border-2 cursor-pointer transition-all ${
               !isAnnual
                 ? "bg-gold text-bg-darkest border-gold-dark shadow-pixel-gold"
                 : "bg-transparent text-text-dim border-border-dark shadow-pixel hover:text-text-bright"
@@ -84,13 +84,13 @@ export default function SubscribePage() {
                 <div className="flex items-center gap-2 mb-4">
                   <span className={`text-xs ${tier.color}`}>{tier.name}</span>
                   {tier.highlight && (
-                    <span className="text-[8px] text-bg-darkest bg-gold px-2 py-0.5 animate-pixel-blink">
+                    <span className="text-[10px] text-bg-darkest bg-gold px-2 py-0.5 animate-pixel-blink">
                       BEST
                     </span>
                   )}
                 </div>
 
-                <p className="text-[9px] text-text-dim mb-4">{tier.subtitle}</p>
+                <p className="text-[11px] text-text-dim mb-4">{tier.subtitle}</p>
 
                 {/* Price */}
                 <div className="flex items-baseline gap-1 mb-2">
@@ -98,22 +98,22 @@ export default function SubscribePage() {
                     {displayPrice}
                   </span>
                   {displayPeriod && (
-                    <span className="text-[10px] text-text-dim">{displayPeriod}</span>
+                    <span className="text-[12px] text-text-dim">{displayPeriod}</span>
                   )}
                 </div>
 
                 {/* Billing note */}
                 {!isFree && isAnnual && tier.annualSave ? (
                   <div className="mb-6">
-                    <p className="text-[8px] text-text-dim">
+                    <p className="text-[10px] text-text-dim">
                       Billed {tier.annualTotalPrice}/yr
                     </p>
-                    <p className="text-[8px] text-green mt-1">
+                    <p className="text-[10px] text-green mt-1">
                       {tier.annualSave}
                     </p>
                   </div>
                 ) : !isFree && !isAnnual && tier.annualSave ? (
-                  <p className="text-[8px] text-text-dim mb-6">
+                  <p className="text-[10px] text-text-dim mb-6">
                     or {tier.annualMonthlyPrice}/mo billed annually
                   </p>
                 ) : (
@@ -125,7 +125,7 @@ export default function SubscribePage() {
                   {tier.features.map((f) => (
                     <li
                       key={f}
-                      className="flex items-start gap-2 text-[10px] text-text-dim"
+                      className="flex items-start gap-2 text-[12px] text-text-dim"
                     >
                       <span className="text-green mt-0.5">&#10003;</span>
                       <span>{f}</span>
@@ -149,7 +149,7 @@ export default function SubscribePage() {
                 )}
 
                 {!isFree && (
-                  <p className="text-[9px] text-text-dim text-center mt-3">
+                  <p className="text-[11px] text-text-dim text-center mt-3">
                     Subscribe in the Spiros desktop app.
                   </p>
                 )}
@@ -162,7 +162,7 @@ export default function SubscribePage() {
         <div className="text-center">
           <a
             href="/"
-            className="text-[9px] text-text-dim hover:text-gold transition-colors"
+            className="text-[11px] text-text-dim hover:text-gold transition-colors"
           >
             &larr; Back to Spiros
           </a>

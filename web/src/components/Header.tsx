@@ -40,7 +40,7 @@ export default function Header() {
             <a
               key={link.href}
               href={link.href}
-              className="text-text-dim text-[10px] hover:text-gold transition-colors"
+              className="text-text-dim text-[12px] hover:text-gold transition-colors"
             >
               {link.label}
             </a>
@@ -69,7 +69,7 @@ export default function Header() {
                         setTheme(opt.id);
                         setThemeOpen(false);
                       }}
-                      className={`block w-full text-left text-[9px] px-3 py-2 cursor-pointer transition-colors ${
+                      className={`block w-full text-left text-[11px] px-3 py-2 cursor-pointer transition-colors ${
                         theme === opt.id
                           ? "text-gold bg-bg-panel"
                           : "text-text-dim hover:text-text-bright hover:bg-bg-panel"
@@ -88,20 +88,20 @@ export default function Header() {
             user ? (
               <a
                 href="/account"
-                className="text-[9px] text-bg-darkest bg-gold px-3 py-1 border-2 border-gold-dark shadow-pixel-gold hover:brightness-110 transition-all"
+                className="text-[11px] text-bg-darkest bg-gold px-3 py-1 border-2 border-gold-dark shadow-pixel-gold hover:brightness-110 transition-all"
               >
                 {profile?.display_name ?? user.email?.split("@")[0] ?? "Account"}
               </a>
             ) : (
               <a
                 href="/login"
-                className="text-text-dim text-[10px] hover:text-gold transition-colors"
+                className="text-text-dim text-[12px] hover:text-gold transition-colors"
               >
                 Login
               </a>
             )
           )}
-          <PixelButton href="/signup" className="text-[9px] px-4 py-2">
+          <PixelButton href="/signup" className="text-[11px] px-4 py-2">
             SIGN UP
           </PixelButton>
         </nav>
@@ -123,7 +123,7 @@ export default function Header() {
             <a
               key={link.href}
               href={link.href}
-              className="text-text-dim text-[10px] hover:text-gold"
+              className="text-text-dim text-[12px] hover:text-gold"
               onClick={() => setMenuOpen(false)}
             >
               {link.label}
@@ -132,12 +132,12 @@ export default function Header() {
 
           {/* Mobile theme picker */}
           <div className="flex items-center gap-3">
-            <span className="text-text-dim text-[9px]">Theme:</span>
+            <span className="text-text-dim text-[11px]">Theme:</span>
             {THEME_OPTIONS.map((opt) => (
               <button
                 key={opt.id}
                 onClick={() => setTheme(opt.id)}
-                className={`text-[10px] px-2 py-1 border cursor-pointer ${
+                className={`text-[12px] px-2 py-1 border cursor-pointer ${
                   theme === opt.id
                     ? "text-gold border-gold"
                     : "text-text-dim border-border-dark hover:text-gold"
@@ -152,7 +152,7 @@ export default function Header() {
             user ? (
               <a
                 href="/account"
-                className="text-gold text-[10px] hover:underline"
+                className="text-gold text-[12px] hover:underline"
                 onClick={() => setMenuOpen(false)}
               >
                 {profile?.display_name ?? "Account"}
@@ -160,14 +160,14 @@ export default function Header() {
             ) : (
               <a
                 href="/login"
-                className="text-text-dim text-[10px] hover:text-gold"
+                className="text-text-dim text-[12px] hover:text-gold"
                 onClick={() => setMenuOpen(false)}
               >
                 Login
               </a>
             )
           )}
-          <PixelButton href="/signup" className="text-[9px] w-full">
+          <PixelButton href="/signup" className="text-[11px] w-full">
             SIGN UP
           </PixelButton>
         </nav>

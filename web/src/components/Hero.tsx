@@ -15,7 +15,7 @@ export default function Hero() {
       <div className="max-w-4xl mx-auto text-center">
         {/* Badge */}
         <div className="inline-block mb-8">
-          <span className="text-[9px] text-gold border border-gold/40 bg-gold/10 px-3 py-1">
+          <span className="text-[11px] text-gold border border-gold/40 bg-gold/10 px-3 py-1">
             &#9733; EARLY ACCESS — FREE FOREVER TIER
           </span>
         </div>
@@ -28,7 +28,7 @@ export default function Hero() {
         </h1>
 
         {/* Subheadline */}
-        <p className="text-[10px] sm:text-xs text-text-dim leading-loose max-w-2xl mx-auto mb-10">
+        <p className="text-[12px] sm:text-xs text-text-dim leading-loose max-w-2xl mx-auto mb-10">
           Spiros tracks every app you use, turns your activity into XP,
           and levels you up like an RPG character. Compete with friends.
           Unlock achievements. See where your time actually goes.
@@ -44,14 +44,14 @@ export default function Hero() {
 
         {/* XP Bar decoration */}
         <PixelBorder className="max-w-md mx-auto p-4">
-          <div className="flex items-center justify-between text-[9px] text-text-dim mb-2">
+          <div className="flex items-center justify-between text-[11px] text-text-dim mb-2">
             <span>Lv. 14 — <span className="text-gold">Architect</span></span>
             <span>2,847 / 4,000 XP</span>
           </div>
           <div className="w-full h-4 bg-bg-darkest border border-border-dark relative overflow-hidden">
             <div className="h-full bg-gold animate-xp-fill xp-bar-shine relative" />
           </div>
-          <div className="flex justify-between text-[8px] text-text-dim mt-2">
+          <div className="flex justify-between text-[10px] text-text-dim mt-2">
             <span className="text-green">+142 XP today</span>
             <span>&#9876; 3 achievements unlocked</span>
           </div>

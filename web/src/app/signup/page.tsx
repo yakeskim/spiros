@@ -12,7 +12,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 export default function SignupPageWrapper() {
   return (
-    <Suspense fallback={<><Header /><main className="max-w-md mx-auto px-4 py-16"><p className="text-[9px] text-text-dim text-center">Loading...</p></main><Footer /></>}>
+    <Suspense fallback={<><Header /><main className="max-w-md mx-auto px-4 py-16"><p className="text-[11px] text-text-dim text-center">Loading...</p></main><Footer /></>}>
       <SignupPage />
     </Suspense>
   );
@@ -128,7 +128,7 @@ function SignupPage() {
       <>
         <Header />
         <main className="max-w-md mx-auto px-4 py-16">
-          <p className="text-[9px] text-text-dim text-center">Loading...</p>
+          <p className="text-[11px] text-text-dim text-center">Loading...</p>
         </main>
         <Footer />
       </>
@@ -143,38 +143,38 @@ function SignupPage() {
 
         {success ? (
           <div className="text-center">
-            <p className="text-[9px] text-green-400 mb-4">Check your email to confirm your account.</p>
-            <a href="/login" className="text-[8px] text-gold hover:underline">
+            <p className="text-[11px] text-green-400 mb-4">Check your email to confirm your account.</p>
+            <a href="/login" className="text-[10px] text-gold hover:underline">
               Go to login
             </a>
           </div>
         ) : (
           <form onSubmit={handleSignup} className="space-y-4">
-            {error && <p className="text-[8px] text-red-400 text-center">{error}</p>}
+            {error && <p className="text-[10px] text-red-400 text-center">{error}</p>}
             <div>
-              <label className="block text-[9px] text-text-dim mb-2">Display Name</label>
+              <label className="block text-[11px] text-text-dim mb-2">Display Name</label>
               <input
                 type="text"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 required
                 placeholder="Your name"
-                className="w-full bg-bg-dark border-2 border-border-dark text-text-bright text-[9px] px-3 py-2 focus:border-gold outline-none"
+                className="w-full bg-bg-dark border-2 border-border-dark text-text-bright text-[11px] px-3 py-2 focus:border-gold outline-none"
               />
             </div>
             <div>
-              <label className="block text-[9px] text-text-dim mb-2">Email</label>
+              <label className="block text-[11px] text-text-dim mb-2">Email</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="you@example.com"
-                className="w-full bg-bg-dark border-2 border-border-dark text-text-bright text-[9px] px-3 py-2 focus:border-gold outline-none"
+                className="w-full bg-bg-dark border-2 border-border-dark text-text-bright text-[11px] px-3 py-2 focus:border-gold outline-none"
               />
             </div>
             <div>
-              <label className="block text-[9px] text-text-dim mb-2">Password</label>
+              <label className="block text-[11px] text-text-dim mb-2">Password</label>
               <input
                 type="password"
                 value={password}
@@ -182,40 +182,40 @@ function SignupPage() {
                 required
                 minLength={6}
                 placeholder="6+ characters"
-                className="w-full bg-bg-dark border-2 border-border-dark text-text-bright text-[9px] px-3 py-2 focus:border-gold outline-none"
+                className="w-full bg-bg-dark border-2 border-border-dark text-text-bright text-[11px] px-3 py-2 focus:border-gold outline-none"
               />
             </div>
             <div>
-              <label className="block text-[9px] text-text-dim mb-2">Referral Code (optional)</label>
+              <label className="block text-[11px] text-text-dim mb-2">Referral Code (optional)</label>
               <input
                 type="text"
                 value={referralCode}
                 onChange={(e) => setReferralCode(e.target.value.toUpperCase())}
                 maxLength={8}
                 placeholder="e.g. ABCD1234"
-                className="w-full bg-bg-dark border-2 border-border-dark text-text-bright text-[9px] px-3 py-2 focus:border-gold outline-none uppercase"
+                className="w-full bg-bg-dark border-2 border-border-dark text-text-bright text-[11px] px-3 py-2 focus:border-gold outline-none uppercase"
               />
               {referralChecking && (
-                <p className="text-[9px] text-text-dim mt-1">Checking code...</p>
+                <p className="text-[11px] text-text-dim mt-1">Checking code...</p>
               )}
               {referralValid && (
-                <p className="text-[9px] text-green-400 mt-1">
+                <p className="text-[11px] text-green-400 mt-1">
                   Referred by {referralValid.referrer_name} — You&apos;ll get 7 days free Starter!
                 </p>
               )}
               {referralError && (
-                <p className="text-[9px] text-red-400 mt-1">{referralError}</p>
+                <p className="text-[11px] text-red-400 mt-1">{referralError}</p>
               )}
             </div>
             <button
               type="submit"
               disabled={submitting}
-              className="w-full bg-gold text-bg-darkest text-[9px] py-3 hover:bg-gold/80 transition-colors cursor-pointer disabled:opacity-50"
+              className="w-full bg-gold text-bg-darkest text-[11px] py-3 hover:bg-gold/80 transition-colors cursor-pointer disabled:opacity-50"
             >
               {submitting ? "Creating account..." : "Sign Up"}
             </button>
             <div className="text-center pt-2">
-              <a href="/login" className="text-[8px] text-text-dim hover:text-gold transition-colors">
+              <a href="/login" className="text-[10px] text-text-dim hover:text-gold transition-colors">
                 Already have an account? Login
               </a>
             </div>

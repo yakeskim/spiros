@@ -11,29 +11,29 @@ export default function Footer() {
 
           {/* Links */}
           <nav className="flex items-center gap-6">
-            <a href="#features" className="text-[9px] text-text-dim hover:text-gold transition-colors">
+            <a href="#features" className="text-[11px] text-text-dim hover:text-gold transition-colors">
               Features
             </a>
-            <a href="/download" className="text-[9px] text-text-dim hover:text-gold transition-colors">
+            <a href="/download" className="text-[11px] text-text-dim hover:text-gold transition-colors">
               Download
             </a>
-            <a href="#pricing" className="text-[9px] text-text-dim hover:text-gold transition-colors">
+            <a href="#pricing" className="text-[11px] text-text-dim hover:text-gold transition-colors">
               Pricing
             </a>
-            <a href="#faq" className="text-[9px] text-text-dim hover:text-gold transition-colors">
+            <a href="#faq" className="text-[11px] text-text-dim hover:text-gold transition-colors">
               FAQ
             </a>
-            <a href="/privacy" className="text-[9px] text-text-dim hover:text-gold transition-colors">
+            <a href="/privacy" className="text-[11px] text-text-dim hover:text-gold transition-colors">
               Privacy
             </a>
-            <a href="/terms" className="text-[9px] text-text-dim hover:text-gold transition-colors">
+            <a href="/terms" className="text-[11px] text-text-dim hover:text-gold transition-colors">
               Terms
             </a>
             <a
               href="https://github.com/jakebaynham/spiros"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[9px] text-text-dim hover:text-gold transition-colors"
+              className="text-[11px] text-text-dim hover:text-gold transition-colors"
             >
               GitHub
             </a>
@@ -42,10 +42,10 @@ export default function Footer() {
 
         {/* Bottom bar */}
         <div className="mt-8 pt-6 border-t border-border-dark flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-[8px] text-text-dim">
+          <p className="text-[10px] text-text-dim">
             &copy; 2026 Spiros. All rights reserved.
           </p>
-          <p className="text-[8px] text-text-dim">
+          <p className="text-[10px] text-text-dim">
             Built with &#9876; by adventurers, for adventurers.
           </p>
         </div>

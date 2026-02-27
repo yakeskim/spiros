@@ -41,13 +41,13 @@ export default function FAQ() {
       <div className="max-w-3xl mx-auto">
         {/* Section header */}
         <div className="text-center mb-14">
-          <span className="text-[9px] text-gold border border-gold/40 bg-gold/10 px-3 py-1">
+          <span className="text-[11px] text-gold border border-gold/40 bg-gold/10 px-3 py-1">
             ? QUEST LOG
           </span>
           <h2 className="text-lg sm:text-xl text-text-bright mt-6 text-shadow-pixel">
             QUEST LOG
           </h2>
-          <p className="text-[10px] text-text-dim mt-4 leading-loose">
+          <p className="text-[12px] text-text-dim mt-4 leading-loose">
             Answers to the most common questions.
           </p>
         </div>
@@ -63,7 +63,7 @@ export default function FAQ() {
                 className="w-full text-left px-5 py-4 flex items-center justify-between cursor-pointer"
                 onClick={() => setOpen(open === i ? null : i)}
               >
-                <span className="text-[10px] text-text-bright pr-4">
+                <span className="text-[12px] text-text-bright pr-4">
                   {faq.q}
                 </span>
                 <span className="text-gold text-xs shrink-0">
@@ -72,7 +72,7 @@ export default function FAQ() {
               </button>
               {open === i && (
                 <div className="px-5 pb-4 border-t border-border-dark">
-                  <p className="text-[10px] text-text-dim leading-loose pt-3">
+                  <p className="text-[12px] text-text-dim leading-loose pt-3">
                     {faq.a}
                   </p>
                 </div>

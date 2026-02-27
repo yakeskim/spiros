@@ -53,13 +53,13 @@ export default function Features() {
       <div className="max-w-6xl mx-auto">
         {/* Section header */}
         <div className="text-center mb-14">
-          <span className="text-[9px] text-gold border border-gold/40 bg-gold/10 px-3 py-1">
+          <span className="text-[11px] text-gold border border-gold/40 bg-gold/10 px-3 py-1">
             ◈ FEATURES
           </span>
           <h2 className="text-lg sm:text-xl text-text-bright mt-6 text-shadow-pixel">
             EQUIPPED FOR BATTLE
           </h2>
-          <p className="text-[10px] text-text-dim mt-4 max-w-lg mx-auto leading-loose">
+          <p className="text-[12px] text-text-dim mt-4 max-w-lg mx-auto leading-loose">
             Everything you need to understand, gamify, and optimize your screen time.
           </p>
         </div>
@@ -74,7 +74,7 @@ export default function Features() {
             >
               <div className={`text-2xl mb-4 ${f.color}`}>{f.icon}</div>
               <h3 className="text-xs text-text-bright mb-3">{f.title}</h3>
-              <p className="text-[10px] text-text-dim leading-loose">
+              <p className="text-[12px] text-text-dim leading-loose">
                 {f.desc}
               </p>
             </PixelBorder>

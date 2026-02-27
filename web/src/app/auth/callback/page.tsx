@@ -39,15 +39,15 @@ export default function AuthCallbackPage() {
   if (error) {
     return (
       <main className="max-w-md mx-auto px-4 py-16 text-center">
-        <p className="text-[9px] text-red-400 mb-6">{error}</p>
-        <a href="/login" className="text-[9px] text-gold hover:underline">Go to Login</a>
+        <p className="text-[11px] text-red-400 mb-6">{error}</p>
+        <a href="/login" className="text-[11px] text-gold hover:underline">Go to Login</a>
       </main>
     );
   }
 
   return (
     <main className="max-w-md mx-auto px-4 py-16 text-center">
-      <p className="text-[9px] text-text-dim">Redirecting...</p>
+      <p className="text-[11px] text-text-dim">Redirecting...</p>
     </main>
   );
 }

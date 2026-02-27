@@ -17,12 +17,12 @@ export default function MockupWindow({
       <div className="flex items-center justify-between px-3 py-2 bg-bg-panel border-b-2 border-border-dark">
         <div className="flex items-center gap-2">
           <span className="text-gold text-sm">&#9876;</span>
-          <span className="text-[8px] text-text-dim">SPIROS</span>
+          <span className="text-[10px] text-text-dim">SPIROS</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-[8px] text-text-dim cursor-default">&#9472;</span>
-          <span className="text-[8px] text-text-dim cursor-default">&#9633;</span>
-          <span className="text-[8px] text-red cursor-default">&#10005;</span>
+          <span className="text-[10px] text-text-dim cursor-default">&#9472;</span>
+          <span className="text-[10px] text-text-dim cursor-default">&#9633;</span>
+          <span className="text-[10px] text-red cursor-default">&#10005;</span>
         </div>
       </div>
 
@@ -33,7 +33,7 @@ export default function MockupWindow({
             {NAV_ICONS.map((icon, i) => (
               <div
                 key={i}
-                className={`w-7 h-7 flex items-center justify-center text-[10px] ${
+                className={`w-7 h-7 flex items-center justify-center text-[12px] ${
                   i === activeNav
                     ? "text-gold bg-gold/10 border border-gold/30"
                     : "text-text-dim hover:text-text-bright"

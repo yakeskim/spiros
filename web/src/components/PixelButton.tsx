@@ -15,7 +15,7 @@ export default function PixelButton({
   className = "",
   onClick,
 }: PixelButtonProps) {
-  const base = "font-pixel text-[10px] sm:text-xs px-6 py-3 border-2 transition-all cursor-pointer inline-block text-center";
+  const base = "font-pixel text-[12px] sm:text-xs px-6 py-3 border-2 transition-all cursor-pointer inline-block text-center";
 
   const variants = {
     primary:

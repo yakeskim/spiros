@@ -96,7 +96,7 @@ export default function SubscriptionSettingsPage() {
       <>
         <Header />
         <main className="max-w-2xl mx-auto px-4 py-16">
-          <p className="text-[9px] text-text-dim text-center">Loading...</p>
+          <p className="text-[11px] text-text-dim text-center">Loading...</p>
         </main>
         <Footer />
       </>
@@ -129,19 +129,19 @@ export default function SubscriptionSettingsPage() {
       <main className="max-w-3xl mx-auto px-4 py-16 space-y-10">
         <div className="text-center">
           <h1 className="text-gold text-lg text-shadow-pixel">Subscription</h1>
-          <p className="text-[9px] text-text-dim mt-2">
+          <p className="text-[11px] text-text-dim mt-2">
             Manage your Spiros subscription
           </p>
         </div>
 
         {/* Current Plan Card */}
         <PixelBorder className="p-6 space-y-4">
-          <h2 className="text-[11px] text-text-bright">Your Plan</h2>
+          <h2 className="text-[13px] text-text-bright">Your Plan</h2>
 
           <div className="flex items-center gap-3">
-            <span className="text-[8px] text-text-dim w-20 shrink-0">Tier</span>
+            <span className="text-[10px] text-text-dim w-20 shrink-0">Tier</span>
             <span
-              className={`text-[10px] font-pixel ${
+              className={`text-[12px] font-pixel ${
                 TIER_COLORS[userTier] ?? "text-text-dim"
               }`}
             >
@@ -152,16 +152,16 @@ export default function SubscriptionSettingsPage() {
           {!isFree && (
             <>
               <div className="flex items-center gap-3">
-                <span className="text-[8px] text-text-dim w-20 shrink-0">Status</span>
-                <span className="text-[9px] text-text-bright">{statusText}</span>
+                <span className="text-[10px] text-text-dim w-20 shrink-0">Status</span>
+                <span className="text-[11px] text-text-bright">{statusText}</span>
               </div>
 
               {renewDate && (
                 <div className="flex items-center gap-3">
-                  <span className="text-[8px] text-text-dim w-20 shrink-0">
+                  <span className="text-[10px] text-text-dim w-20 shrink-0">
                     {renewLabel}
                   </span>
-                  <span className="text-[9px] text-text-bright">{renewDate}</span>
+                  <span className="text-[11px] text-text-bright">{renewDate}</span>
                 </div>
               )}
 
@@ -169,11 +169,11 @@ export default function SubscriptionSettingsPage() {
                 <button
                   onClick={openStripePortal}
                   disabled={portalLoading || subLoading}
-                  className="text-[9px] text-gold border-2 border-gold/40 px-4 py-2 hover:bg-gold/10 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="text-[11px] text-gold border-2 border-gold/40 px-4 py-2 hover:bg-gold/10 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {portalLoading ? "Opening..." : "Manage Billing & Invoices"}
                 </button>
-                <p className="text-[9px] text-text-dim mt-2">
+                <p className="text-[11px] text-text-dim mt-2">
                   Update payment method, view invoices, or cancel via Stripe
                 </p>
               </div>
@@ -181,7 +181,7 @@ export default function SubscriptionSettingsPage() {
           )}
 
           {isFree && (
-            <p className="text-[8px] text-text-dim">
+            <p className="text-[10px] text-text-dim">
               You&apos;re on the free plan. Upgrade below to unlock premium features.
             </p>
           )}
@@ -190,7 +190,7 @@ export default function SubscriptionSettingsPage() {
         {/* Upgrade Cards */}
         {upgradeTiers.length > 0 && (
           <div>
-            <h2 className="text-[11px] text-text-bright mb-4">
+            <h2 className="text-[13px] text-text-bright mb-4">
               {isFree ? "Choose a Plan" : "Upgrade"}
             </h2>
             <div
@@ -213,7 +213,7 @@ export default function SubscriptionSettingsPage() {
                   <div className="flex items-center gap-2 mb-3">
                     <span className={`text-xs ${tier.color}`}>{tier.name}</span>
                     {tier.highlight && (
-                      <span className="text-[9px] text-bg-darkest bg-gold px-2 py-0.5">
+                      <span className="text-[11px] text-bg-darkest bg-gold px-2 py-0.5">
                         BEST
                       </span>
                     )}
@@ -223,9 +223,9 @@ export default function SubscriptionSettingsPage() {
                     <span className="text-xl text-text-bright text-shadow-pixel">
                       {tier.monthlyPrice}
                     </span>
-                    <span className="text-[9px] text-text-dim">{tier.period}</span>
+                    <span className="text-[11px] text-text-dim">{tier.period}</span>
                   </div>
-                  <p className="text-[8px] text-text-dim mb-4">
+                  <p className="text-[10px] text-text-dim mb-4">
                     or {tier.annualMonthlyPrice}/mo billed {tier.annualTotalPrice}/yr
                     {tier.annualSave && (
                       <span className="text-green ml-1">({tier.annualSave})</span>
@@ -236,7 +236,7 @@ export default function SubscriptionSettingsPage() {
                     {tier.features.map((f) => (
                       <li
                         key={f}
-                        className="flex items-start gap-2 text-[9px] text-text-dim"
+                        className="flex items-start gap-2 text-[11px] text-text-dim"
                       >
                         <span className="text-green mt-0.5">&#10003;</span>
                         <span>{f}</span>
@@ -251,7 +251,7 @@ export default function SubscriptionSettingsPage() {
                   >
                     {isFree ? `GET ${tier.name}` : `UPGRADE TO ${tier.name}`}
                   </PixelButton>
-                  <p className="text-[9px] text-text-dim text-center mt-2">
+                  <p className="text-[11px] text-text-dim text-center mt-2">
                     Subscribe in the Spiros desktop app
                   </p>
                 </PixelBorder>
@@ -264,7 +264,7 @@ export default function SubscriptionSettingsPage() {
         <div className="text-center space-y-2">
           <a
             href="/account"
-            className="text-[9px] text-text-dim hover:text-gold transition-colors block"
+            className="text-[11px] text-text-dim hover:text-gold transition-colors block"
           >
             &larr; Back to Account
           </a>

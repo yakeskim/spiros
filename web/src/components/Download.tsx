@@ -10,13 +10,13 @@ export default function Download() {
       <div className="max-w-4xl mx-auto">
         {/* Section header */}
         <div className="text-center mb-14">
-          <span className="text-[9px] text-gold border border-gold/40 bg-gold/10 px-3 py-1">
+          <span className="text-[11px] text-gold border border-gold/40 bg-gold/10 px-3 py-1">
             &#9660; DOWNLOAD
           </span>
           <h2 className="text-lg sm:text-xl text-text-bright mt-6 text-shadow-pixel">
             START YOUR QUEST
           </h2>
-          <p className="text-[10px] text-text-dim mt-4 max-w-md mx-auto leading-loose">
+          <p className="text-[12px] text-text-dim mt-4 max-w-md mx-auto leading-loose">
             Free to download. Your data stays on your machine.
             Create your account directly in the app after installation.
           </p>
@@ -37,11 +37,11 @@ export default function Download() {
               </svg>
             </div>
             <h3 className="text-xs text-text-bright text-shadow-pixel mb-2">WINDOWS</h3>
-            <p className="text-[8px] text-text-dim mb-1">Windows 10 / 11</p>
-            <p className="text-[9px] text-text-dim mb-6">64-bit &middot; ~85 MB</p>
+            <p className="text-[10px] text-text-dim mb-1">Windows 10 / 11</p>
+            <p className="text-[11px] text-text-dim mb-6">64-bit &middot; ~85 MB</p>
             <a
               href={`${GITHUB_RELEASE}/download/Spiros-Setup.exe`}
-              className="font-pixel text-[10px] px-6 py-3 border-2 bg-gold text-bg-darkest border-gold-dark shadow-pixel-gold hover:brightness-110 active:shadow-pixel-pressed active:translate-x-[2px] active:translate-y-[2px] cursor-pointer inline-block text-center w-full transition-all"
+              className="font-pixel text-[12px] px-6 py-3 border-2 bg-gold text-bg-darkest border-gold-dark shadow-pixel-gold hover:brightness-110 active:shadow-pixel-pressed active:translate-x-[2px] active:translate-y-[2px] cursor-pointer inline-block text-center w-full transition-all"
             >
               DOWNLOAD .EXE
             </a>
@@ -60,10 +60,10 @@ export default function Download() {
               </svg>
             </div>
             <h3 className="text-xs text-text-bright text-shadow-pixel mb-2">macOS</h3>
-            <p className="text-[8px] text-text-dim mb-1">macOS 12+</p>
-            <p className="text-[9px] text-text-dim mb-6">Universal &middot; ~95 MB</p>
+            <p className="text-[10px] text-text-dim mb-1">macOS 12+</p>
+            <p className="text-[11px] text-text-dim mb-6">Universal &middot; ~95 MB</p>
             <span
-              className="font-pixel text-[10px] px-6 py-3 border-2 bg-transparent text-text-dim border-border-light shadow-pixel cursor-default inline-block text-center w-full opacity-60"
+              className="font-pixel text-[12px] px-6 py-3 border-2 bg-transparent text-text-dim border-border-light shadow-pixel cursor-default inline-block text-center w-full opacity-60"
               title="Mac build coming soon"
             >
               COMING SOON
@@ -75,7 +75,7 @@ export default function Download() {
         <div className="text-center mt-8">
           <a
             href="/download"
-            className="text-[9px] text-text-dim hover:text-gold transition-colors"
+            className="text-[11px] text-text-dim hover:text-gold transition-colors"
           >
             View all versions &amp; past releases &#8594;
           </a>

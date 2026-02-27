@@ -1308,12 +1308,16 @@ function subscribeToTierChanges() {
         schema: 'public',
         table: 'subscriptions',
         filter: `user_id=eq.${user.id}`
-      }, (payload) => {
+      }, async (payload) => {
         const newTier = payload.new?.tier || 'free';
         cachedTier = newTier;
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.webContents.send('subscription:tierChanged', newTier);
         }
+        // Keep profiles table in sync with subscription tier
+        try {
+          await supabase.from('profiles').update({ tier: newTier }).eq('id', user.id);
+        } catch (_) {}
       })
       .subscribe();
   });
@@ -2358,7 +2362,9 @@ async function syncProfileToCloud() {
       xp: gs.xp || 0,
       title: gs.title || 'Novice',
       streak_current: gs.streak?.current || 0,
-      streak_best: gs.streak?.best || 0
+      streak_best: gs.streak?.best || 0,
+      tier: cachedTier || 'free',
+      last_seen_at: new Date().toISOString()
     }, { onConflict: 'id' });
   } catch (e) { logError('syncProfileToCloud', e); }
 }

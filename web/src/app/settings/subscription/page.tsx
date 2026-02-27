@@ -35,8 +35,6 @@ export default function SubscriptionSettingsPage() {
   const [subLoading, setSubLoading] = useState(true);
   const [portalLoading, setPortalLoading] = useState(false);
 
-  const userTier = profile?.tier ?? "free";
-
   useEffect(() => {
     if (!loading && !user) {
       window.location.href = "/login";
@@ -56,6 +54,9 @@ export default function SubscriptionSettingsPage() {
         setSubLoading(false);
       });
   }, [user]);
+
+  // Subscription table is the source of truth for tier
+  const userTier = (sub?.status === "active" && sub?.tier) ? sub.tier : (profile?.tier ?? "free");
 
   async function openStripePortal() {
     setPortalLoading(true);

@@ -36,14 +36,32 @@ export function useAuth() {
 }
 
 async function fetchProfile(userId: string): Promise<Profile | null> {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("display_name, level, xp, title, streak_current, streak_best, last_seen_at, tier")
-    .eq("id", userId)
-    .single();
+  // Fetch profile and subscription tier in parallel
+  const [profileRes, subRes] = await Promise.all([
+    supabase
+      .from("profiles")
+      .select("display_name, level, xp, title, streak_current, streak_best, last_seen_at, tier")
+      .eq("id", userId)
+      .single(),
+    supabase
+      .from("subscriptions")
+      .select("tier, status")
+      .eq("user_id", userId)
+      .single(),
+  ]);
 
-  if (error || !data) return null;
-  return data as Profile;
+  if (profileRes.error || !profileRes.data) return null;
+
+  const profile = profileRes.data as Profile;
+
+  // Subscription table is the source of truth for tier
+  if (subRes.data && subRes.data.status === "active") {
+    profile.tier = subRes.data.tier;
+  } else if (!profile.tier) {
+    profile.tier = "free";
+  }
+
+  return profile;
 }
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {

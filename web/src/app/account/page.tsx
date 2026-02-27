@@ -69,13 +69,9 @@ function AccountPage() {
   const [nameError, setNameError] = useState("");
   const [nameSaving, setNameSaving] = useState(false);
 
-  // Password change
-  const [showPasswordForm, setShowPasswordForm] = useState(false);
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [passwordError, setPasswordError] = useState("");
-  const [passwordSuccess, setPasswordSuccess] = useState(false);
-  const [passwordSaving, setPasswordSaving] = useState(false);
+  // Password reset
+  const [passwordResetSent, setPasswordResetSent] = useState(false);
+  const [passwordResetLoading, setPasswordResetLoading] = useState(false);
 
   // Social stats
   const [friendsCount, setFriendsCount] = useState<number | null>(null);
@@ -214,32 +210,14 @@ function AccountPage() {
     }
   }
 
-  async function handlePasswordChange(e: React.FormEvent) {
-    e.preventDefault();
-    setPasswordError("");
-    setPasswordSuccess(false);
-
-    if (newPassword.length < 8) {
-      setPasswordError("Password must be at least 8 characters.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPasswordError("Passwords do not match.");
-      return;
-    }
-
-    setPasswordSaving(true);
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
-    setPasswordSaving(false);
-
-    if (error) {
-      setPasswordError(error.message);
-    } else {
-      setPasswordSuccess(true);
-      setNewPassword("");
-      setConfirmPassword("");
-      setShowPasswordForm(false);
-    }
+  async function handlePasswordReset() {
+    if (!user?.email) return;
+    setPasswordResetLoading(true);
+    await supabase.auth.resetPasswordForEmail(user.email, {
+      redirectTo: "https://spiros.app/reset-password",
+    });
+    setPasswordResetLoading(false);
+    setPasswordResetSent(true);
   }
 
   if (loading || !user) {
@@ -381,61 +359,16 @@ function AccountPage() {
                 <span className="text-xs text-text-bright">{user.email}</span>
               </div>
 
-              {passwordSuccess && (
-                <p className="text-[11px] text-green-400">Password updated successfully!</p>
-              )}
-
-              {!showPasswordForm ? (
-                <button
-                  onClick={() => { setShowPasswordForm(true); setPasswordSuccess(false); }}
-                  className="text-[11px] text-text-dim hover:text-gold cursor-pointer transition-colors"
-                >
-                  Change password
-                </button>
+              {passwordResetSent ? (
+                <p className="text-[11px] text-green-400">Password reset email sent. Check your inbox.</p>
               ) : (
-                <form onSubmit={handlePasswordChange} className="space-y-3 max-w-sm pt-2">
-                  {passwordError && <p className="text-[11px] text-red-400">{passwordError}</p>}
-                  <div>
-                    <label className="block text-[11px] text-text-dim mb-1">New Password</label>
-                    <input
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      required
-                      minLength={8}
-                      placeholder="8+ characters"
-                      className="w-full bg-bg-darkest border-2 border-border-dark text-text-bright text-xs px-3 py-2 focus:border-gold outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] text-text-dim mb-1">Confirm Password</label>
-                    <input
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      required
-                      minLength={8}
-                      placeholder="Repeat password"
-                      className="w-full bg-bg-darkest border-2 border-border-dark text-text-bright text-xs px-3 py-2 focus:border-gold outline-none"
-                    />
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="submit"
-                      disabled={passwordSaving}
-                      className="text-[11px] text-bg-darkest bg-gold px-5 py-2 border-2 border-gold-dark shadow-pixel-gold hover:brightness-110 cursor-pointer disabled:opacity-50"
-                    >
-                      {passwordSaving ? "Saving..." : "Update Password"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setShowPasswordForm(false); setPasswordError(""); }}
-                      className="text-[11px] text-text-dim hover:text-text-bright cursor-pointer"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
+                <button
+                  onClick={handlePasswordReset}
+                  disabled={passwordResetLoading}
+                  className="text-[11px] text-text-dim hover:text-gold cursor-pointer transition-colors disabled:opacity-50"
+                >
+                  {passwordResetLoading ? "Sending..." : "Change password"}
+                </button>
               )}
             </div>
           </div>

@@ -158,7 +158,7 @@ export default function DownloadPage() {
                     className="font-pixel text-[10px] px-6 py-3 border-2 bg-gold text-bg-darkest border-gold-dark shadow-pixel-gold hover:brightness-110 active:shadow-pixel-pressed active:translate-x-[2px] active:translate-y-[2px] cursor-pointer inline-block text-center transition-all"
                   >
                     DOWNLOAD FOR WINDOWS
-                    <span className="block text-[7px] text-bg-darkest/70 mt-1">
+                    <span className="block text-[9px] text-bg-darkest/70 mt-1">
                       {win.name} &middot; {formatSize(win.size)}
                     </span>
                   </a>
@@ -204,7 +204,7 @@ export default function DownloadPage() {
                           {release.tag_name}
                         </span>
                         {release.prerelease && (
-                          <span className="text-[7px] text-orange border border-orange/40 px-1.5 py-0.5">
+                          <span className="text-[9px] text-orange border border-orange/40 px-1.5 py-0.5">
                             PRE
                           </span>
                         )}
@@ -239,7 +239,7 @@ export default function DownloadPage() {
                           <span className="font-pixel text-[9px] px-4 py-2 border-2 bg-transparent text-text-dim border-border-dark shadow-pixel cursor-default inline-block text-center opacity-50">
                             DOWNLOAD
                           </span>
-                          <span className="absolute -top-2 -right-2 text-[7px] text-bg-darkest bg-gold px-1.5 py-0.5">
+                          <span className="absolute -top-2 -right-2 text-[9px] text-bg-darkest bg-gold px-1.5 py-0.5">
                             PRO
                           </span>
                         </div>

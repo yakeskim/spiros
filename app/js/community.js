@@ -102,7 +102,7 @@ const Community = (() => {
             <option value="Other">Other</option>
           </select>
         </div>
-        <div id="submit-error" style="color:var(--red);font-size:7px;display:none;margin-bottom:6px"></div>
+        <div id="submit-error" style="color:var(--red);font-size:9px;display:none;margin-bottom:6px"></div>
         <button class="btn-pixel" id="btn-do-submit">Submit</button>
       </div>
     `;
@@ -150,7 +150,7 @@ const Community = (() => {
             <div class="community-comment-text">${escapeHtml(c.content)}</div>
           </div>
         `).join('')}
-        ${comments.length === 0 ? '<div style="font-size:7px;color:var(--text-dim);padding:4px 0">No comments yet</div>' : ''}
+        ${comments.length === 0 ? '<div style="font-size:9px;color:var(--text-dim);padding:4px 0">No comments yet</div>' : ''}
         <div class="community-comment-form">
           <input type="text" class="input-pixel" placeholder="Add a comment..." maxlength="1000" data-comment-input="${projectId}">
           <button class="btn-pixel btn-sm" data-comment-submit="${projectId}">Post</button>

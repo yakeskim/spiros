@@ -39,7 +39,7 @@ export default function SubscribePage() {
             }`}
           >
             ANNUAL
-            {isAnnual && <span className="ml-2 text-[7px] text-green">SAVE</span>}
+            {isAnnual && <span className="ml-2 text-[9px] text-green">SAVE</span>}
           </button>
           <button
             onClick={() => setBilling("monthly")}
@@ -149,7 +149,7 @@ export default function SubscribePage() {
                 )}
 
                 {!isFree && (
-                  <p className="text-[7px] text-text-dim text-center mt-3">
+                  <p className="text-[9px] text-text-dim text-center mt-3">
                     Subscribe in the Spiros desktop app.
                   </p>
                 )}

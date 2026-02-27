@@ -36,7 +36,7 @@ export default function Pricing() {
             }`}
           >
             ANNUAL
-            {isAnnual && <span className="ml-2 text-[7px]">SAVE</span>}
+            {isAnnual && <span className="ml-2 text-[9px]">SAVE</span>}
           </button>
           <button
             onClick={() => setBilling("monthly")}

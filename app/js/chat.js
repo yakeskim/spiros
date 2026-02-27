@@ -76,9 +76,9 @@ const Chat = (() => {
             <div class="chat-sidebar-section">
               <div class="chat-sidebar-title">Direct Messages</div>
               ${!hasDMs
-                ? '<div style="font-size:7px;color:var(--gold);padding:4px;cursor:pointer" id="chat-dm-upgrade">&#x1F512; Upgrade to Pro for DMs</div>'
+                ? '<div style="font-size:9px;color:var(--gold);padding:4px;cursor:pointer" id="chat-dm-upgrade">&#x1F512; Upgrade to Pro for DMs</div>'
                 : (friends.length === 0
-                  ? '<div style="font-size:6px;color:var(--text-dim);padding:4px">No friends yet</div>'
+                  ? '<div style="font-size:8px;color:var(--text-dim);padding:4px">No friends yet</div>'
                   : friends.map(f => `
                     <button class="chat-dm-item ${activeTab === 'dm' && activeDMFriend?.id === f.id ? 'active' : ''}" data-dm-id="${f.id}" data-dm-name="${escapeHtml(f.display_name || 'Unknown')}">
                       <span class="chat-dm-avatar">${escapeHtml((f.display_name || '?').charAt(0).toUpperCase())}</span>

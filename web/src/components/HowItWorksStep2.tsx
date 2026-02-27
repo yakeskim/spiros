@@ -35,14 +35,14 @@ export default function HowItWorksStep2() {
                   <div className="text-xs text-text-bright text-shadow-pixel">
                     {s.val}
                   </div>
-                  <div className="text-[7px] text-text-dim mt-1">{s.label}</div>
+                  <div className="text-[9px] text-text-dim mt-1">{s.label}</div>
                 </div>
               ))}
             </div>
 
             {/* Timeline bar */}
             <div>
-              <div className="text-[7px] text-text-dim mb-1">TODAY&apos;S TIMELINE</div>
+              <div className="text-[9px] text-text-dim mb-1">TODAY&apos;S TIMELINE</div>
               <div className="h-4 flex overflow-hidden border border-border-dark">
                 <div className="bg-blue" style={{ width: "45%" }} />
                 <div className="bg-cyan" style={{ width: "30%" }} />
@@ -50,13 +50,13 @@ export default function HowItWorksStep2() {
                 <div className="bg-bg-dark flex-1" />
               </div>
               <div className="flex gap-3 mt-1.5">
-                <span className="text-[6px] text-text-dim flex items-center gap-1">
+                <span className="text-[8px] text-text-dim flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-blue inline-block" /> Development
                 </span>
-                <span className="text-[6px] text-text-dim flex items-center gap-1">
+                <span className="text-[8px] text-text-dim flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-cyan inline-block" /> Browsing
                 </span>
-                <span className="text-[6px] text-text-dim flex items-center gap-1">
+                <span className="text-[8px] text-text-dim flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-purple inline-block" /> Design
                 </span>
               </div>
@@ -64,7 +64,7 @@ export default function HowItWorksStep2() {
 
             {/* Top apps */}
             <div>
-              <div className="text-[7px] text-text-dim mb-2">TOP APPS</div>
+              <div className="text-[9px] text-text-dim mb-2">TOP APPS</div>
               <div className="space-y-2">
                 {[
                   { name: "VS Code", pct: 72, dur: "9h 00m", color: "bg-blue" },
@@ -72,7 +72,7 @@ export default function HowItWorksStep2() {
                   { name: "Figma", pct: 21, dur: "2h 38m", color: "bg-purple" },
                 ].map((app) => (
                   <div key={app.name} className="flex items-center gap-2">
-                    <span className="text-[7px] text-text-dim w-12 shrink-0">
+                    <span className="text-[9px] text-text-dim w-12 shrink-0">
                       {app.name}
                     </span>
                     <div className="flex-1 h-2 bg-bg-dark border border-border-dark relative overflow-hidden">
@@ -81,7 +81,7 @@ export default function HowItWorksStep2() {
                         style={{ width: `${app.pct}%` }}
                       />
                     </div>
-                    <span className="text-[6px] text-text-dim w-10 text-right shrink-0">
+                    <span className="text-[8px] text-text-dim w-10 text-right shrink-0">
                       {app.dur}
                     </span>
                   </div>

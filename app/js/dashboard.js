@@ -800,7 +800,7 @@ const Dashboard = (() => {
       widgetEl.innerHTML = `
         <div class="empty-state" style="text-align:center;padding:16px">
           <p>&#x1F512; Weekly Challenges require Pro</p>
-          <p style="font-size:6px;color:var(--text-dim);margin-top:4px">Complete challenges to earn bonus XP each week</p>
+          <p style="font-size:8px;color:var(--text-dim);margin-top:4px">Complete challenges to earn bonus XP each week</p>
           <button class="btn-pixel btn-sm" id="btn-upgrade-challenges" style="margin-top:8px">Upgrade to Pro</button>
         </div>
       `;
@@ -813,7 +813,7 @@ const Dashboard = (() => {
     try {
       const challenges = await spirosAPI.getWeeklyChallenges();
       if (!challenges || challenges.length === 0) {
-        widgetEl.innerHTML = '<div style="color:var(--text-dim);font-size:7px">No challenges this week</div>';
+        widgetEl.innerHTML = '<div style="color:var(--text-dim);font-size:9px">No challenges this week</div>';
         return;
       }
 
@@ -858,7 +858,7 @@ const Dashboard = (() => {
         });
       });
     } catch (e) {
-      widgetEl.innerHTML = '<div style="color:var(--text-dim);font-size:7px">Could not load challenges</div>';
+      widgetEl.innerHTML = '<div style="color:var(--text-dim);font-size:9px">Could not load challenges</div>';
     }
   }
 
@@ -920,16 +920,16 @@ const Dashboard = (() => {
 
       el.innerHTML = `
         <div style="margin-bottom:12px">
-          <h4 style="font-size:7px;margin-bottom:6px">4-Week Productivity Trend</h4>
+          <h4 style="font-size:9px;margin-bottom:6px">4-Week Productivity Trend</h4>
           ${trendHtml}
         </div>
         <div style="margin-bottom:12px">
-          <h4 style="font-size:7px;margin-bottom:6px">Peak Hours Today ${peakHour >= 0 && Math.max(...hourBuckets) > 0 ? '(Peak: ' + (peakHour === 0 ? '12am' : peakHour < 12 ? peakHour + 'am' : peakHour === 12 ? '12pm' : (peakHour - 12) + 'pm') + ')' : ''}</h4>
+          <h4 style="font-size:9px;margin-bottom:6px">Peak Hours Today ${peakHour >= 0 && Math.max(...hourBuckets) > 0 ? '(Peak: ' + (peakHour === 0 ? '12am' : peakHour < 12 ? peakHour + 'am' : peakHour === 12 ? '12pm' : (peakHour - 12) + 'pm') + ')' : ''}</h4>
           <div style="display:flex;gap:2px;flex-wrap:wrap">${peakHoursHtml}</div>
         </div>
       `;
     } catch (e) {
-      el.innerHTML = '<div style="color:var(--text-dim);font-size:7px">Could not load analytics</div>';
+      el.innerHTML = '<div style="color:var(--text-dim);font-size:9px">Could not load analytics</div>';
     }
   }
 

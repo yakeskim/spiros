@@ -256,7 +256,7 @@ function AccountPage() {
             <p className="text-[8px] text-text-bright">
               You were referred by a friend! Enjoy 7 days of Starter for free.
             </p>
-            <p className="text-[7px] text-text-dim">
+            <p className="text-[9px] text-text-dim">
               Card required. Auto-charges $3.99/mo after trial if not cancelled.
             </p>
             <div className="flex items-center justify-center gap-3 pt-2">
@@ -312,14 +312,14 @@ function AccountPage() {
                 <span className="text-[9px] text-text-bright">{profile?.display_name ?? "—"}</span>
                 <button
                   onClick={() => { setEditingName(true); setNewName(profile?.display_name ?? ""); }}
-                  className="text-[7px] text-text-dim hover:text-gold cursor-pointer"
+                  className="text-[9px] text-text-dim hover:text-gold cursor-pointer"
                 >
                   [edit]
                 </button>
               </div>
             )}
           </div>
-          {nameError && <p className="text-[7px] text-red-400 ml-24">{nameError}</p>}
+          {nameError && <p className="text-[9px] text-red-400 ml-24">{nameError}</p>}
 
           {/* Email */}
           <div className="flex items-center gap-3">
@@ -341,7 +341,7 @@ function AccountPage() {
               </button>
             ) : (
               <form onSubmit={handlePasswordChange} className="space-y-3 max-w-xs">
-                {passwordError && <p className="text-[7px] text-red-400">{passwordError}</p>}
+                {passwordError && <p className="text-[9px] text-red-400">{passwordError}</p>}
                 <div>
                   <label className="block text-[8px] text-text-dim mb-1">New Password</label>
                   <input
@@ -451,12 +451,12 @@ function AccountPage() {
             {/* Stats */}
             <div className="flex items-center gap-6 pt-2">
               <div>
-                <p className="text-[7px] text-text-dim">Total Referrals</p>
+                <p className="text-[9px] text-text-dim">Total Referrals</p>
                 <p className="text-gold text-sm text-shadow-pixel">{referralCount}</p>
               </div>
               {nextMilestone && (
                 <div>
-                  <p className="text-[7px] text-text-dim">Next Reward</p>
+                  <p className="text-[9px] text-text-dim">Next Reward</p>
                   <p className="text-[8px] text-text-bright">
                     {nextMilestone.count - referralCount} more for {nextMilestone.label}
                   </p>
@@ -469,7 +469,7 @@ function AccountPage() {
               {MILESTONES.map((m) => (
                 <div
                   key={m.count}
-                  className={`flex items-center gap-2 text-[7px] ${
+                  className={`flex items-center gap-2 text-[9px] ${
                     referralCount >= m.count ? "text-green-400" : "text-text-dim opacity-60"
                   }`}
                 >
@@ -480,7 +480,7 @@ function AccountPage() {
               ))}
             </div>
 
-            <p className="text-[7px] text-text-dim text-center pt-2">
+            <p className="text-[9px] text-text-dim text-center pt-2">
               Open the Spiros app for full milestone details and rewards.
             </p>
           </section>
@@ -493,19 +493,19 @@ function AccountPage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {/* Level */}
             <div className="bg-bg-darkest border-2 border-border-dark p-3 text-center">
-              <p className="text-[7px] text-text-dim mb-1">Level</p>
+              <p className="text-[9px] text-text-dim mb-1">Level</p>
               <p className="text-gold text-sm text-shadow-pixel">{level}</p>
             </div>
 
             {/* Title */}
             <div className="bg-bg-darkest border-2 border-border-dark p-3 text-center">
-              <p className="text-[7px] text-text-dim mb-1">Title</p>
+              <p className="text-[9px] text-text-dim mb-1">Title</p>
               <p className={`text-[9px] ${titleColor}`}>{profile?.title ?? "Novice"}</p>
             </div>
 
             {/* XP */}
             <div className="bg-bg-darkest border-2 border-border-dark p-3 text-center col-span-2 sm:col-span-1">
-              <p className="text-[7px] text-text-dim mb-1">XP</p>
+              <p className="text-[9px] text-text-dim mb-1">XP</p>
               <p className="text-[9px] text-text-bright">{xp} / {xpNeeded}</p>
               <div className="mt-2 h-2 bg-bg-dark border border-border-dark relative overflow-hidden">
                 <div
@@ -517,16 +517,16 @@ function AccountPage() {
 
             {/* Current Streak */}
             <div className="bg-bg-darkest border-2 border-border-dark p-3 text-center">
-              <p className="text-[7px] text-text-dim mb-1">Current Streak</p>
+              <p className="text-[9px] text-text-dim mb-1">Current Streak</p>
               <p className="text-orange text-sm text-shadow-pixel">{profile?.streak_current ?? 0}</p>
-              <p className="text-[7px] text-text-dim">days</p>
+              <p className="text-[9px] text-text-dim">days</p>
             </div>
 
             {/* Best Streak */}
             <div className="bg-bg-darkest border-2 border-border-dark p-3 text-center">
-              <p className="text-[7px] text-text-dim mb-1">Best Streak</p>
+              <p className="text-[9px] text-text-dim mb-1">Best Streak</p>
               <p className="text-gold text-sm text-shadow-pixel">{profile?.streak_best ?? 0}</p>
-              <p className="text-[7px] text-text-dim">days</p>
+              <p className="text-[9px] text-text-dim">days</p>
             </div>
           </div>
         </section>
@@ -537,13 +537,13 @@ function AccountPage() {
 
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-bg-darkest border-2 border-border-dark p-3 text-center">
-              <p className="text-[7px] text-text-dim mb-1">Friends</p>
+              <p className="text-[9px] text-text-dim mb-1">Friends</p>
               <p className="text-blue text-sm text-shadow-pixel">
                 {friendsCount !== null ? friendsCount : "—"}
               </p>
             </div>
             <div className="bg-bg-darkest border-2 border-border-dark p-3 text-center">
-              <p className="text-[7px] text-text-dim mb-1">Last Active</p>
+              <p className="text-[9px] text-text-dim mb-1">Last Active</p>
               <p className="text-[8px] text-text-bright">
                 {profile?.last_seen_at
                   ? new Date(profile.last_seen_at).toLocaleDateString()
@@ -552,7 +552,7 @@ function AccountPage() {
             </div>
           </div>
 
-          <p className="text-[7px] text-text-dim text-center pt-2">
+          <p className="text-[9px] text-text-dim text-center pt-2">
             Open the Spiros app for full social features.
           </p>
         </section>

@@ -238,14 +238,14 @@ const Profile = (() => {
             PROFILE_FRAMES.map(f => '<button class="frame-option' + (currentFrame === f ? ' active' : '') + '" data-frame="' + f + '">' + f + '</button>').join('') +
             '</div></div>' : '') +
             '<button class="btn-pixel" id="btn-save-profile-custom" style="margin-top:8px">Save</button>' +
-            '<div id="profile-custom-msg" style="font-size:7px;margin-top:4px;display:none"></div>' +
+            '<div id="profile-custom-msg" style="font-size:9px;margin-top:4px;display:none"></div>' +
             '</div>';
         })()}
 
         <div class="settings-section glass" style="margin-top:16px" id="referral-section">
           <h3 class="card-title">Referral Program</h3>
           <div id="referral-content" style="text-align:center;padding:8px">
-            <p style="color:var(--text-dim);font-size:7px">Loading referral info...</p>
+            <p style="color:var(--text-dim);font-size:9px">Loading referral info...</p>
           </div>
         </div>
       </div>
@@ -390,7 +390,7 @@ const Profile = (() => {
         });
       });
     } catch (_) {
-      content.innerHTML = '<p style="color:var(--text-dim);font-size:7px">Could not load referral data</p>';
+      content.innerHTML = '<p style="color:var(--text-dim);font-size:9px">Could not load referral data</p>';
     }
   }
 

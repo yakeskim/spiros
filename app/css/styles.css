@@ -190,7 +190,7 @@ body {
 
 .version-tag {
   font-family: var(--pixel-font);
-  font-size: 6px;
+  font-size: 8px;
   color: var(--gold-dark);
   letter-spacing: 1px;
   opacity: 0.8;
@@ -217,7 +217,7 @@ body {
 }
 
 #xp-title {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   text-shadow: 1px 1px 0 rgba(0,0,0,0.8);
 }
@@ -269,7 +269,7 @@ body {
 }
 
 .xp-numbers {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   text-align: center;
   margin-top: 3px;
@@ -339,7 +339,7 @@ body {
 }
 
 .nav-secondary .nav-item-secondary {
-  font-size: 7px;
+  font-size: 9px;
   opacity: 0.75;
 }
 
@@ -386,7 +386,7 @@ body {
 }
 
 .sidebar-online-pct {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   margin-top: 2px;
   padding-left: 11px;
@@ -671,7 +671,7 @@ body {
   color: var(--text-dim);
   cursor: pointer;
   font-family: var(--pixel-font);
-  font-size: 7px;
+  font-size: 9px;
   transition: none;
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
 }
@@ -709,7 +709,7 @@ body {
 }
 
 .stat-label {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -718,7 +718,7 @@ body {
 
 /* ===== Stat Average Indicator ===== */
 .stat-avg {
-  font-size: 7px;
+  font-size: 9px;
   margin-top: 4px;
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
   line-height: 1.4;
@@ -777,7 +777,7 @@ canvas {
   padding: 6px 10px;
   pointer-events: none;
   font-family: var(--font-primary);
-  font-size: 7px;
+  font-size: 9px;
   line-height: 1.6;
   color: #fffffe;
   white-space: nowrap;
@@ -827,7 +827,7 @@ canvas {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 7px;
+  font-size: 9px;
 }
 
 .legend-dot {
@@ -866,7 +866,7 @@ canvas {
 }
 
 .app-time {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
 }
@@ -979,7 +979,7 @@ canvas {
 
 .badge {
   font-family: var(--pixel-font);
-  font-size: 6px;
+  font-size: 8px;
   padding: 2px 4px;
   border: 1px solid;
 }
@@ -1001,14 +1001,14 @@ canvas {
 }
 
 .project-branch {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--green);
   margin-bottom: 3px;
   text-shadow: 1px 1px 0 rgba(0,0,0,0.6);
 }
 
 .project-commit {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   margin-bottom: 6px;
   white-space: nowrap;
@@ -1020,7 +1020,7 @@ canvas {
 .project-stats {
   display: flex;
   gap: 10px;
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   margin-bottom: 6px;
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
@@ -1040,7 +1040,7 @@ canvas {
 .lang-labels {
   display: flex;
   gap: 8px;
-  font-size: 7px;
+  font-size: 9px;
   margin-bottom: 8px;
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
 }
@@ -1112,7 +1112,7 @@ canvas {
 .project-detail-close:hover { color: var(--text-bright); }
 
 .project-detail-path {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   background: var(--bg-dark);
   border: 1px solid var(--border-dark);
@@ -1133,7 +1133,7 @@ canvas {
 }
 
 .detail-copy-hint {
-  font-size: 6px;
+  font-size: 8px;
   color: var(--text-dim);
   white-space: nowrap;
   opacity: 0.6;
@@ -1162,7 +1162,7 @@ canvas {
 }
 
 .detail-commit-msg {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   margin-top: 4px;
   white-space: nowrap;
@@ -1179,7 +1179,7 @@ canvas {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text);
   padding: 2px 0;
 }
@@ -1245,14 +1245,14 @@ canvas {
 
 .ach-name {
   font-family: var(--pixel-font);
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-bright);
   margin-bottom: 2px;
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
 }
 
 .ach-desc {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
 }
@@ -1286,7 +1286,7 @@ canvas {
 /* Changelog */
 .changelog-type {
   font-family: var(--pixel-font);
-  font-size: 7px;
+  font-size: 9px;
   color: var(--cyan);
   text-transform: uppercase;
   margin: 8px 0 4px;
@@ -1359,7 +1359,7 @@ canvas {
 }
 
 .about-text {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
 }
@@ -1371,7 +1371,7 @@ canvas {
 }
 
 .update-msg {
-  font-size: 7px;
+  font-size: 9px;
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
   color: var(--text-dim);
 }
@@ -1406,7 +1406,7 @@ canvas {
 /* ===== Buttons — Pixel RPG style ===== */
 .btn-pixel {
   font-family: var(--pixel-font);
-  font-size: 7px;
+  font-size: 9px;
   padding: 8px 14px;
   background: var(--bg-panel-light);
   color: var(--gold);
@@ -1468,12 +1468,12 @@ canvas {
   width: auto;
   padding: 0 10px;
   font-family: var(--pixel-font);
-  font-size: 7px;
+  font-size: 9px;
 }
 
 .btn-sm {
   padding: 5px 8px;
-  font-size: 7px;
+  font-size: 9px;
   font-family: var(--pixel-font);
   border: var(--px) solid var(--border-light);
   background: var(--bg-panel);
@@ -1552,7 +1552,7 @@ canvas {
   border: var(--px) solid var(--border-dark);
   color: var(--text);
   font-family: var(--pixel-font);
-  font-size: 7px;
+  font-size: 9px;
   box-shadow: inset var(--px) var(--px) 0 rgba(0,0,0,0.5);
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
 }
@@ -1563,7 +1563,7 @@ canvas {
   box-shadow: inset var(--px) var(--px) 0 rgba(0,0,0,0.5), 0 0 0 1px var(--gold-dark);
 }
 
-.input-sm { padding: 4px 6px; font-size: 7px; }
+.input-sm { padding: 4px 6px; font-size: 9px; }
 
 .select-pixel {
   padding: 6px 8px;
@@ -1571,7 +1571,7 @@ canvas {
   border: var(--px) solid var(--border-light);
   color: var(--text);
   font-family: var(--pixel-font);
-  font-size: 7px;
+  font-size: 9px;
   cursor: pointer;
   box-shadow:
     inset 1px 1px 0 var(--border-highlight),
@@ -1655,7 +1655,7 @@ canvas {
 
 .toast-title {
   font-family: var(--pixel-font);
-  font-size: 7px;
+  font-size: 9px;
   color: var(--gold);
   margin-bottom: 2px;
   text-shadow: 1px 1px 0 rgba(0,0,0,0.6);
@@ -1815,7 +1815,7 @@ canvas {
   opacity: 0.6;
 }
 .empty-state-hint {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   opacity: 0.7;
   margin-top: 6px;
@@ -1823,7 +1823,7 @@ canvas {
 
 /* ===== Character Count Indicator ===== */
 .char-count {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   text-align: right;
   display: block;
@@ -1931,7 +1931,7 @@ canvas {
 }
 
 .auth-subtitle {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   margin-top: 6px;
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
@@ -1959,14 +1959,14 @@ canvas {
   background: rgba(255,68,85,0.15);
   border: 1px solid var(--red-dark);
   color: var(--red);
-  font-size: 7px;
+  font-size: 9px;
   padding: 6px 8px;
   margin-bottom: 10px;
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
 }
 
 .auth-switch {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   margin-top: 8px;
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
@@ -1983,7 +1983,7 @@ canvas {
 }
 
 .auth-skip {
-  font-size: 6px;
+  font-size: 8px;
   color: var(--text-dim);
   margin-top: 16px;
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
@@ -2034,19 +2034,19 @@ canvas {
 }
 
 .friend-level {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
 }
 
 .friend-streak {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--orange);
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
 }
 
 .friend-status-tag {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   padding: 2px 6px;
   border: 1px solid var(--border-dark);
@@ -2110,20 +2110,20 @@ canvas {
 }
 
 .friend-last-seen {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   opacity: 0.7;
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
 }
 
 .friend-activity-state {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--green);
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
 }
 
 .online-friends-count {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--bg-darkest);
   background: var(--green);
   padding: 1px 4px;
@@ -2144,14 +2144,14 @@ canvas {
   grid-template-columns: 1fr 1fr 1fr;
   gap: 8px;
   padding: 6px 8px;
-  font-size: 7px;
+  font-size: 9px;
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
 }
 
 .compare-header {
   border-bottom: 2px solid var(--border-light);
   color: var(--gold);
-  font-size: 6px;
+  font-size: 8px;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -2195,7 +2195,7 @@ canvas {
     3px 3px 0 rgba(0,0,0,0.6);
   padding: 6px 8px;
   font-family: var(--pixel-font);
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text);
   white-space: normal;
   max-width: 220px;
@@ -2229,7 +2229,7 @@ canvas {
 }
 
 .input-stat-label {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -2255,7 +2255,7 @@ canvas {
 .activity-log-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 7px;
+  font-size: 9px;
   font-family: var(--pixel-font);
 }
 
@@ -2275,7 +2275,7 @@ canvas {
   font-weight: normal;
   text-transform: uppercase;
   letter-spacing: 1px;
-  font-size: 6px;
+  font-size: 8px;
 }
 
 .activity-log-table td {
@@ -2318,7 +2318,7 @@ canvas {
 
 .bg-badge {
   display: inline-block;
-  font-size: 6px;
+  font-size: 8px;
   background: var(--orange);
   color: #0f0e17;
   padding: 1px 3px;
@@ -2378,7 +2378,7 @@ canvas {
   background: var(--bg-darkest);
   border: 1px solid var(--border-dark);
   box-shadow: inset 1px 1px 0 rgba(0,0,0,0.4);
-  font-size: 7px;
+  font-size: 9px;
   font-family: var(--pixel-font);
   color: var(--text);
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
@@ -2400,14 +2400,14 @@ canvas {
 }
 
 .blocked-app-empty {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   padding: 4px 0;
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
 }
 
 .setting-hint {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   margin-bottom: 8px;
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
@@ -2434,12 +2434,12 @@ canvas {
 }
 .cloud-stat-label {
   font-family: var(--font-primary);
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   text-transform: uppercase;
 }
 .cloud-profile-loading {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   padding: 8px 0;
 }
@@ -2463,7 +2463,7 @@ canvas {
   border: 1px solid var(--border-dark);
   color: var(--text-dim);
   font-family: var(--pixel-font);
-  font-size: 7px;
+  font-size: 9px;
   padding: 4px 8px;
   cursor: pointer;
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
@@ -2499,7 +2499,7 @@ canvas {
 }
 
 .ach-category-count {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
 }
 
@@ -2557,7 +2557,7 @@ canvas {
 }
 
 .profile-page .profile-edit-btn {
-  font-size: 7px;
+  font-size: 9px;
   padding: 3px 6px;
   opacity: 0.7;
 }
@@ -2589,7 +2589,7 @@ canvas {
 }
 
 .profile-name-limit {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   margin-top: 4px;
 }
@@ -2620,7 +2620,7 @@ canvas {
 
 .community-cat-tab {
   font-family: var(--pixel-font);
-  font-size: 7px;
+  font-size: 9px;
   padding: 4px 8px;
   border: var(--px) solid var(--border-dark);
   background: var(--bg-panel);
@@ -2641,7 +2641,7 @@ canvas {
 
 .community-sort {
   font-family: var(--pixel-font);
-  font-size: 7px;
+  font-size: 9px;
   padding: 4px 6px;
   background: var(--bg-panel);
   color: var(--text);
@@ -2723,14 +2723,14 @@ canvas {
 }
 
 .community-project-desc {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   line-height: 1.6;
   margin-bottom: 6px;
 }
 
 .community-project-url {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--blue);
   word-break: break-all;
   cursor: pointer;
@@ -2745,12 +2745,12 @@ canvas {
   align-items: center;
   gap: 8px;
   margin-top: 6px;
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
 }
 
 .community-cat-tag {
-  font-size: 7px;
+  font-size: 9px;
   padding: 2px 5px;
   border: 1px solid var(--border-dark);
   background: var(--bg-darkest);
@@ -2766,7 +2766,7 @@ canvas {
 
 .community-comment-toggle {
   font-family: var(--pixel-font);
-  font-size: 7px;
+  font-size: 9px;
   padding: 2px 6px;
   border: var(--px) solid var(--border-dark);
   background: var(--bg-darkest);
@@ -2781,7 +2781,7 @@ canvas {
 
 .community-delete-btn {
   font-family: var(--pixel-font);
-  font-size: 7px;
+  font-size: 9px;
   padding: 2px 6px;
   border: var(--px) solid var(--red-dark);
   background: var(--bg-darkest);
@@ -2801,19 +2801,19 @@ canvas {
 }
 
 .community-comment-author {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--gold);
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
 }
 
 .community-comment-time {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   margin-left: 6px;
 }
 
 .community-comment-text {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text);
   margin-top: 2px;
   line-height: 1.5;
@@ -2845,7 +2845,7 @@ canvas {
 
 .community-submit-form textarea {
   font-family: var(--pixel-font);
-  font-size: 7px;
+  font-size: 9px;
   padding: 6px 8px;
   background: var(--bg-darkest);
   color: var(--text);
@@ -2906,7 +2906,7 @@ canvas {
 }
 
 .chat-sidebar-title {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -2921,7 +2921,7 @@ canvas {
   width: 100%;
   padding: 5px 8px;
   font-family: var(--pixel-font);
-  font-size: 7px;
+  font-size: 9px;
   border: var(--px) solid transparent;
   background: transparent;
   color: var(--text-dim);
@@ -2952,7 +2952,7 @@ canvas {
   width: 100%;
   padding: 5px 8px;
   font-family: var(--pixel-font);
-  font-size: 7px;
+  font-size: 9px;
   border: var(--px) solid transparent;
   background: transparent;
   color: var(--text-dim);
@@ -3014,13 +3014,13 @@ canvas {
 }
 
 .chat-message-author {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--gold);
   text-shadow: 1px 1px 0 rgba(0,0,0,0.5);
 }
 
 .chat-message-time {
-  font-size: 6px;
+  font-size: 8px;
   color: var(--text-dim);
   margin-left: 6px;
 }
@@ -3137,7 +3137,7 @@ canvas {
 .lb-you .lb-name { color: var(--gold); }
 
 .lb-title {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   margin-left: auto;
   flex-shrink: 0;
@@ -3201,7 +3201,7 @@ canvas {
   border: none;
   color: var(--text-dim);
   font-family: var(--pixel-font);
-  font-size: 7px;
+  font-size: 9px;
   cursor: pointer;
   text-align: left;
   transition: background 0.15s, color 0.15s;
@@ -3266,7 +3266,7 @@ canvas {
 }
 .lb-scope-btn {
   font-family: var(--font-primary);
-  font-size: 7px;
+  font-size: 9px;
   padding: 6px 16px;
   border: 1px solid var(--border);
   background: transparent;
@@ -3304,7 +3304,7 @@ canvas {
   display: flex;
   flex-direction: column;
   gap: 1px;
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   padding-top: 0;
 }
@@ -3333,7 +3333,7 @@ canvas {
   display: flex;
   align-items: center;
   gap: 3px;
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   margin-top: 4px;
 }
@@ -3364,7 +3364,7 @@ canvas {
 }
 .showcase-ach-name {
   font-family: var(--font-primary);
-  font-size: 7px;
+  font-size: 9px;
   text-align: center;
   color: var(--text);
 }
@@ -3387,7 +3387,7 @@ canvas {
   align-items: center;
   gap: 4px;
   font-family: var(--font-primary);
-  font-size: 6px;
+  font-size: 8px;
   padding: 3px 8px;
   background: rgba(245, 197, 66, 0.08);
   border: 1px solid rgba(245, 197, 66, 0.2);
@@ -3427,7 +3427,7 @@ canvas {
   margin: 0;
 }
 .guild-card-desc {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   margin-top: 4px;
   overflow: hidden;
@@ -3439,7 +3439,7 @@ canvas {
   gap: 12px;
   margin-top: 8px;
   font-family: var(--font-primary);
-  font-size: 6px;
+  font-size: 8px;
   color: var(--text-dim);
 }
 .guild-header {
@@ -3470,7 +3470,7 @@ canvas {
   gap: 16px;
   margin-top: 6px;
   font-family: var(--font-primary);
-  font-size: 6px;
+  font-size: 8px;
   color: var(--text-dim);
 }
 .guild-header-actions {
@@ -3488,7 +3488,7 @@ canvas {
   align-items: center;
   gap: 8px;
   padding: 4px 6px;
-  font-size: 7px;
+  font-size: 9px;
 }
 .guild-member-row:hover {
   background: rgba(255,255,255,0.02);
@@ -3497,16 +3497,16 @@ canvas {
   flex: 1;
   color: var(--text);
   font-family: var(--font-primary);
-  font-size: 6px;
+  font-size: 8px;
 }
 .guild-member-level {
   font-family: var(--font-primary);
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
 }
 .guild-role-badge {
   font-family: var(--font-primary);
-  font-size: 7px;
+  font-size: 9px;
   padding: 1px 5px;
   border: 1px solid var(--border);
   color: var(--text-dim);
@@ -3521,7 +3521,7 @@ canvas {
 }
 .btn-role {
   font-family: var(--font-primary);
-  font-size: 7px;
+  font-size: 9px;
   padding: 2px 6px;
   background: transparent;
   border: 1px solid var(--border);
@@ -3541,7 +3541,7 @@ canvas {
 .guild-form-field label {
   display: block;
   font-family: var(--font-primary);
-  font-size: 6px;
+  font-size: 8px;
   color: var(--text-dim);
   margin-bottom: 4px;
 }
@@ -3670,13 +3670,13 @@ canvas {
   gap: 6px;
   align-items: center;
   padding: 3px 0;
-  font-size: 6px;
+  font-size: 8px;
   border-bottom: 1px solid rgba(255,255,255,0.03);
 }
 .detail-commit-hash {
   font-family: monospace;
   color: var(--accent);
-  font-size: 6px;
+  font-size: 8px;
 }
 .detail-commit-msg-text {
   color: var(--text);
@@ -3689,7 +3689,7 @@ canvas {
 }
 .detail-commit-date {
   color: var(--text-dim);
-  font-size: 7px;
+  font-size: 9px;
 }
 .detail-branch-list {
   display: flex;
@@ -3699,7 +3699,7 @@ canvas {
 }
 .detail-branch-tag {
   font-family: var(--font-primary);
-  font-size: 7px;
+  font-size: 9px;
   padding: 2px 6px;
   border: 1px solid var(--border);
   color: var(--text-dim);
@@ -3715,12 +3715,12 @@ canvas {
 .detail-status-row {
   display: flex;
   gap: 6px;
-  font-size: 6px;
+  font-size: 8px;
   padding: 2px 0;
 }
 .detail-status-type {
   font-family: var(--font-primary);
-  font-size: 7px;
+  font-size: 9px;
   width: 50px;
   text-transform: uppercase;
 }
@@ -3737,7 +3737,7 @@ canvas {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   margin-bottom: 6px;
 }
@@ -3753,7 +3753,7 @@ canvas {
   transition: width 0.3s;
 }
 .detail-goal-label {
-  font-size: 6px;
+  font-size: 8px;
   color: var(--text-dim);
   margin-top: 2px;
 }
@@ -3765,7 +3765,7 @@ canvas {
   border: 1px solid var(--border);
   color: var(--text);
   font-family: var(--font-primary);
-  font-size: 6px;
+  font-size: 8px;
   padding: 6px;
   resize: vertical;
 }
@@ -3800,7 +3800,7 @@ canvas {
 }
 .challenge-card-title {
   font-family: var(--font-primary);
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text);
 }
 .challenge-complete .challenge-card-title {
@@ -3808,7 +3808,7 @@ canvas {
 }
 .challenge-reward {
   font-family: var(--font-primary);
-  font-size: 6px;
+  font-size: 8px;
   color: var(--accent);
   padding: 1px 5px;
   border: 1px solid rgba(245, 197, 66, 0.3);
@@ -3816,7 +3816,7 @@ canvas {
   white-space: nowrap;
 }
 .challenge-card-desc {
-  font-size: 6px;
+  font-size: 8px;
   color: var(--text-dim);
   margin-top: 4px;
 }
@@ -3836,7 +3836,7 @@ canvas {
 }
 .challenge-progress-label {
   font-family: var(--font-primary);
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   margin-top: 2px;
 }
@@ -3884,7 +3884,7 @@ canvas {
 }
 .chat-profile-title {
   font-family: var(--font-primary);
-  font-size: 6px;
+  font-size: 8px;
   color: var(--text-dim);
   margin-top: 3px;
 }
@@ -3908,12 +3908,12 @@ canvas {
 }
 .chat-profile-stat-label {
   font-family: var(--font-primary);
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   margin-top: 3px;
 }
 .chat-profile-since {
-  font-size: 6px;
+  font-size: 8px;
   color: var(--text-dim);
   text-align: center;
 }
@@ -3923,7 +3923,7 @@ canvas {
 /* Tier badges */
 .tier-badge {
   display: block;
-  font-size: 6px;
+  font-size: 8px;
   padding: 6px 10px;
   border: 2px solid;
   font-family: var(--font-primary);
@@ -3983,7 +3983,7 @@ canvas {
   font-size: 20px;
 }
 .upgrade-modal-desc {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
 }
 .upgrade-billing-toggle {
@@ -3996,7 +3996,7 @@ canvas {
 .upgrade-billing-btn {
   flex: 1;
   padding: 8px 12px;
-  font-size: 7px;
+  font-size: 9px;
   font-family: var(--font-primary);
   background: var(--bg-panel);
   color: var(--text-dim);
@@ -4009,7 +4009,7 @@ canvas {
   color: var(--bg-darkest);
 }
 .upgrade-save-tag {
-  font-size: 6px;
+  font-size: 8px;
   color: #f5c542;
 }
 .upgrade-billing-btn.active .upgrade-save-tag {
@@ -4057,7 +4057,7 @@ canvas {
   margin-bottom: 2px;
 }
 .upgrade-plan-interval {
-  font-size: 6px;
+  font-size: 8px;
   color: var(--text-dim);
 }
 .upgrade-plan-features {
@@ -4067,7 +4067,7 @@ canvas {
   text-align: left;
 }
 .upgrade-plan-features li {
-  font-size: 6px;
+  font-size: 8px;
   color: var(--text-dim);
   padding: 2px 0;
 }
@@ -4076,7 +4076,7 @@ canvas {
   color: var(--green);
 }
 .upgrade-hint {
-  font-size: 6px;
+  font-size: 8px;
   color: var(--text-dim);
   margin-top: 8px;
 }
@@ -4102,7 +4102,7 @@ canvas {
 .upgrade-close {
   display: block;
   margin: 12px auto 0;
-  font-size: 7px;
+  font-size: 9px;
   font-family: var(--font-primary);
   color: var(--text-dim);
   background: none;
@@ -4162,7 +4162,7 @@ canvas {
   color: var(--text-dim);
 }
 .sub-plan-yearly {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   text-align: center;
   padding: 4px 16px 8px;
@@ -4174,7 +4174,7 @@ canvas {
   flex: 1;
 }
 .sub-plan-features li {
-  font-size: 6px;
+  font-size: 8px;
   color: var(--text-dim);
   padding: 3px 0;
 }
@@ -4199,11 +4199,11 @@ canvas {
   margin: 8px 0;
 }
 .sub-current-status {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
 }
 .sub-current-renew {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   margin-bottom: 12px;
 }
@@ -4211,7 +4211,7 @@ canvas {
   background: transparent;
   border: 1px solid var(--border);
   color: var(--text);
-  font-size: 7px;
+  font-size: 9px;
   cursor: pointer;
   padding: 6px 16px;
 }
@@ -4251,7 +4251,7 @@ canvas {
   opacity: 0.8;
 }
 .project-locked-text {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
 }
 
@@ -4262,7 +4262,7 @@ canvas {
   flex-wrap: wrap;
 }
 .frame-option {
-  font-size: 6px;
+  font-size: 8px;
   font-family: var(--font-primary);
   padding: 4px 8px;
   border: 2px solid var(--border);
@@ -5214,7 +5214,7 @@ canvas {
   margin-bottom: 6px;
 }
 .theme-card-desc {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   line-height: 1.4;
 }
@@ -5228,7 +5228,7 @@ canvas {
   font-size: 16px;
 }
 .theme-card-lock {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--gold);
   margin-top: 6px;
 }
@@ -5245,7 +5245,7 @@ canvas {
   margin-bottom: 12px;
 }
 .referral-code-label {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   text-transform: uppercase;
   letter-spacing: 2px;
@@ -5286,7 +5286,7 @@ canvas {
   font-size: 18px;
 }
 .referral-stat .stat-label {
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   margin-top: 2px;
 }
@@ -5350,12 +5350,12 @@ canvas {
 }
 .milestone-reward {
   display: block;
-  font-size: 7px;
+  font-size: 9px;
   color: var(--text-dim);
   margin-top: 1px;
 }
 .milestone-status {
-  font-size: 7px;
+  font-size: 9px;
   font-family: var(--font-primary);
   color: var(--text-dim);
   flex-shrink: 0;

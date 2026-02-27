@@ -196,15 +196,15 @@ function SignupPage() {
                 className="w-full bg-bg-dark border-2 border-border-dark text-text-bright text-[9px] px-3 py-2 focus:border-gold outline-none uppercase"
               />
               {referralChecking && (
-                <p className="text-[7px] text-text-dim mt-1">Checking code...</p>
+                <p className="text-[9px] text-text-dim mt-1">Checking code...</p>
               )}
               {referralValid && (
-                <p className="text-[7px] text-green-400 mt-1">
+                <p className="text-[9px] text-green-400 mt-1">
                   Referred by {referralValid.referrer_name} — You&apos;ll get 7 days free Starter!
                 </p>
               )}
               {referralError && (
-                <p className="text-[7px] text-red-400 mt-1">{referralError}</p>
+                <p className="text-[9px] text-red-400 mt-1">{referralError}</p>
               )}
             </div>
             <button

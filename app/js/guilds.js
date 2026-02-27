@@ -269,7 +269,7 @@ const Guilds = (() => {
               ).join('')}
             </div>
           </div>
-          <div id="guild-create-error" style="color:var(--red);font-size:7px;margin-top:6px;display:none"></div>
+          <div id="guild-create-error" style="color:var(--red);font-size:9px;margin-top:6px;display:none"></div>
           <button class="btn-pixel" id="btn-submit-guild" style="margin-top:12px;width:100%">Create Guild</button>
         </div>
 
@@ -279,7 +279,7 @@ const Guilds = (() => {
             <span class="guild-preview-icon" id="guild-preview-icon" style="font-size:24px">${GUILD_ICONS[0]}</span>
             <div>
               <div class="guild-preview-name" id="guild-preview-name" style="font-size:9px;color:var(--text-bright);font-family:var(--pixel-font)">Guild Name</div>
-              <div class="guild-preview-desc" id="guild-preview-desc" style="font-size:7px;color:var(--text-dim);margin-top:2px">Description goes here</div>
+              <div class="guild-preview-desc" id="guild-preview-desc" style="font-size:9px;color:var(--text-dim);margin-top:2px">Description goes here</div>
             </div>
           </div>
         </div>
@@ -429,7 +429,7 @@ const Guilds = (() => {
         </div>
       `;
     } catch (e) {
-      el.innerHTML = '<div style="color:var(--text-dim);font-size:7px">Could not load analytics</div>';
+      el.innerHTML = '<div style="color:var(--text-dim);font-size:9px">Could not load analytics</div>';
     }
   }
 

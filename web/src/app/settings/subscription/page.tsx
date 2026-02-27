@@ -173,7 +173,7 @@ export default function SubscriptionSettingsPage() {
                 >
                   {portalLoading ? "Opening..." : "Manage Billing & Invoices"}
                 </button>
-                <p className="text-[7px] text-text-dim mt-2">
+                <p className="text-[9px] text-text-dim mt-2">
                   Update payment method, view invoices, or cancel via Stripe
                 </p>
               </div>
@@ -213,7 +213,7 @@ export default function SubscriptionSettingsPage() {
                   <div className="flex items-center gap-2 mb-3">
                     <span className={`text-xs ${tier.color}`}>{tier.name}</span>
                     {tier.highlight && (
-                      <span className="text-[7px] text-bg-darkest bg-gold px-2 py-0.5">
+                      <span className="text-[9px] text-bg-darkest bg-gold px-2 py-0.5">
                         BEST
                       </span>
                     )}
@@ -251,7 +251,7 @@ export default function SubscriptionSettingsPage() {
                   >
                     {isFree ? `GET ${tier.name}` : `UPGRADE TO ${tier.name}`}
                   </PixelButton>
-                  <p className="text-[7px] text-text-dim text-center mt-2">
+                  <p className="text-[9px] text-text-dim text-center mt-2">
                     Subscribe in the Spiros desktop app
                   </p>
                 </PixelBorder>

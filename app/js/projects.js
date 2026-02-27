@@ -144,7 +144,7 @@ const Projects = (() => {
         <div class="project-card glass project-locked" id="project-locked-card">
           <div class="lock-icon">&#x1F512;</div>
           <div style="font-size:8px;color:var(--text-dim);margin-top:8px">+${filtered.length - 1} more project${filtered.length - 1 > 1 ? 's' : ''}</div>
-          <div style="font-size:7px;color:var(--gold);margin-top:6px">Upgrade to Starter to see all projects</div>
+          <div style="font-size:9px;color:var(--gold);margin-top:6px">Upgrade to Starter to see all projects</div>
         </div>
       `;
       grid.querySelector('#project-locked-card')?.addEventListener('click', () => {
@@ -506,7 +506,7 @@ const Projects = (() => {
     const commitsEl = document.getElementById('detail-commits');
     if (commitsEl) {
       if (commits.length === 0) {
-        commitsEl.innerHTML = '<div style="color:var(--text-dim);font-size:7px">No commits found</div>';
+        commitsEl.innerHTML = '<div style="color:var(--text-dim);font-size:9px">No commits found</div>';
       } else {
         commitsEl.innerHTML = commits.map(c => `
           <div class="detail-commit-row">
@@ -523,7 +523,7 @@ const Projects = (() => {
     const branchesEl = document.getElementById('detail-branches');
     if (branchesEl) {
       if (branchInfo.branches.length === 0) {
-        branchesEl.innerHTML = '<div style="color:var(--text-dim);font-size:7px">No branches found</div>';
+        branchesEl.innerHTML = '<div style="color:var(--text-dim);font-size:9px">No branches found</div>';
       } else {
         branchesEl.innerHTML = branchInfo.branches.map(b => {
           const isCurrent = b === branchInfo.current;
@@ -537,7 +537,7 @@ const Projects = (() => {
     const statusEl = document.getElementById('detail-status');
     if (statusEl) {
       if (status.length === 0) {
-        statusEl.innerHTML = '<div style="color:var(--text-dim);font-size:7px">Working tree clean</div>';
+        statusEl.innerHTML = '<div style="color:var(--text-dim);font-size:9px">Working tree clean</div>';
       } else {
         statusEl.innerHTML = status.map(s => {
           const cls = s.type === 'added' ? 'status-added' : s.type === 'deleted' ? 'status-deleted' : 'status-modified';

@@ -111,18 +111,6 @@
           <span class="nav-icon">◈</span>
           <span>Dashboard</span>
         </button>
-        <button class="nav-item" data-view="projects">
-          <span class="nav-icon">⬡</span>
-          <span>Projects</span>
-        </button>
-        <button class="nav-item" data-view="community">
-          <span class="nav-icon">⌂</span>
-          <span>Community</span>
-        </button>
-        <button class="nav-item" data-view="guilds">
-          <span class="nav-icon">⛊</span>
-          <span>Guilds</span>
-        </button>
         <button class="nav-item" data-view="chat">
           <span class="nav-icon">✉</span>
           <span>Chat</span>
@@ -141,37 +129,44 @@
         </button>
       </div>
 
-      <div id="sidebar-online" class="sidebar-online" style="display:none">
-        <div class="sidebar-online-row">
-          <span class="sidebar-online-dot"></span>
-          <span id="sidebar-online-count">0</span>
-          <span class="sidebar-online-label">online</span>
-        </div>
-        <div class="sidebar-online-pct">
-          <span id="sidebar-online-pct">0%</span> of community
-        </div>
-      </div>
-
       <div class="nav-secondary">
-        <button class="nav-item nav-item-secondary" data-view="profile">
-          <span class="nav-icon">☺</span>
-          <span>Profile</span>
+        <button class="nav-item nav-item-secondary" data-view="profile" title="Profile">
+          <span class="nav-icon">◉</span>
         </button>
-        <button class="nav-item nav-item-secondary" data-view="changelog">
-          <span class="nav-icon">☰</span>
-          <span>Changelog</span>
+        <button class="nav-item nav-item-secondary" data-view="changelog" title="Changelog">
+          <span class="nav-icon">↳</span>
         </button>
-        <button class="nav-item nav-item-secondary" data-view="settings">
+        <button class="nav-item nav-item-secondary" data-view="settings" title="Settings">
           <span class="nav-icon">⚙</span>
-          <span>Settings</span>
         </button>
       </div>
 
       <div class="sidebar-footer">
-          <div id="tracking-status">
+        <div id="tracking-status">
           <span id="tracking-dot" class="tracking-dot active"></span>
           <span id="tracking-label">Tracking</span>
           <span id="streak-badge" class="streak-badge" title="Current streak">🔥 0</span>
+          <span id="sidebar-online" class="sidebar-online-compact" style="display:none">
+            <span class="sidebar-online-sep">·</span>
+            <span id="sidebar-online-count">0</span>
+            <span class="sidebar-online-label">online</span>
+          </span>
+        </div>
+        <div class="sidebar-footer-row2">
+          <div id="sidebar-clock" class="sidebar-clock"></div>
+          <div id="credits-meter" class="credits-meter" style="display:none">
+            <div class="credits-bar-row">
+              <span class="credits-bar-label">Window</span>
+              <div class="credits-bar"><div id="credits-window-fill" class="credits-bar-fill"></div></div>
+              <span id="credits-window-text" class="credits-bar-text">0 / 500</span>
+            </div>
+            <div class="credits-bar-row">
+              <span class="credits-bar-label">Week</span>
+              <div class="credits-bar"><div id="credits-weekly-fill" class="credits-bar-fill"></div></div>
+              <span id="credits-weekly-text" class="credits-bar-text">0 / 2k</span>
+            </div>
+            <div id="credits-reset-label" class="credits-window-label"></div>
+          </div>
         </div>
       </div>
     </nav>
@@ -194,10 +189,16 @@
           <div class="loader-text">LOADING</div>
         </div>
       </div>
+      <div id="credits-overlay" class="credits-overlay hidden">
+        <div class="credits-overlay-content">
+          <div class="credits-overlay-icon">⏸</div>
+          <h2 class="credits-overlay-title">Credits Exhausted</h2>
+          <p id="credits-overlay-reason" class="credits-overlay-reason"></p>
+          <p id="credits-overlay-reset" class="credits-overlay-reset"></p>
+          <button class="btn-pixel credits-overlay-upgrade" id="credits-upgrade-btn">Upgrade for More</button>
+        </div>
+      </div>
       <div id="view-dashboard" class="view active"></div>
-      <div id="view-projects" class="view"></div>
-      <div id="view-community" class="view"></div>
-      <div id="view-guilds" class="view"></div>
       <div id="view-chat" class="view"></div>
       <div id="view-friends" class="view"></div>
       <div id="view-leaderboard" class="view"></div>
@@ -262,7 +263,6 @@
           <div class="upgrade-plan-name">Starter</div>
           <div class="upgrade-plan-price" data-monthly="$3.99/mo" data-yearly="$35.88/yr">$3.99/mo</div>
           <ul class="upgrade-plan-features">
-            <li>Unlimited projects</li>
             <li>Cloud sync & backup</li>
             <li>All chat channels</li>
             <li>Data export</li>
@@ -287,7 +287,6 @@
           <ul class="upgrade-plan-features">
             <li>Everything in Pro</li>
             <li>1.5x XP bonus</li>
-            <li>Create guilds</li>
             <li>Profile frames</li>
             <li>2-year retention</li>
           </ul>
@@ -302,12 +301,9 @@
   <script src="js/charts.js"></script>
   <script src="js/gamification.js"></script>
   <script src="js/dashboard.js"></script>
-  <script src="js/projects.js"></script>
   <script src="js/settings.js"></script>
   <script src="js/friends.js"></script>
-  <script src="js/community.js"></script>
   <script src="js/chat.js"></script>
-  <script src="js/guilds.js"></script>
   <script src="js/leaderboard.js"></script>
   <script src="js/profile.js"></script>
   <script src="js/changelog.js"></script>

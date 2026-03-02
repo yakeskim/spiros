@@ -367,7 +367,7 @@ const Gamification = (() => {
   }
 
   function updateStreak(gameState, todayMs) {
-    const today = new Date().toISOString().split('T')[0];
+    const today = localDateStr(new Date());
     const streak = gameState.streak || { current: 0, best: 0, lastDate: null };
 
     if (todayMs < 3600000) return streak;
@@ -375,7 +375,7 @@ const Gamification = (() => {
 
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayStr = yesterday.toISOString().split('T')[0];
+    const yesterdayStr = localDateStr(yesterday);
 
     if (streak.lastDate === yesterdayStr) {
       streak.current += 1;
@@ -516,8 +516,8 @@ const Gamification = (() => {
     gameState.stats.totalAppsSet = gameState.stats.totalApps;
 
     // Category streak tracking (consecutive days per category)
-    const today = new Date(dayData.date || new Date()).toISOString().split('T')[0];
-    const yesterday = new Date(new Date(today).getTime() - 86400000).toISOString().split('T')[0];
+    const today = localDateStr(new Date(dayData.date || new Date()));
+    const yesterday = localDateStr(new Date(new Date(today).getTime() - 86400000));
     gameState.stats.categoryStreaks = gameState.stats.categoryStreaks || {};
     const catStreakNames = ['coding', 'music', 'design', 'browsing', 'gaming', 'communication'];
     for (const cat of catStreakNames) {
@@ -547,7 +547,7 @@ const Gamification = (() => {
     gameState.stats.weekTracking = gameState.stats.weekTracking || { weekStart: null, daysTracked: [] };
     const dayDateObj = new Date(today);
     const mondayOffset = (dayDateObj.getDay() + 6) % 7; // 0=Mon...6=Sun
-    const weekStart = new Date(dayDateObj.getTime() - mondayOffset * 86400000).toISOString().split('T')[0];
+    const weekStart = localDateStr(new Date(dayDateObj.getTime() - mondayOffset * 86400000));
     if (gameState.stats.weekTracking.weekStart !== weekStart) {
       gameState.stats.weekTracking = { weekStart, daysTracked: [] };
     }

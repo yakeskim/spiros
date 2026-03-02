@@ -1,7 +1,7 @@
 {
   "name": "spiros-app",
-  "version": "1.4.1",
-  "description": "Desktop Activity Tracker & Project Dashboard",
+  "version": "2.0.0",
+  "description": "Desktop Activity Tracker",
   "main": "electron-main.js",
   "scripts": {
     "start": "electron .",

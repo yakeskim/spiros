@@ -11,7 +11,17 @@ const Charts = (() => {
 
   function getFont() {
     const theme = document.documentElement.dataset.theme;
-    return theme === 'neutral' ? NEUTRAL_FONT : PIXEL_FONT;
+    if (theme === 'neutral') return NEUTRAL_FONT;
+    if (theme === 'matrix') return '"JetBrains Mono", "Fira Code", monospace';
+    return PIXEL_FONT;
+  }
+
+  /** Scale canvas font size by theme — pixel fonts render larger at same px */
+  function fs(basePx) {
+    const theme = document.documentElement.dataset.theme;
+    if (theme === 'neutral') return Math.round(basePx * 1.5);
+    if (theme === 'matrix') return Math.round(basePx * 1.3);
+    return basePx;
   }
 
   function getInnerCircleFill() {
@@ -65,6 +75,22 @@ const Charts = (() => {
     ctx.fillRect(x + w - 1, y, 1, h);
   }
 
+  /** Snap a ms value up to a nice round max so grid labels (max/4 steps) are clean times */
+  function niceTimeMax(val) {
+    // Each entry = step size; grid max = step * 4
+    const steps = [
+      60000, 120000, 300000, 600000, 900000,           // 1m 2m 5m 10m 15m
+      1800000, 2700000, 3600000, 5400000,               // 30m 45m 1h 1.5h
+      7200000, 10800000, 14400000, 18000000, 21600000,  // 2h 3h 4h 5h 6h
+      28800000, 36000000, 43200000                       // 8h 10h 12h
+    ];
+    for (const step of steps) {
+      if (step * 4 >= val) return step * 4;
+    }
+    // Fallback: round up to next 4-hour multiple
+    return Math.ceil(val / 14400000) * 14400000;
+  }
+
   // ===== BAR CHART =====
   function drawBarChart(canvas, data, opts = {}) {
     if (!canvas || !data || !data.length) return;
@@ -78,9 +104,12 @@ const Charts = (() => {
     // Inset background
     drawInsetBg(ctx, padding.left, padding.top, chartW, chartH);
 
-    const maxVal = Math.max(...data.map(d => d.value), 1);
+    const rawMax = Math.max(...data.map(d => d.value), 1);
     const barWidth = Math.max(8, Math.floor((chartW / data.length) * 0.6));
     const totalSlot = chartW / data.length;
+    const useLog = opts.log && rawMax > 0;
+    const logMax = useLog ? Math.log10(rawMax + 1) : 0;
+    const maxVal = useLog ? rawMax : niceTimeMax(rawMax);
 
     // Grid lines (dashed pixel style)
     for (let i = 0; i <= 4; i++) {
@@ -91,17 +120,21 @@ const Charts = (() => {
       }
       // Label
       ctx.fillStyle = LABEL_COLOR;
-      ctx.font = `7px ${PIXEL_FONT}`;
+      ctx.font = `${fs(7)}px ${getFont()}`;
       ctx.textAlign = 'right';
       ctx.textBaseline = 'middle';
-      const labelVal = maxVal * (1 - i / 4);
+      const labelVal = useLog
+        ? Math.pow(10, (1 - i / 4) * logMax) - 1
+        : maxVal * (1 - i / 4);
       ctx.fillText(formatDuration(labelVal), padding.left - 6, y);
     }
 
     // Bars
     data.forEach((d, i) => {
       const x = Math.round(padding.left + i * totalSlot + (totalSlot - barWidth) / 2);
-      const barH = Math.round((d.value / maxVal) * chartH);
+      const barH = useLog
+        ? Math.round((Math.log10(d.value + 1) / logMax) * chartH)
+        : Math.round((d.value / maxVal) * chartH);
       const y = padding.top + chartH - barH;
 
       // Bar body
@@ -121,7 +154,7 @@ const Charts = (() => {
 
       // Label
       ctx.fillStyle = LABEL_COLOR;
-      ctx.font = `7px ${PIXEL_FONT}`;
+      ctx.font = `${fs(7)}px ${getFont()}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       const label = d.label.length > 5 ? d.label.slice(0, 4) + '..' : d.label;
@@ -159,7 +192,7 @@ const Charts = (() => {
         ctx.fillRect(px, y, 2, 1);
       }
       ctx.fillStyle = LABEL_COLOR;
-      ctx.font = `7px ${PIXEL_FONT}`;
+      ctx.font = `${fs(7)}px ${getFont()}`;
       ctx.textAlign = 'right';
       ctx.textBaseline = 'middle';
       ctx.fillText(formatDuration(maxVal * (1 - i / 4)), padding.left - 6, y);
@@ -190,7 +223,7 @@ const Charts = (() => {
 
       // Label
       ctx.fillStyle = LABEL_COLOR;
-      ctx.font = `7px ${PIXEL_FONT}`;
+      ctx.font = `${fs(7)}px ${getFont()}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       ctx.fillText(d.label, x + barWidth / 2, padding.top + chartH + 6);
@@ -198,6 +231,10 @@ const Charts = (() => {
   }
 
   // ===== DONUT CHART (pixel octagon style) =====
+  // Donut slice hitbox storage
+  let _donutSlices = [];
+  let _donutCenter = { cx: 0, cy: 0, innerR: 0, outerR: 0 };
+
   function drawDonutChart(canvas, data, opts = {}) {
     if (!canvas || !data || !data.length) return;
     const { ctx, w, h } = setupHiDPI(canvas);
@@ -211,10 +248,13 @@ const Charts = (() => {
     const total = data.reduce((s, d) => s + d.value, 0) || 1;
 
     let angle = -Math.PI / 2;
+    _donutSlices = [];
+    _donutCenter = { cx, cy, innerR: innerRadius, outerR: radius };
 
     // Draw each slice
     data.forEach(d => {
       const sliceAngle = (d.value / total) * Math.PI * 2;
+      _donutSlices.push({ startAngle: angle, endAngle: angle + sliceAngle, label: d.label, value: d.value, color: d.color, pct: ((d.value / total) * 100).toFixed(1) });
 
       ctx.beginPath();
       ctx.arc(cx, cy, radius, angle, angle + sliceAngle);
@@ -250,17 +290,68 @@ const Charts = (() => {
     // Center text
     if (opts.centerLabel) {
       ctx.fillStyle = '#fffffe';
-      ctx.font = `10px ${getFont()}`;
+      ctx.font = `${fs(10)}px ${getFont()}`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(opts.centerLabel, cx, cy - 6);
     }
     if (opts.centerSub) {
       ctx.fillStyle = LABEL_COLOR;
-      ctx.font = `7px ${getFont()}`;
+      ctx.font = `${fs(7)}px ${getFont()}`;
       ctx.textAlign = 'center';
       ctx.fillText(opts.centerSub, cx, cy + 8);
     }
+  }
+
+  function getDonutSliceAt(x, y) {
+    const { cx, cy, innerR, outerR } = _donutCenter;
+    const dx = x - cx, dy = y - cy;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < innerR || dist > outerR) return null;
+    let angle = Math.atan2(dy, dx);
+    // Normalize to match start at -PI/2
+    if (angle < -Math.PI / 2) angle += Math.PI * 2;
+    for (const s of _donutSlices) {
+      let start = s.startAngle, end = s.endAngle;
+      // Normalize
+      if (start < -Math.PI / 2) start += Math.PI * 2;
+      if (end < -Math.PI / 2) end += Math.PI * 2;
+      if (angle >= start && angle < end) return s;
+    }
+    return null;
+  }
+
+  function drawPieChart(canvas, data, opts = {}) {
+    if (!canvas || !data || !data.length) return;
+    const { ctx, w, h } = setupHiDPI(canvas);
+    clearCanvas(ctx, w * 2, h * 2);
+
+    const cx = w / 2;
+    const cy = h / 2;
+    const radius = Math.min(cx, cy) - 16;
+    if (radius < 10) return;
+    const total = data.reduce((s, d) => s + d.value, 0) || 1;
+
+    let angle = -Math.PI / 2;
+    _donutSlices = [];
+    _donutCenter = { cx, cy, innerR: 0, outerR: radius };
+
+    data.forEach(d => {
+      const sliceAngle = (d.value / total) * Math.PI * 2;
+      _donutSlices.push({ startAngle: angle, endAngle: angle + sliceAngle, label: d.label, value: d.value, color: d.color, pct: ((d.value / total) * 100).toFixed(1) });
+
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, radius, angle, angle + sliceAngle);
+      ctx.closePath();
+      ctx.fillStyle = d.color || '#4488ff';
+      ctx.fill();
+      ctx.strokeStyle = '#0f0e17';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      angle += sliceAngle;
+    });
   }
 
   // ===== TIMELINE (hour blocks — pixel segments) =====
@@ -268,6 +359,17 @@ const Charts = (() => {
   let _timelineHitboxes = [];
   let _timelinePadding = null;
   let _timelineTrackH = 0;
+  let _viewStart = 0, _viewEnd = 24;
+
+  function setTimelineView(start, end) {
+    _viewStart = Math.max(0, Math.min(start, 23));
+    _viewEnd = Math.max(_viewStart + 1, Math.min(end, 24));
+    if (_viewEnd - _viewStart < 1) _viewEnd = _viewStart + 1;
+  }
+
+  function getTimelineView() {
+    return { start: _viewStart, end: _viewEnd };
+  }
 
   function formatTime12h(date) {
     let hrs = date.getHours();
@@ -291,20 +393,41 @@ const Charts = (() => {
     const padding = { left: 36, right: 8, top: 8, bottom: 18 };
     const trackH = h - padding.top - padding.bottom;
     const trackW = w - padding.left - padding.right;
+    const viewRange = _viewEnd - _viewStart;
 
     _timelinePadding = { ...padding, trackW, trackH };
 
     // Inset track background
     drawInsetBg(ctx, padding.left, padding.top, trackW, trackH);
 
-    // Hour markers (pixel dashed) — 12h format
+    // Hour markers — adaptive tick spacing based on zoom
     ctx.fillStyle = LABEL_COLOR;
-    ctx.font = `6px ${PIXEL_FONT}`;
+    ctx.font = `${fs(6)}px ${getFont()}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    for (let hr = 0; hr < 24; hr += 3) {
-      const x = Math.round(padding.left + (hr / 24) * trackW);
-      ctx.fillText(formatHour12h(hr), x, padding.top + trackH + 4);
+
+    let tickStep;
+    if (viewRange <= 3) tickStep = 0.25;
+    else if (viewRange <= 6) tickStep = 0.5;
+    else if (viewRange <= 12) tickStep = 1;
+    else tickStep = 3;
+
+    const firstTick = Math.ceil(_viewStart / tickStep) * tickStep;
+    for (let hr = firstTick; hr <= _viewEnd; hr += tickStep) {
+      const x = Math.round(padding.left + ((hr - _viewStart) / viewRange) * trackW);
+      if (x < padding.left || x > padding.left + trackW) continue;
+
+      // Label
+      if (hr === Math.floor(hr)) {
+        ctx.fillText(formatHour12h(hr % 24), x, padding.top + trackH + 4);
+      } else {
+        const wholeHr = Math.floor(hr);
+        const mins = Math.round((hr - wholeHr) * 60);
+        const ampm = wholeHr >= 12 ? 'PM' : 'AM';
+        const dispHr = wholeHr % 12 || 12;
+        ctx.fillText(`${dispHr}:${String(mins).padStart(2, '0')}`, x, padding.top + trackH + 4);
+      }
+
       // Tick marks
       ctx.fillStyle = GRID_COLOR;
       for (let py = padding.top; py < padding.top + trackH; py += 3) {
@@ -321,8 +444,18 @@ const Charts = (() => {
       if (!entry || !entry.ts) continue;
       const d = new Date(entry.ts);
       const hourFrac = d.getHours() + d.getMinutes() / 60;
-      const x = Math.round(padding.left + (hourFrac / 24) * trackW);
-      const blockW = Math.max(2, Math.round(((entry.dur || 0) / (24 * 3600000)) * trackW));
+      const durHrs = (entry.dur || 0) / 3600000;
+      const entryEnd = hourFrac + durHrs;
+
+      // Skip entries entirely outside view
+      if (entryEnd <= _viewStart || hourFrac >= _viewEnd) continue;
+
+      // Clip to view range
+      const clippedStart = Math.max(hourFrac, _viewStart);
+      const clippedEnd = Math.min(entryEnd, _viewEnd);
+
+      const x = Math.round(padding.left + ((clippedStart - _viewStart) / viewRange) * trackW);
+      const blockW = Math.max(2, Math.round(((clippedEnd - clippedStart) / viewRange) * trackW));
 
       const catColor = (categories[entry.cat] && categories[entry.cat].color) || '#78909c';
       pxRect(ctx, x, padding.top + 2, blockW, trackH - 4, catColor);
@@ -358,7 +491,7 @@ const Charts = (() => {
 
     // Day labels
     ctx.fillStyle = LABEL_COLOR;
-    ctx.font = `6px ${PIXEL_FONT}`;
+    ctx.font = `${fs(6)}px ${getFont()}`;
     ctx.textAlign = 'right';
     ctx.textBaseline = 'middle';
     const dayLabels = ['', 'M', '', 'W', '', 'F', ''];
@@ -383,7 +516,7 @@ const Charts = (() => {
       const month = tempDate.getMonth();
       if (month !== lastMonth) {
         ctx.fillStyle = LABEL_COLOR;
-        ctx.font = `6px ${PIXEL_FONT}`;
+        ctx.font = `${fs(6)}px ${getFont()}`;
         ctx.textAlign = 'left';
         ctx.textBaseline = 'bottom';
         ctx.fillText(monthNames[month], padding.left + week * (cellSize + cellGap), padding.top - 4);
@@ -396,7 +529,7 @@ const Charts = (() => {
     const current = new Date(startDate);
 
     while (current <= today) {
-      const dateStr = current.toISOString().split('T')[0];
+      const dateStr = localDateStr(current);
       const dayOfWeek = current.getDay();
 
       const x = Math.round(padding.left + col * (cellSize + cellGap));
@@ -507,7 +640,7 @@ const Charts = (() => {
 
     // X labels
     ctx.fillStyle = LABEL_COLOR;
-    ctx.font = `6px ${PIXEL_FONT}`;
+    ctx.font = `${fs(6)}px ${getFont()}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
     const step = Math.max(1, Math.floor(data.length / 8));
@@ -540,12 +673,16 @@ const Charts = (() => {
     drawBarChart,
     drawStackedBarChart,
     drawDonutChart,
+    drawPieChart,
     drawTimeline,
+    setTimelineView,
+    getTimelineView,
     drawHeatmap,
     drawLineChart,
     formatDuration,
     formatTime12h,
     getTimelineEntryAt,
+    getDonutSliceAt,
     setupHiDPI
   };
 })();

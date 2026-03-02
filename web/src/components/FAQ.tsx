@@ -21,7 +21,7 @@ const FAQS = [
   },
   {
     q: "How does gamification work?",
-    a: "Every minute of tracked activity earns you XP. As you accumulate XP, you level up through ranks (Novice → Apprentice → Journeyman → ... → Legend). You can unlock achievements, build up your village, and compete with friends on leaderboards.",
+    a: "Every minute of tracked activity earns you XP. As you accumulate XP, you level up through ranks (Novice → Apprentice → Journeyman → ... → Legend). You can unlock achievements and compete with friends on leaderboards.",
   },
   {
     q: "How do I create an account?",

@@ -28,15 +28,6 @@ contextBridge.exposeInMainWorld('spirosAPI', {
     ipcRenderer.on('chat:newDM', (event, data) => callback(data));
   },
 
-  // Community
-  getCommunityProjects: (filter, sort) => ipcRenderer.invoke('community:getProjects', filter, sort),
-  submitCommunityProject: (title, desc, url, cat) => ipcRenderer.invoke('community:submit', title, desc, url, cat),
-  voteCommunityProject: (projectId, voteType) => ipcRenderer.invoke('community:vote', projectId, voteType),
-  getUserVotes: () => ipcRenderer.invoke('community:getUserVotes'),
-  getProjectComments: (projectId) => ipcRenderer.invoke('community:getComments', projectId),
-  addProjectComment: (projectId, content) => ipcRenderer.invoke('community:addComment', projectId, content),
-  deleteCommunityProject: (projectId) => ipcRenderer.invoke('community:delete', projectId),
-
   // Friends
   searchUsers: (query) => ipcRenderer.invoke('friends:search', query),
   getFriends: () => ipcRenderer.invoke('friends:list'),
@@ -48,7 +39,6 @@ contextBridge.exposeInMainWorld('spirosAPI', {
 
   // Presence
   getOnlineFriends: () => ipcRenderer.invoke('presence:getOnlineFriends'),
-  getCommunityStats: () => ipcRenderer.invoke('presence:communityStats'),
   onPresenceSync: (callback) => {
     ipcRenderer.on('presence:sync', (event, data) => callback(data));
   },
@@ -68,14 +58,14 @@ contextBridge.exposeInMainWorld('spirosAPI', {
   startTracking: () => ipcRenderer.invoke('tracker:start'),
   stopTracking: () => ipcRenderer.invoke('tracker:stop'),
   getTrackingStatus: () => ipcRenderer.invoke('tracker:status'),
+  getTrackingCredits: () => ipcRenderer.invoke('tracker:credits'),
+  onCreditsExhausted: (cb) => { ipcRenderer.on('credits:exhausted', (e, d) => cb(d)); },
+  onCreditsRestored: (cb) => { ipcRenderer.on('credits:restored', () => cb()); },
   getToday: () => ipcRenderer.invoke('tracker:today'),
   getRange: (startDate, endDate) => ipcRenderer.invoke('tracker:range', startDate, endDate),
   onActivityUpdate: (callback) => {
     ipcRenderer.on('activity:update', (event, entry) => callback(entry));
   },
-
-  // Projects
-  scanProjects: (folder) => ipcRenderer.invoke('projects:scan', folder),
 
   // Settings
   getSettings: () => ipcRenderer.invoke('settings:get'),
@@ -114,16 +104,7 @@ contextBridge.exposeInMainWorld('spirosAPI', {
 
   // Global Leaderboard
   getGlobalLeaderboard: (metric, limit) => ipcRenderer.invoke('leaderboard:global', metric, limit),
-
-  // Guilds
-  getGuilds: (sort, search) => ipcRenderer.invoke('guilds:list', sort, search),
-  getGuild: (guildId) => ipcRenderer.invoke('guilds:get', guildId),
-  getGuildMembers: (guildId) => ipcRenderer.invoke('guilds:members', guildId),
-  createGuild: (name, desc, icon, color) => ipcRenderer.invoke('guilds:create', name, desc, icon, color),
-  joinGuild: (guildId) => ipcRenderer.invoke('guilds:join', guildId),
-  leaveGuild: (guildId) => ipcRenderer.invoke('guilds:leave', guildId),
-  updateGuildMemberRole: (guildId, userId, role) => ipcRenderer.invoke('guilds:updateRole', guildId, userId, role),
-  getMyGuild: () => ipcRenderer.invoke('guilds:mine'),
+  getCompetitionLeaderboard: (metric) => ipcRenderer.invoke('leaderboard:competition', metric),
 
   // Weekly Challenges
   getWeeklyChallenges: () => ipcRenderer.invoke('challenges:getWeekly'),
@@ -132,11 +113,6 @@ contextBridge.exposeInMainWorld('spirosAPI', {
   // Chat Reactions
   addReaction: (messageId, messageType, emoji) => ipcRenderer.invoke('chat:addReaction', messageId, messageType, emoji),
   getReactions: (messageIds) => ipcRenderer.invoke('chat:getReactions', messageIds),
-
-  // Projects: Git
-  getGitLog: (projectPath, limit) => ipcRenderer.invoke('projects:gitLog', projectPath, limit),
-  getGitBranches: (projectPath) => ipcRenderer.invoke('projects:gitBranches', projectPath),
-  getGitStatus: (projectPath) => ipcRenderer.invoke('projects:gitStatus', projectPath),
 
   // Achievement & Stats Sync
   syncAchievements: () => ipcRenderer.invoke('achievements:sync'),

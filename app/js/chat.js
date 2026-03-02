@@ -1,8 +1,8 @@
 // chat.js — Live Chat: category channels + friend DMs with Supabase Realtime + Reactions
 
 const Chat = (() => {
-  const CHANNELS = ['General', 'Help', 'SaaS', 'Social', 'Creative', 'Dev Tools', 'Other'];
-  const CHANNEL_ICONS = { General: '💬', Help: '❓', SaaS: '💼', Social: '👥', Creative: '🎨', 'Dev Tools': '🛠', Other: '📦' };
+  const CHANNELS = ['General', 'Coding', 'Creative', 'Off-Topic'];
+  const CHANNEL_ICONS = { General: '💬', Coding: '💻', Creative: '🎨', 'Off-Topic': '🎲' };
   const REACTION_EMOJIS = ['👍', '❤️', '😂', '🎉', '🔥', '👀', '💯', '⚔'];
 
   let activeTab = 'channel'; // 'channel' | 'dm'
@@ -76,9 +76,9 @@ const Chat = (() => {
             <div class="chat-sidebar-section">
               <div class="chat-sidebar-title">Direct Messages</div>
               ${!hasDMs
-                ? '<div style="font-size:9px;color:var(--gold);padding:4px;cursor:pointer" id="chat-dm-upgrade">&#x1F512; Upgrade to Pro for DMs</div>'
+                ? '<div style="font-size:var(--font-size-base);color:var(--gold);padding:4px;cursor:pointer" id="chat-dm-upgrade">&#x1F512; Upgrade to Pro for DMs</div>'
                 : (friends.length === 0
-                  ? '<div style="font-size:8px;color:var(--text-dim);padding:4px">No friends yet</div>'
+                  ? '<div style="font-size:var(--font-size-base);color:var(--text-dim);padding:4px">No friends yet</div>'
                   : friends.map(f => `
                     <button class="chat-dm-item ${activeTab === 'dm' && activeDMFriend?.id === f.id ? 'active' : ''}" data-dm-id="${f.id}" data-dm-name="${escapeHtml(f.display_name || 'Unknown')}">
                       <span class="chat-dm-avatar">${escapeHtml((f.display_name || '?').charAt(0).toUpperCase())}</span>

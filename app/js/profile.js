@@ -44,8 +44,8 @@ const Profile = (() => {
     const heatmapEnd = new Date();
     const heatmapStart = new Date(heatmapEnd);
     heatmapStart.setDate(heatmapStart.getDate() - 83);
-    const startStr = heatmapStart.toISOString().split('T')[0];
-    const endStr = heatmapEnd.toISOString().split('T')[0];
+    const startStr = localDateStr(heatmapStart);
+    const endStr = localDateStr(heatmapEnd);
 
     let rangeData = [];
     let totalHoursTracked = 0;
@@ -60,7 +60,7 @@ const Profile = (() => {
       } else {
         const statsStart = new Date(heatmapEnd);
         statsStart.setDate(statsStart.getDate() - 364);
-        const allData = await spirosAPI.getRange(statsStart.toISOString().split('T')[0], endStr);
+        const allData = await spirosAPI.getRange(localDateStr(statsStart), endStr);
         for (const day of allData) {
           const ms = day.summary?.totalMs || 0;
           totalHoursTracked += ms;
@@ -80,7 +80,7 @@ const Profile = (() => {
     for (let i = 0; i < 84; i++) {
       const d = new Date(heatmapStart);
       d.setDate(d.getDate() + i);
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = localDateStr(d);
       const ms = heatmapMap[dateStr] || 0;
       let lvl = 0;
       if (ms >= 28800000) lvl = 4;      // 8h+ gold
@@ -121,9 +121,6 @@ const Profile = (() => {
       }
     }
 
-    // Guild badge
-    let guildBadgeHtml = '<div id="profile-guild-badge" class="profile-guild-badge" style="display:none"></div>';
-
     container.innerHTML = `
       <div class="profile-page">
         <h2 class="page-title">Profile</h2>
@@ -138,7 +135,6 @@ const Profile = (() => {
               <span class="profile-level">Lv. ${level}</span>
               <span class="profile-title">${escapeHtml(title)}</span>
             </div>
-            ${guildBadgeHtml}
           </div>
         </div>
 
@@ -230,41 +226,29 @@ const Profile = (() => {
           const currentFrame = profile.profile_frame || 'none';
           return '<div class="settings-section glass" style="margin-top:16px">' +
             '<h3 class="card-title">Customize Profile</h3>' +
-            '<div class="guild-form-field"><label>Avatar Color</label><div class="guild-color-picker" id="profile-color-picker">' +
-            AVATAR_COLORS.map(c => '<button class="guild-color-btn' + (currentColor === c ? ' active' : '') + '" data-color="' + c + '" style="background:' + c + '"></button>').join('') +
+            '<div class="profile-form-field"><label>Avatar Color</label><div class="profile-color-picker" id="profile-color-picker">' +
+            AVATAR_COLORS.map(c => '<button class="color-swatch' + (currentColor === c ? ' active' : '') + '" data-color="' + c + '" style="background:' + c + '"></button>').join('') +
             '</div></div>' +
-            '<div class="guild-form-field"><label>Custom Title</label><input type="text" id="profile-custom-title" class="input-pixel" placeholder="Enter custom title..." maxlength="30" value="' + escapeHtml(currentCustomTitle) + '"></div>' +
-            (isMax ? '<div class="guild-form-field"><label>Profile Frame</label><div class="profile-frame-picker" id="profile-frame-picker">' +
+            '<div class="profile-form-field"><label>Custom Title</label><input type="text" id="profile-custom-title" class="input-pixel" placeholder="Enter custom title..." maxlength="30" value="' + escapeHtml(currentCustomTitle) + '"></div>' +
+            (isMax ? '<div class="profile-form-field"><label>Profile Frame</label><div class="profile-frame-picker" id="profile-frame-picker">' +
             PROFILE_FRAMES.map(f => '<button class="frame-option' + (currentFrame === f ? ' active' : '') + '" data-frame="' + f + '">' + f + '</button>').join('') +
             '</div></div>' : '') +
             '<button class="btn-pixel" id="btn-save-profile-custom" style="margin-top:8px">Save</button>' +
-            '<div id="profile-custom-msg" style="font-size:9px;margin-top:4px;display:none"></div>' +
+            '<div id="profile-custom-msg" style="font-size:var(--font-size-base);margin-top:4px;display:none"></div>' +
             '</div>';
         })()}
 
         <div class="settings-section glass" style="margin-top:16px" id="referral-section">
           <h3 class="card-title">Referral Program</h3>
           <div id="referral-content" style="text-align:center;padding:8px">
-            <p style="color:var(--text-dim);font-size:9px">Loading referral info...</p>
+            <p style="color:var(--text-dim);font-size:var(--font-size-base)">Loading referral info...</p>
           </div>
         </div>
       </div>
     `;
 
     wireProfileEvents(container);
-    loadGuildBadge();
     loadReferralSection();
-  }
-
-  async function loadGuildBadge() {
-    try {
-      const guild = await spirosAPI.getMyGuild();
-      const badge = document.getElementById('profile-guild-badge');
-      if (badge && guild) {
-        badge.style.display = 'inline-flex';
-        badge.innerHTML = `<span style="color:${guild.color || '#f5c542'}">${guild.icon || '⚔'}</span> ${escapeHtml(guild.name)}`;
-      }
-    } catch (_) {}
   }
 
   const REFERRAL_MILESTONES = [
@@ -390,7 +374,7 @@ const Profile = (() => {
         });
       });
     } catch (_) {
-      content.innerHTML = '<p style="color:var(--text-dim);font-size:9px">Could not load referral data</p>';
+      content.innerHTML = '<p style="color:var(--text-dim);font-size:var(--font-size-base)">Could not load referral data</p>';
     }
   }
 
@@ -403,10 +387,10 @@ const Profile = (() => {
     // Profile customization (Pro+)
     let selectedColor = '';
     let selectedFrame = 'none';
-    container.querySelectorAll('#profile-color-picker .guild-color-btn').forEach(btn => {
+    container.querySelectorAll('#profile-color-picker .color-swatch').forEach(btn => {
       if (btn.classList.contains('active')) selectedColor = btn.dataset.color;
       btn.addEventListener('click', () => {
-        container.querySelectorAll('#profile-color-picker .guild-color-btn').forEach(b => b.classList.remove('active'));
+        container.querySelectorAll('#profile-color-picker .color-swatch').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         selectedColor = btn.dataset.color;
       });

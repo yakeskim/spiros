@@ -5,6 +5,19 @@ const { exec, execFile, execSync, spawn } = require('child_process');
 const { createClient } = require('@supabase/supabase-js');
 const { autoUpdater } = require('electron-updater');
 
+// ===== Local date helper (avoids UTC offset from toISOString) =====
+let _appTimezone = null; // null = system default, set from settings on load
+
+function localDateStr(d) {
+  if (_appTimezone) {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: _appTimezone }).format(d);
+  }
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 // ===== Security Helpers =====
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const ALLOWED_PROFILE_FIELDS = ['avatar_color', 'custom_title', 'profile_frame', 'bio'];
@@ -31,6 +44,158 @@ let tracker = null;
 let isTracking = false;
 let lastUserInputTime = 0;    // timestamp of last real user input
 let userActivityState = 'idle'; // 'active' | 'bg' | 'idle'
+
+// ===== Tracking Credits System =====
+const CREDIT_POOLS = {
+  free:    { perWindow: 500,    perWeek: 2000 },
+  starter: { perWindow: 2500,   perWeek: 12000 },
+  pro:     { perWindow: 10000,  perWeek: 50000 },
+  max:     { perWindow: 100000, perWeek: 500000 }
+};
+
+let creditsCapped = false;
+let cappedReason = null; // 'window' | 'weekly'
+
+function getCurrentWindowIndex() {
+  const now = new Date();
+  const h = _appTimezone
+    ? parseInt(new Intl.DateTimeFormat('en-US', { timeZone: _appTimezone, hour: 'numeric', hour12: false }).format(now))
+    : now.getHours();
+  return Math.floor(h / 8); // 0 = midnight-8am, 1 = 8am-4pm, 2 = 4pm-midnight
+}
+
+function getWindowResetTime() {
+  const now = new Date();
+  const windowIdx = getCurrentWindowIndex();
+  const nextWindowHour = (windowIdx + 1) * 8;
+  const reset = new Date(now);
+  if (_appTimezone) {
+    const parts = new Intl.DateTimeFormat('en-CA', { timeZone: _appTimezone, year: 'numeric', month: '2-digit', day: '2-digit' }).format(now).split('-');
+    reset.setFullYear(+parts[0], +parts[1] - 1, +parts[2]);
+  }
+  if (nextWindowHour >= 24) {
+    reset.setDate(reset.getDate() + 1);
+    reset.setHours(0, 0, 0, 0);
+  } else {
+    reset.setHours(nextWindowHour, 0, 0, 0);
+  }
+  return reset;
+}
+
+function getWeeklyResetTime() {
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun, 1=Mon...
+  const daysUntilMonday = day === 0 ? 1 : (8 - day);
+  const reset = new Date(now);
+  reset.setDate(reset.getDate() + daysUntilMonday);
+  reset.setHours(0, 0, 0, 0);
+  return reset;
+}
+
+function getMondayDateStr() {
+  const now = new Date();
+  const day = now.getDay(); // 0=Sun
+  const diff = day === 0 ? 6 : day - 1; // days since Monday
+  const monday = new Date(now);
+  monday.setDate(monday.getDate() - diff);
+  return localDateStr(monday);
+}
+
+function calcIntensity(clicks, rightClicks, keys, scrolls, mouseMoved, controller) {
+  const total = clicks + rightClicks + keys + scrolls + (mouseMoved > 0 ? 1 : 0) + controller;
+  if (total === 0) return 1;
+  if (total <= 3) return 2;
+  if (total <= 10) return 3;
+  if (total <= 25) return 4;
+  return 5;
+}
+
+function getCreditsUsedInWindow(data, windowIdx) {
+  if (!data || !data.creditsUsed) return 0;
+  return data.creditsUsed[String(windowIdx)] || 0;
+}
+
+function getTotalCreditsForDay(data) {
+  if (!data || !data.creditsUsed) return 0;
+  return (data.creditsUsed['0'] || 0) + (data.creditsUsed['1'] || 0) + (data.creditsUsed['2'] || 0);
+}
+
+let _weeklyCreditsCache = { value: 0, ts: 0, monday: '' };
+
+function getWeeklyCreditsUsed() {
+  const now = Date.now();
+  const monday = getMondayDateStr();
+  // Cache for 30s or until week changes
+  if (_weeklyCreditsCache.monday === monday && now - _weeklyCreditsCache.ts < 30000) {
+    return _weeklyCreditsCache.value;
+  }
+  const today = localDateStr(new Date());
+  const days = loadRange(monday, today);
+  let total = 0;
+  for (const day of days) {
+    total += getTotalCreditsForDay(day);
+  }
+  _weeklyCreditsCache = { value: total, ts: now, monday };
+  return total;
+}
+
+function deductCredits(amount) {
+  try {
+    const data = loadTodayData();
+    if (!data.creditsUsed) data.creditsUsed = { '0': 0, '1': 0, '2': 0 };
+    const wIdx = String(getCurrentWindowIndex());
+    data.creditsUsed[wIdx] = (data.creditsUsed[wIdx] || 0) + amount;
+    saveTodayData(data);
+    // Invalidate weekly cache
+    _weeklyCreditsCache.ts = 0;
+  } catch (e) { logError('deductCredits', e); }
+}
+
+function checkCredits() {
+  const tier = cachedTier || 'free';
+  const limits = CREDIT_POOLS[tier] || CREDIT_POOLS.free;
+  const windowIdx = getCurrentWindowIndex();
+
+  const data = loadTodayData();
+  const windowUsed = getCreditsUsedInWindow(data, windowIdx);
+  const weeklyUsed = getWeeklyCreditsUsed();
+
+  if (weeklyUsed >= limits.perWeek) {
+    return { ok: false, reason: 'weekly', windowUsed, weeklyUsed, limits };
+  }
+  if (windowUsed >= limits.perWindow) {
+    return { ok: false, reason: 'window', windowUsed, weeklyUsed, limits };
+  }
+  return { ok: true, windowUsed, weeklyUsed, limits };
+}
+
+function getTrackingCredits() {
+  const tier = cachedTier || 'free';
+  const limits = CREDIT_POOLS[tier] || CREDIT_POOLS.free;
+  const windowIdx = getCurrentWindowIndex();
+
+  const data = loadTodayData();
+  const windowUsed = getCreditsUsedInWindow(data, windowIdx);
+  const weeklyUsed = getWeeklyCreditsUsed();
+  const windowResetAt = getWindowResetTime();
+  const weeklyResetAt = getWeeklyResetTime();
+
+  return {
+    tier,
+    windowUsed,
+    windowLimit: limits.perWindow,
+    weeklyUsed,
+    weeklyLimit: limits.perWeek,
+    capped: creditsCapped,
+    cappedReason,
+    windowIndex: windowIdx,
+    windowLabel: ['12am\u20138am', '8am\u20134pm', '4pm\u201312am'][windowIdx],
+    windowResetAt: windowResetAt.toISOString(),
+    windowResetLocal: windowResetAt.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+    weeklyResetAt: weeklyResetAt.toISOString(),
+    weeklyResetLocal: weeklyResetAt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
+  };
+}
 
 // ===== Paths =====
 const userDataPath = app.getPath('userData');
@@ -70,7 +235,6 @@ function ensureDirs() {
 // ===== Settings =====
 function getDefaultSettings() {
   return {
-    projectsFolder: '',
     pollIntervalMs: 5000,
     categories: {
       music: { patterns: ['FL Studio', 'Ableton', 'Audacity', 'REAPER', 'Logic Pro', 'GarageBand', 'Bitwig', 'Cubase', 'Pro Tools', 'Bandlab', 'Soundtrap'], icon: 'music-note', color: '#e040fb' },
@@ -125,7 +289,8 @@ function getDefaultSettings() {
     },
     consentAccepted: false,
     autoUpdate: true,
-    theme: 'neutral'
+    theme: 'neutral',
+    timezone: ''
   };
 }
 
@@ -679,6 +844,33 @@ function handlePollResult(result) {
     const storedLetters = privacy.trackKeystrokes ? letters : 0;
     const storedWords = privacy.trackKeystrokes ? words : 0;
 
+    // ===== Credits gate =====
+    const creditCheck = checkCredits();
+    if (!creditCheck.ok) {
+      if (!creditsCapped) {
+        creditsCapped = true;
+        cappedReason = creditCheck.reason;
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.webContents.send('credits:exhausted', {
+            reason: creditCheck.reason,
+            windowResetAt: getWindowResetTime().toISOString(),
+            weeklyResetAt: getWeeklyResetTime().toISOString()
+          });
+        }
+      }
+      return; // don't record — credits exhausted
+    }
+    if (creditsCapped) {
+      creditsCapped = false;
+      cappedReason = null;
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('credits:restored');
+      }
+    }
+
+    // Deduct credits based on input intensity
+    const intensity = calcIntensity(clicks, rightClicks, keys, scrolls, mouseMoved, controller);
+
     const data = loadTodayData();
 
     // Find last foreground entry (skip bg entries) to merge with
@@ -720,6 +912,12 @@ function handlePollResult(result) {
     }
 
     updateSummary(data);
+
+    // Deduct tracking credits (intensity is the main cost driver)
+    if (!data.creditsUsed) data.creditsUsed = { '0': 0, '1': 0, '2': 0 };
+    const wIdx = String(getCurrentWindowIndex());
+    data.creditsUsed[wIdx] = (data.creditsUsed[wIdx] || 0) + intensity;
+
     saveTodayData(data);
 
     // Push update to renderer
@@ -769,7 +967,7 @@ function extractDomain(title) {
 
 function getTodayPath() {
   const d = new Date();
-  const dateStr = d.toISOString().split('T')[0];
+  const dateStr = localDateStr(d);
   return path.join(activityDir, `${dateStr}.json`);
 }
 
@@ -782,7 +980,7 @@ function loadTodayData() {
   } catch (e) { logError('loadTodayData', e); }
   const d = new Date();
   return {
-    date: d.toISOString().split('T')[0],
+    date: localDateStr(d),
     entries: [],
     summary: {
       totalMs: 0,
@@ -853,10 +1051,9 @@ function stopBgScanner() {
 }
 
 function scanBackgroundProcesses() {
-  // Check for Claude Code running as claude.exe or as node.exe with "claude" in command line
-  // execFile avoids spawning cmd.exe (which can flash a console window)
-  execFile('wmic', ['process', 'where', "name='claude.exe' or name='node.exe'", 'get', 'processid,name,commandline', '/format:csv'], {
-    windowsHide: true, timeout: 5000
+  // Check for Claude Code running as claude.exe using tasklist (faster & more reliable than wmic)
+  execFile('tasklist', ['/FI', 'IMAGENAME eq claude.exe', '/FO', 'CSV', '/NH'], {
+    windowsHide: true, timeout: 3000
   }, (err, stdout) => {
     if (err || !stdout) return;
 
@@ -864,21 +1061,12 @@ function scanBackgroundProcesses() {
     const now = Date.now();
     const activeClaude = new Set();
 
+    // CSV format: "claude.exe","1234","Console","1","12,345 K"
     const lines = stdout.split('\n').filter(l => l.trim());
     for (const line of lines) {
-      const parts = line.split(',');
-      if (parts.length < 3) continue;
-      const pidStr = parts[parts.length - 1].trim();
-      const pid = parseInt(pidStr) || 0;
-      const procName = (parts[parts.length - 2] || '').trim().toLowerCase();
-      const cmdLine = parts.slice(1, -2).join(',').toLowerCase();
-
-      // Detect Claude Code: claude.exe directly, or node.exe with "claude" in command line
-      if (procName === 'claude.exe') {
-        activeClaude.add(pid);
-      } else if (procName === 'node.exe' && cmdLine.includes('claude') && !cmdLine.includes('spiros')) {
-        activeClaude.add(pid);
-      }
+      if (!line.toLowerCase().includes('claude.exe')) continue;
+      const match = line.match(/"claude\.exe","(\d+)"/i);
+      if (match) activeClaude.add(parseInt(match[1]));
     }
 
     if (activeClaude.size === 0) {
@@ -956,10 +1144,13 @@ function stopTracking() {
 // ===== Load activity for date range =====
 function loadRange(startDate, endDate) {
   const results = [];
-  const current = new Date(startDate);
-  const end = new Date(endDate);
+  // Parse as local dates (not UTC) to avoid timezone off-by-one
+  const sp = startDate.split('-').map(Number);
+  const ep = endDate.split('-').map(Number);
+  const current = new Date(sp[0], sp[1] - 1, sp[2]);
+  const end = new Date(ep[0], ep[1] - 1, ep[2]);
   while (current <= end) {
-    const dateStr = current.toISOString().split('T')[0];
+    const dateStr = localDateStr(current);
     const p = path.join(activityDir, `${dateStr}.json`);
     try {
       if (fs.existsSync(p)) {
@@ -969,156 +1160,6 @@ function loadRange(startDate, endDate) {
     current.setDate(current.getDate() + 1);
   }
   return results;
-}
-
-// ===== Projects Scanner =====
-// Async helper: run a git command and return trimmed stdout (or fallback on error)
-function gitAsync(cmd, cwd, fallback = '') {
-  return new Promise((resolve) => {
-    exec(cmd, { cwd, encoding: 'utf8', timeout: 5000, windowsHide: true }, (err, stdout) => {
-      resolve(err ? fallback : (stdout || '').trim());
-    });
-  });
-}
-
-async function scanProjects(folderPath) {
-  const projects = [];
-  let entries;
-  try {
-    entries = fs.readdirSync(folderPath, { withFileTypes: true });
-  } catch (e) { return []; }
-
-  for (const entry of entries) {
-    if (projects.length >= 100) break;
-    if (!entry.isDirectory()) continue;
-    const projPath = path.join(folderPath, entry.name);
-
-    try {
-      const hasGit = fs.existsSync(path.join(projPath, '.git'));
-      const project = {
-        name: entry.name,
-        path: projPath,
-        hasGit,
-        projectType: detectProjectType(projPath),
-        branch: '',
-        lastCommit: '',
-        lastCommitDate: '',
-        commitCount: 0,
-        dirty: false,
-        languages: {},
-        fileCount: 0,
-        lineCount: 0
-      };
-
-      if (hasGit) {
-        // Run git commands in parallel — async so main process stays responsive
-        const [branch, lastCommit, lastCommitDate, commitCountStr, statusOut] = await Promise.all([
-          gitAsync('git rev-parse --abbrev-ref HEAD', projPath),
-          gitAsync('git log -1 --pretty=format:%s', projPath),
-          gitAsync('git log -1 --pretty=format:%aI', projPath),
-          gitAsync('git rev-list --count HEAD', projPath, '0'),
-          gitAsync('git status --porcelain', projPath),
-        ]);
-        project.branch = branch;
-        project.lastCommit = lastCommit;
-        project.lastCommitDate = lastCommitDate;
-        project.commitCount = parseInt(commitCountStr) || 0;
-        project.dirty = statusOut.length > 0;
-      } else {
-        // Use directory mtime as lastCommitDate fallback for sorting
-        try { project.lastCommitDate = fs.statSync(projPath).mtime.toISOString(); } catch (e) {}
-      }
-
-      const exts = {};
-      let fileCount = 0;
-      let lineCount = 0;
-      const ignore = new Set(['.git', 'node_modules', '.next', 'dist', 'build', '__pycache__', '.cache', 'vendor']);
-
-      function walk(dir, depth) {
-        if (depth > 4 || fileCount > 500) return;
-        try {
-          const items = fs.readdirSync(dir, { withFileTypes: true });
-          for (const item of items) {
-            if (fileCount > 500) return;
-            if (ignore.has(item.name)) continue;
-            const full = path.join(dir, item.name);
-            if (item.isDirectory()) {
-              walk(full, depth + 1);
-            } else if (item.isFile()) {
-              fileCount++;
-              const ext = path.extname(item.name).toLowerCase();
-              if (ext) {
-                exts[ext] = (exts[ext] || 0) + 1;
-              }
-              try {
-                const stat = fs.statSync(full);
-                if (stat.size > 0 && stat.size < 256 * 1024) {
-                  const content = fs.readFileSync(full, 'utf8');
-                  lineCount += content.split('\n').length;
-                }
-              } catch (e) { /* binary or unreadable */ }
-            }
-          }
-        } catch (e) { /* permission error */ }
-      }
-
-      walk(projPath, 0);
-      project.fileCount = fileCount;
-      project.lineCount = lineCount;
-
-      const langMap = {
-        '.js': 'JavaScript', '.jsx': 'JavaScript', '.ts': 'TypeScript', '.tsx': 'TypeScript',
-        '.py': 'Python', '.rb': 'Ruby', '.go': 'Go', '.rs': 'Rust',
-        '.java': 'Java', '.kt': 'Kotlin', '.cs': 'C#', '.cpp': 'C++', '.c': 'C',
-        '.html': 'HTML', '.css': 'CSS', '.scss': 'SCSS',
-        '.json': 'JSON', '.md': 'Markdown', '.yml': 'YAML', '.yaml': 'YAML',
-        '.php': 'PHP', '.swift': 'Swift', '.dart': 'Dart', '.vue': 'Vue',
-        '.svelte': 'Svelte', '.lua': 'Lua', '.sh': 'Shell'
-      };
-      for (const [ext, count] of Object.entries(exts)) {
-        const lang = langMap[ext] || ext;
-        project.languages[lang] = (project.languages[lang] || 0) + count;
-      }
-
-      projects.push(project);
-    } catch (e) { /* skip broken repos */ }
-  }
-
-  projects.sort((a, b) => (b.lastCommitDate || '').localeCompare(a.lastCommitDate || ''));
-  return projects;
-}
-
-function detectProjectType(projPath) {
-  const markers = [
-    ['package.json', 'Node.js'],
-    ['Cargo.toml', 'Rust'],
-    ['requirements.txt', 'Python'],
-    ['setup.py', 'Python'],
-    ['pyproject.toml', 'Python'],
-    ['go.mod', 'Go'],
-    ['Gemfile', 'Ruby'],
-    ['pom.xml', 'Java'],
-    ['build.gradle', 'Java'],
-    ['*.sln', 'C#'],
-    ['composer.json', 'PHP'],
-    ['pubspec.yaml', 'Flutter'],
-    ['CMakeLists.txt', 'C/C++'],
-    ['Makefile', 'Make'],
-    ['index.html', 'Web'],
-  ];
-  for (const [file, type] of markers) {
-    if (file.startsWith('*')) {
-      // glob-style: check if any file matches the extension
-      const ext = file.slice(1);
-      try {
-        const items = fs.readdirSync(projPath);
-        if (items.some(f => f.endsWith(ext))) return type;
-      } catch (_) {}
-    } else {
-      if (fs.existsSync(path.join(projPath, file))) return type;
-    }
-  }
-  return 'Folder';
 }
 
 // ===== Window =====
@@ -1325,6 +1366,16 @@ function subscribeToTierChanges() {
         // Keep profiles table in sync
         const { data: { user } } = await supabase.auth.getUser();
         if (user) await supabase.from('profiles').update({ tier: cachedTier }).eq('id', user.id);
+        // Recheck credits — tier upgrade may restore credits
+        const tierOrder = { free: 0, starter: 1, pro: 2, max: 3 };
+        if ((tierOrder[cachedTier] || 0) > (tierOrder[oldTier] || 0) && creditsCapped) {
+          const cc = checkCredits();
+          if (cc.ok) {
+            creditsCapped = false;
+            cappedReason = null;
+            mainWindow.webContents.send('credits:restored');
+          }
+        }
       }
     } catch (_) {}
   }, 5 * 60 * 1000);
@@ -1425,7 +1476,7 @@ async function useStreakFreeze(userId) {
     const now = new Date();
     const monday = new Date(now);
     monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
-    const mondayStr = monday.toISOString().split('T')[0];
+    const mondayStr = localDateStr(monday);
 
     let freezesUsed = profile.streak_freezes_used || 0;
     if (profile.streak_freeze_last_reset !== mondayStr) {
@@ -1692,128 +1743,6 @@ async function changeDisplayName(newName) {
   return { success: true };
 }
 
-// ===== Community Projects =====
-async function getCommunityProjects(filter, sort) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
-
-  let query = supabase.from('community_projects')
-    .select('*, profiles!community_projects_user_id_fkey(display_name)');
-
-  if (filter) query = query.eq('category', filter);
-
-  if (sort === 'top') {
-    // Sort by score (upvotes - downvotes) descending
-    query = query.order('upvotes', { ascending: false });
-  } else {
-    query = query.order('created_at', { ascending: false });
-  }
-
-  query = query.limit(50);
-  const { data, error } = await query;
-  if (error) { logError('getCommunityProjects', error); return []; }
-
-  return (data || []).map(p => ({
-    ...p,
-    _isOwner: p.user_id === user.id
-  }));
-}
-
-async function submitCommunityProject(title, desc, url, category) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: 'Not logged in' };
-
-  // Validate
-  if (!title || title.length < 1 || title.length > 100) return { success: false, error: 'Title must be 1-100 characters' };
-  if (!desc || desc.length < 1 || desc.length > 500) return { success: false, error: 'Description must be 1-500 characters' };
-  if (!url || !/^https?:\/\//.test(url)) return { success: false, error: 'URL must start with http:// or https://' };
-  if (!['SaaS', 'Social', 'Creative', 'Dev Tools', 'Other'].includes(category)) return { success: false, error: 'Invalid category' };
-
-  // Moderation check on title + description
-  const modTitle = moderateContent(title);
-  if (!modTitle.ok) return { success: false, error: modTitle.error };
-  const modDesc = moderateContent(desc);
-  if (!modDesc.ok) return { success: false, error: modDesc.error };
-
-  const { error } = await supabase.from('community_projects').insert({
-    user_id: user.id, title, description: desc, url, category
-  });
-  if (error) return { success: false, error: error.message };
-  return { success: true };
-}
-
-async function voteCommunityProject(projectId, voteType) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: 'Not logged in' };
-
-  // Check existing vote
-  const { data: existing } = await supabase.from('project_votes')
-    .select('id, vote_type')
-    .eq('user_id', user.id)
-    .eq('project_id', projectId)
-    .single();
-
-  if (existing) {
-    if (existing.vote_type === voteType) {
-      // Same vote — remove it
-      await supabase.from('project_votes').delete().eq('id', existing.id);
-    } else {
-      // Different vote — switch
-      await supabase.from('project_votes').update({ vote_type: voteType }).eq('id', existing.id);
-    }
-  } else {
-    // New vote
-    await supabase.from('project_votes').insert({
-      user_id: user.id, project_id: projectId, vote_type: voteType
-    });
-  }
-
-  return { success: true };
-}
-
-async function getUserVotes() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
-  const { data } = await supabase.from('project_votes')
-    .select('project_id, vote_type')
-    .eq('user_id', user.id);
-  return data || [];
-}
-
-async function getProjectComments(projectId) {
-  const { data } = await supabase.from('project_comments')
-    .select('*, profiles!project_comments_user_id_fkey(display_name)')
-    .eq('project_id', projectId)
-    .order('created_at', { ascending: true });
-  return data || [];
-}
-
-async function addProjectComment(projectId, content) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: 'Not logged in' };
-  if (!content || content.length < 1 || content.length > 1000) return { success: false, error: 'Comment must be 1-1000 characters' };
-
-  // Moderation check
-  const mod = moderateContent(content);
-  if (!mod.ok) return { success: false, error: mod.error };
-
-  const { error } = await supabase.from('project_comments').insert({
-    project_id: projectId, user_id: user.id, content
-  });
-  if (error) return { success: false, error: error.message };
-  return { success: true };
-}
-
-async function deleteCommunityProject(projectId) {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return { success: false, error: 'Not logged in' };
-
-  const { error } = await supabase.from('community_projects')
-    .delete().eq('id', projectId).eq('user_id', user.id);
-  if (error) return { success: false, error: error.message };
-  return { success: true };
-}
-
 // ===== Live Chat =====
 let chatSubscription = null;
 let dmSubscription = null;
@@ -1844,7 +1773,7 @@ async function sendChatMessage(channel, content) {
 
     // Free users: 50 messages per day rate limit
     if (!hasTier('starter')) {
-      const today = new Date().toISOString().split('T')[0];
+      const today = localDateStr(new Date());
       const { data: rateRow } = await supabase.from('chat_rate_limits')
         .select('message_count')
         .eq('user_id', user.id)
@@ -2005,7 +1934,7 @@ async function syncActivityToCloud() {
   for (let i = 0; i < 1; i++) {
     const d = new Date(now);
     d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().split('T')[0];
+    const dateStr = localDateStr(d);
     const localPath = path.join(activityDir, `${dateStr}.json`);
 
     if (!fs.existsSync(localPath)) continue;
@@ -2068,7 +1997,7 @@ async function pullCloudToLocal() {
   if (error || !cloudDays || cloudDays.length === 0) return;
 
   ensureDirs();
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = localDateStr(new Date());
 
   for (const day of cloudDays) {
     const localPath = path.join(activityDir, `${day.date}.json`);
@@ -2371,28 +2300,6 @@ async function getOnlineFriends() {
   }
 }
 
-async function getCommunityStats() {
-  try {
-    const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-    const oneWeekAgo = new Date(Date.now() - 7 * 86400000).toISOString();
-
-    const [onlineRes, activeRes] = await Promise.all([
-      supabase.from('profiles').select('*', { count: 'exact', head: true })
-        .in('presence_status', ['online', 'afk']).gte('last_seen_at', fiveMinAgo),
-      supabase.from('profiles').select('*', { count: 'exact', head: true })
-        .gte('last_seen_at', oneWeekAgo)
-    ]);
-
-    return {
-      onlineCount: onlineRes.error ? 0 : (onlineRes.count || 0),
-      totalUsers: activeRes.error ? 0 : (activeRes.count || 0)
-    };
-  } catch (e) {
-    logError('getCommunityStats', e);
-    return { onlineCount: 0, totalUsers: 0 };
-  }
-}
-
 // ===== Public Profile =====
 async function getPublicProfile(userId) {
   try {
@@ -2426,6 +2333,16 @@ async function syncProfileToCloud() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const gs = loadGameState();
+
+    // Calculate weekly active time from last 7 days
+    let weeklyMs = 0;
+    try {
+      const today = localDateStr(new Date());
+      const weekAgo = localDateStr(new Date(Date.now() - 7 * 86400000));
+      const days = loadRange(weekAgo, today);
+      for (const day of days) weeklyMs += (day.summary?.totalMs || 0);
+    } catch (_) {}
+
     await supabase.from('profiles').upsert({
       id: user.id,
       display_name: user.user_metadata?.display_name || user.email?.split('@')[0] || 'Unknown',
@@ -2435,6 +2352,7 @@ async function syncProfileToCloud() {
       streak_current: gs.streak?.current || 0,
       streak_best: gs.streak?.best || 0,
       tier: cachedTier || 'free',
+      weekly_ms: weeklyMs,
       last_seen_at: new Date().toISOString()
     }, { onConflict: 'id' });
   } catch (e) { logError('syncProfileToCloud', e); }
@@ -2447,12 +2365,12 @@ async function getGlobalLeaderboard(metric, limit) {
     const user = { id: userId };
 
     // Rely on the 5-minute sync interval to keep profile stats fresh
-    const validMetrics = ['level', 'xp', 'streak_current'];
+    const validMetrics = ['level', 'xp', 'streak_current', 'weekly_ms'];
     const col = validMetrics.includes(metric) ? metric : 'level';
     const topN = Math.min(Math.max(limit || 50, 10), 100);
 
     const { data, error } = await supabase.from('profiles')
-      .select('id, display_name, level, xp, title, streak_current')
+      .select('id, display_name, level, xp, title, streak_current, weekly_ms')
       .order(col, { ascending: false })
       .limit(topN);
     if (error) { logError('getGlobalLeaderboard', error); return { players: [], myRank: null }; }
@@ -2464,6 +2382,7 @@ async function getGlobalLeaderboard(metric, limit) {
       xp: p.xp || 0,
       title: p.title || 'Novice',
       streak: p.streak_current || 0,
+      weeklyMs: p.weekly_ms || 0,
       rank: i + 1,
       isYou: p.id === user.id
     }));
@@ -2492,172 +2411,50 @@ async function getGlobalLeaderboard(metric, limit) {
   }
 }
 
-// ===== Guilds =====
-async function getGuilds(sort, search) {
+async function getCompetitionLeaderboard(metric) {
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return [];
+    const userId = await getCachedUserId();
+    if (!userId) return { players: [], myRank: null, offset: 0 };
 
-    let query = supabase.from('guilds').select('*');
-    if (search) {
-      const escapedSearch = search.replace(/%/g, '\\%').replace(/_/g, '\\_');
-      query = query.ilike('name', `%${escapedSearch}%`);
-    }
-    if (sort === 'xp') query = query.order('total_xp', { ascending: false });
-    else query = query.order('member_count', { ascending: false });
-    query = query.limit(50);
+    const validMetrics = ['level', 'xp', 'streak_current', 'weekly_ms'];
+    const col = validMetrics.includes(metric) ? metric : 'level';
 
-    const { data, error } = await query;
-    if (error) { logError('getGuilds', error); return []; }
-    return data || [];
-  } catch (e) {
-    logError('getGuilds', e);
-    return [];
-  }
-}
+    // Get user's value for the metric
+    const { data: profile } = await supabase.from('profiles')
+      .select(col).eq('id', userId).single();
+    if (!profile) return { players: [], myRank: null, offset: 0 };
 
-async function getGuild(guildId) {
-  try {
-    const { data, error } = await supabase.from('guilds')
-      .select('*').eq('id', guildId).single();
-    if (error) { logError('getGuild', error); return null; }
-    return data;
-  } catch (e) {
-    logError('getGuild', e);
-    return null;
-  }
-}
+    // Count players above user's value → user's rank
+    const { count } = await supabase.from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .gt(col, profile[col]);
+    const myRank = (count || 0) + 1;
 
-async function getGuildMembers(guildId) {
-  try {
-    const { data, error } = await supabase.from('guild_members')
-      .select('*, profile:profiles(display_name, level, title)')
-      .eq('guild_id', guildId)
-      .order('role', { ascending: true });
-    if (error) { logError('getGuildMembers', error); return []; }
-    return (data || []).map(m => ({
-      ...m,
-      display_name: m.profile?.display_name || 'Unknown',
-      level: m.profile?.level || 1,
-      title: m.profile?.title || 'Novice'
+    // Offset so user appears ~10th in the list
+    const offset = Math.max(0, myRank - 10);
+
+    const { data, error } = await supabase.from('profiles')
+      .select('id, display_name, level, xp, title, streak_current, weekly_ms')
+      .order(col, { ascending: false })
+      .range(offset, offset + 99);
+    if (error) { logError('getCompetitionLeaderboard', error); return { players: [], myRank, offset }; }
+
+    const players = (data || []).map((p, i) => ({
+      id: p.id,
+      name: p.display_name || 'Unknown',
+      level: p.level || 1,
+      xp: p.xp || 0,
+      title: p.title || 'Novice',
+      streak: p.streak_current || 0,
+      weeklyMs: p.weekly_ms || 0,
+      rank: offset + i + 1,
+      isYou: p.id === userId
     }));
+
+    return { players, myRank, offset };
   } catch (e) {
-    logError('getGuildMembers', e);
-    return [];
-  }
-}
-
-async function createGuild(name, description, icon, color) {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, error: 'Not logged in' };
-    if (!name || name.length < 2 || name.length > 30) return { success: false, error: 'Name must be 2-30 characters' };
-
-    // Check if user is already in a guild
-    const { data: existing } = await supabase.from('guild_members')
-      .select('id').eq('user_id', user.id).limit(1);
-    if (existing && existing.length > 0) return { success: false, error: 'You are already in a guild' };
-
-    const { data: guild, error } = await supabase.from('guilds').insert({
-      name, description: description || '', icon: icon || '⚔', color: color || '#f5c542',
-      owner_id: user.id, member_count: 1, total_xp: 0
-    }).select().single();
-    if (error) return { success: false, error: error.message };
-
-    // Add creator as owner member
-    await supabase.from('guild_members').insert({
-      guild_id: guild.id, user_id: user.id, role: 'owner'
-    });
-
-    return { success: true, guild };
-  } catch (e) {
-    logError('createGuild', e);
-    return { success: false, error: e.message };
-  }
-}
-
-async function joinGuild(guildId) {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, error: 'Not logged in' };
-
-    // Check if user is already in a guild
-    const { data: existing } = await supabase.from('guild_members')
-      .select('id').eq('user_id', user.id).limit(1);
-    if (existing && existing.length > 0) return { success: false, error: 'You are already in a guild' };
-
-    const { error } = await supabase.from('guild_members').insert({
-      guild_id: guildId, user_id: user.id, role: 'member'
-    });
-    if (error) return { success: false, error: error.message };
-
-    // Increment member count
-    await supabase.rpc('increment_guild_members', { guild_id_param: guildId });
-
-    return { success: true };
-  } catch (e) {
-    logError('joinGuild', e);
-    return { success: false, error: e.message };
-  }
-}
-
-async function leaveGuild(guildId) {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, error: 'Not logged in' };
-
-    const { error } = await supabase.from('guild_members')
-      .delete().eq('guild_id', guildId).eq('user_id', user.id);
-    if (error) return { success: false, error: error.message };
-
-    // Decrement member count
-    await supabase.rpc('decrement_guild_members', { guild_id_param: guildId });
-
-    return { success: true };
-  } catch (e) {
-    logError('leaveGuild', e);
-    return { success: false, error: e.message };
-  }
-}
-
-async function updateGuildMemberRole(guildId, userId, role) {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { success: false, error: 'Not logged in' };
-
-    // Verify caller is guild owner
-    const { data: guild } = await supabase.from('guilds')
-      .select('owner_id').eq('id', guildId).single();
-    if (!guild || guild.owner_id !== user.id) return { success: false, error: 'Only the guild owner can change roles' };
-
-    const validRoles = ['member', 'officer'];
-    if (!validRoles.includes(role)) return { success: false, error: 'Invalid role' };
-
-    const { error } = await supabase.from('guild_members')
-      .update({ role }).eq('guild_id', guildId).eq('user_id', userId);
-    if (error) return { success: false, error: error.message };
-    return { success: true };
-  } catch (e) {
-    logError('updateGuildMemberRole', e);
-    return { success: false, error: e.message };
-  }
-}
-
-async function getMyGuild() {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
-
-    const { data: membership } = await supabase.from('guild_members')
-      .select('guild_id, role').eq('user_id', user.id).limit(1).single();
-    if (!membership) return null;
-
-    const guild = await getGuild(membership.guild_id);
-    if (!guild) return null;
-    return { ...guild, myRole: membership.role };
-  } catch (e) {
-    logError('getMyGuild', e);
-    return null;
+    logError('getCompetitionLeaderboard', e);
+    return { players: [], myRank: null, offset: 0 };
   }
 }
 
@@ -2685,7 +2482,7 @@ function getWeekMonday() {
   const day = d.getDay();
   const diff = d.getDate() - day + (day === 0 ? -6 : 1);
   const monday = new Date(d.setDate(diff));
-  return monday.toISOString().split('T')[0];
+  return localDateStr(monday);
 }
 
 async function ensureWeeklyChallenges() {
@@ -2742,7 +2539,7 @@ async function getWeeklyChallenges() {
     for (const p of (progress || [])) progressMap[p.challenge_id] = p;
 
     // Compute current progress from activity data
-    const weekEnd = new Date().toISOString().split('T')[0];
+    const weekEnd = localDateStr(new Date());
     let weekData = [];
     try { weekData = await loadRange(weekStart, weekEnd); } catch (_) {}
 
@@ -2890,72 +2687,6 @@ async function getReactions(messageIds) {
   }
 }
 
-// ===== Projects: Git Integration =====
-function runGitCommand(projectPath, args) {
-  if (!projectPath || typeof projectPath !== 'string' || !path.isAbsolute(projectPath) || !fs.existsSync(projectPath)) {
-    return Promise.reject(new Error('Invalid project path'));
-  }
-  return new Promise((resolve, reject) => {
-    execFile('git', args, { cwd: projectPath, timeout: 10000 }, (err, stdout, stderr) => {
-      if (err) reject(err);
-      else resolve(stdout.trim());
-    });
-  });
-}
-
-async function getGitLog(projectPath, limit) {
-  try {
-    const n = Math.min(Math.max(limit || 15, 1), 50);
-    const output = await runGitCommand(projectPath, ['log', `--oneline`, `--format=%H|%an|%s|%ai`, `-${n}`]);
-    if (!output) return [];
-    return output.split('\n').filter(Boolean).map(line => {
-      const [hash, author, message, date] = line.split('|');
-      return { hash: (hash || '').slice(0, 8), author, message, date };
-    });
-  } catch (e) {
-    return [];
-  }
-}
-
-async function getGitBranches(projectPath) {
-  try {
-    const output = await runGitCommand(projectPath, ['branch', '-a']);
-    if (!output) return { branches: [], current: '' };
-    const branches = [];
-    let current = '';
-    for (const line of output.split('\n')) {
-      const trimmed = line.trim();
-      if (!trimmed) continue;
-      if (trimmed.startsWith('* ')) {
-        current = trimmed.slice(2);
-        branches.push(current);
-      } else {
-        branches.push(trimmed);
-      }
-    }
-    return { branches, current };
-  } catch (e) {
-    return { branches: [], current: '' };
-  }
-}
-
-async function getGitStatus(projectPath) {
-  try {
-    const output = await runGitCommand(projectPath, ['status', '--porcelain']);
-    if (!output) return [];
-    return output.split('\n').filter(Boolean).map(line => {
-      const status = line.slice(0, 2).trim();
-      const file = line.slice(3);
-      let type = 'modified';
-      if (status === '??' || status === 'A') type = 'added';
-      else if (status === 'D') type = 'deleted';
-      return { file, status, type };
-    });
-  } catch (e) {
-    return [];
-  }
-}
-
 // ===== IPC Handlers =====
 // Auth
 ipcMain.handle('auth:signup', (e, email, password, displayName, referralCode) => authSignUp(email, password, displayName, referralCode));
@@ -3037,49 +2768,31 @@ ipcMain.handle('referral:claimRewards', async () => {
   }
 });
 
-// Friends
-ipcMain.handle('friends:search', (e, query) => searchUsers(query));
-ipcMain.handle('friends:list', () => getFriends());
-ipcMain.handle('friends:request', (e, addresseeId) => sendFriendRequest(addresseeId));
-ipcMain.handle('friends:respond', (e, friendshipId, accept) => respondFriendRequest(friendshipId, accept));
-ipcMain.handle('friends:remove', (e, friendshipId) => removeFriend(friendshipId));
-ipcMain.handle('friends:activity', (e, friendId, date) => getFriendActivity(friendId, date));
-ipcMain.handle('friends:stats', (e, friendId, startDate, endDate) => getFriendStats(friendId, startDate, endDate));
+// Friends (1 credit per cloud call)
+ipcMain.handle('friends:search', (e, query) => { deductCredits(1); return searchUsers(query); });
+ipcMain.handle('friends:list', () => { deductCredits(1); return getFriends(); });
+ipcMain.handle('friends:request', (e, addresseeId) => { deductCredits(1); return sendFriendRequest(addresseeId); });
+ipcMain.handle('friends:respond', (e, friendshipId, accept) => { deductCredits(1); return respondFriendRequest(friendshipId, accept); });
+ipcMain.handle('friends:remove', (e, friendshipId) => { deductCredits(1); return removeFriend(friendshipId); });
+ipcMain.handle('friends:activity', (e, friendId, date) => { deductCredits(1); return getFriendActivity(friendId, date); });
+ipcMain.handle('friends:stats', (e, friendId, startDate, endDate) => { deductCredits(1); return getFriendStats(friendId, startDate, endDate); });
 
-// Community
-ipcMain.handle('community:getProjects', (e, filter, sort) => getCommunityProjects(filter, sort));
-ipcMain.handle('community:submit', (e, title, desc, url, cat) => submitCommunityProject(title, desc, url, cat));
-ipcMain.handle('community:vote', (e, projectId, voteType) => voteCommunityProject(projectId, voteType));
-ipcMain.handle('community:getUserVotes', () => getUserVotes());
-ipcMain.handle('community:getComments', (e, projectId) => getProjectComments(projectId));
-ipcMain.handle('community:addComment', (e, projectId, content) => addProjectComment(projectId, content));
-ipcMain.handle('community:delete', (e, projectId) => deleteCommunityProject(projectId));
-
-// Chat
-ipcMain.handle('chat:getMessages', (e, channel) => getChatMessages(channel));
-ipcMain.handle('chat:send', (e, channel, content) => sendChatMessage(channel, content));
-ipcMain.handle('chat:getDMs', (e, friendId) => getDirectMessages(friendId));
-ipcMain.handle('chat:sendDM', (e, receiverId, content) => sendDirectMessage(receiverId, content));
+// Chat (1 credit per cloud call)
+ipcMain.handle('chat:getMessages', (e, channel) => { deductCredits(1); return getChatMessages(channel); });
+ipcMain.handle('chat:send', (e, channel, content) => { deductCredits(1); return sendChatMessage(channel, content); });
+ipcMain.handle('chat:getDMs', (e, friendId) => { deductCredits(1); return getDirectMessages(friendId); });
+ipcMain.handle('chat:sendDM', (e, receiverId, content) => { deductCredits(1); return sendDirectMessage(receiverId, content); });
 ipcMain.handle('chat:subscribeChannel', (e, channel) => subscribeChatChannel(channel));
 ipcMain.handle('chat:subscribeDM', (e, friendId) => subscribeDMChannel(friendId));
 ipcMain.handle('chat:unsubscribe', () => unsubscribeChat());
 
-// Chat Reactions
-ipcMain.handle('chat:addReaction', (e, messageId, messageType, emoji) => addReaction(messageId, messageType, emoji));
-ipcMain.handle('chat:getReactions', (e, messageIds) => getReactions(messageIds));
+// Chat Reactions (1 credit per cloud call)
+ipcMain.handle('chat:addReaction', (e, messageId, messageType, emoji) => { deductCredits(1); return addReaction(messageId, messageType, emoji); });
+ipcMain.handle('chat:getReactions', (e, messageIds) => { deductCredits(1); return getReactions(messageIds); });
 
-// Leaderboard
-ipcMain.handle('leaderboard:global', (e, metric, limit) => getGlobalLeaderboard(metric, limit));
-
-// Guilds
-ipcMain.handle('guilds:list', (e, sort, search) => getGuilds(sort, search));
-ipcMain.handle('guilds:get', (e, guildId) => getGuild(guildId));
-ipcMain.handle('guilds:members', (e, guildId) => getGuildMembers(guildId));
-ipcMain.handle('guilds:create', (e, name, desc, icon, color) => createGuild(name, desc, icon, color));
-ipcMain.handle('guilds:join', (e, guildId) => joinGuild(guildId));
-ipcMain.handle('guilds:leave', (e, guildId) => leaveGuild(guildId));
-ipcMain.handle('guilds:updateRole', (e, guildId, userId, role) => updateGuildMemberRole(guildId, userId, role));
-ipcMain.handle('guilds:mine', () => getMyGuild());
+// Leaderboard (1 credit per cloud call)
+ipcMain.handle('leaderboard:global', (e, metric, limit) => { deductCredits(1); return getGlobalLeaderboard(metric, limit); });
+ipcMain.handle('leaderboard:competition', (e, metric) => { deductCredits(1); return getCompetitionLeaderboard(metric); });
 
 // Challenges
 ipcMain.handle('challenges:getWeekly', () => getWeeklyChallenges());
@@ -3097,17 +2810,11 @@ ipcMain.handle('subscription:useStreakFreeze', async () => {
   return useStreakFreeze(user.id);
 });
 
-// Projects: Git
-ipcMain.handle('projects:gitLog', (e, projectPath, limit) => getGitLog(projectPath, limit));
-ipcMain.handle('projects:gitBranches', (e, projectPath) => getGitBranches(projectPath));
-ipcMain.handle('projects:gitStatus', (e, projectPath) => getGitStatus(projectPath));
+// Presence (1 credit per cloud call)
+ipcMain.handle('presence:getOnlineFriends', () => { deductCredits(1); return getOnlineFriends(); });
 
-// Presence
-ipcMain.handle('presence:getOnlineFriends', () => getOnlineFriends());
-ipcMain.handle('presence:communityStats', () => getCommunityStats());
-
-// Sync
-ipcMain.handle('sync:now', () => syncActivityToCloud());
+// Sync (2 credits — heavier operation)
+ipcMain.handle('sync:now', () => { deductCredits(2); return syncActivityToCloud(); });
 ipcMain.handle('sync:profile', async () => {
   try {
     await syncProfileToCloud();
@@ -3127,8 +2834,9 @@ ipcMain.handle('profile:localStats', () => {
   };
 });
 
-// Achievement Sync
+// Achievement Sync (2 credits — heavier operation)
 ipcMain.handle('achievements:sync', async () => {
+  deductCredits(2);
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not logged in' };
@@ -3169,6 +2877,7 @@ ipcMain.handle('achievements:sync', async () => {
 });
 
 ipcMain.handle('gamestats:sync', async () => {
+  deductCredits(2);
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return { success: false, error: 'Not logged in' };
@@ -3191,7 +2900,8 @@ ipcMain.handle('gamestats:sync', async () => {
 // Tracker
 ipcMain.handle('tracker:start', () => { startTracking(); return { success: true }; });
 ipcMain.handle('tracker:stop', () => { stopTracking(); return { success: true }; });
-ipcMain.handle('tracker:status', () => ({ isTracking, activityState: isTracking ? userActivityState : 'idle' }));
+ipcMain.handle('tracker:status', () => ({ isTracking, activityState: isTracking ? userActivityState : 'idle', creditsCapped }));
+ipcMain.handle('tracker:credits', () => getTrackingCredits());
 ipcMain.handle('tracker:today', () => loadTodayData());
 ipcMain.handle('tracker:range', (e, startDate, endDate) => {
   const start = new Date(startDate);
@@ -3209,22 +2919,6 @@ ipcMain.handle('app:getChangelog', () => {
   catch (e) { return ''; }
 });
 
-ipcMain.handle('projects:scan', async (e, folder) => {
-  const settings = loadSettings();
-  const folderPath = folder || settings.projectsFolder;
-  if (!folderPath) return [];
-  // Only allow scanning within the configured projects folder
-  const resolved = path.resolve(folderPath);
-  const allowed = path.resolve(settings.projectsFolder || '');
-  if (allowed && !resolved.startsWith(allowed)) return [];
-  try {
-    return await scanProjects(folderPath);
-  } catch (err) {
-    console.error('projects:scan error:', err);
-    return [];
-  }
-});
-
 ipcMain.handle('settings:get', () => loadSettings());
 ipcMain.handle('settings:set', (e, newSettings) => {
   if (!newSettings || typeof newSettings !== 'object') return { success: false };
@@ -3239,6 +2933,8 @@ ipcMain.handle('settings:set', (e, newSettings) => {
   if (newSettings.autoUpdate !== undefined) {
     autoUpdater.autoDownload = newSettings.autoUpdate !== false;
   }
+  // Update cached timezone for localDateStr
+  _appTimezone = newSettings.timezone || null;
   return { success: true };
 });
 
@@ -3284,7 +2980,7 @@ ipcMain.handle('app:openInVSCode', (e, projPath) => {
     if (!projPath || typeof projPath !== 'string' || !path.isAbsolute(projPath) || !fs.existsSync(projPath)) {
       return { success: false, error: 'Invalid project path' };
     }
-    spawn('code', [projPath], { detached: true, stdio: 'ignore' }).unref();
+    spawn('code', [projPath], { detached: true, stdio: 'ignore', windowsHide: true }).unref();
     return { success: true };
   } catch (err) {
     return { success: false, error: err.message };
@@ -3296,9 +2992,9 @@ ipcMain.handle('app:openTerminal', (e, projPath) => {
     if (!projPath || typeof projPath !== 'string' || !path.isAbsolute(projPath) || !fs.existsSync(projPath)) {
       return { success: false, error: 'Invalid project path' };
     }
-    const wt = spawn('wt', ['-d', projPath], { detached: true, stdio: 'ignore' });
+    const wt = spawn('wt', ['-d', projPath], { detached: true, stdio: 'ignore', windowsHide: true });
     wt.on('error', () => {
-      spawn('cmd', ['/K', 'cd', '/d', projPath], { detached: true, stdio: 'ignore' }).unref();
+      spawn('cmd', ['/K', 'cd', '/d', projPath], { detached: true, stdio: 'ignore', windowsHide: true }).unref();
     });
     wt.unref();
     return { success: true };
@@ -3431,6 +3127,7 @@ ipcMain.handle('app:version', () => {
 // ===== Auto-Update =====
 const settings = loadSettings();
 autoUpdater.autoDownload = settings.autoUpdate !== false;
+_appTimezone = settings.timezone || null;
 autoUpdater.autoInstallOnAppQuit = true;
 
 function sendUpdateStatus(status, info) {
@@ -3497,7 +3194,7 @@ function runDataRetention() {
 
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - retentionDays);
-    const cutoffStr = cutoff.toISOString().split('T')[0];
+    const cutoffStr = localDateStr(cutoff);
 
     const files = fs.readdirSync(activityDir).filter(f => f.endsWith('.json'));
     let deleted = 0;

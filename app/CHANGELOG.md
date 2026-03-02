@@ -3,6 +3,62 @@
 All notable changes to Spiros are documented here.
 Format: [Semantic Versioning](https://semver.org/) — MAJOR.MINOR.PATCH
 
+## v2.0.0 — 2026-03-02
+**MAJOR** — Core Product Pivot: Activity Tracking Focus
+### Removed
+- Removed Projects tab — project scanning, git integration, project cards, detail popups, and all related backend
+- Removed Community tab — community project submissions, voting, and comments
+- Removed Guilds system — guild creation, browsing, membership, roles, and analytics
+- Removed sidebar online counter widget
+- Removed Projects Folder setting from General settings
+
+### New: Tracking Credits System
+- Tiered credit pools: Free (500/window, 2k/week), Starter (2.5k/window, 12k/week), Pro (10k/window, 50k/week), Max (100k/window, 500k/week)
+- 8-hour credit windows (midnight–8am, 8am–4pm, 4pm–midnight) with weekly Monday reset
+- Credits scale with input intensity (1–5 per poll based on clicks, keys, scrolls, mouse, controller)
+- Sidebar credits meter with window and weekly progress bars
+- Full-screen "Credits Exhausted" overlay when capped, auto-clears on new window/week/tier upgrade
+- Social and cloud features also consume credits (friends, chat, leaderboard, sync)
+
+### New: Timezone Support
+- Full IANA timezone picker in new Settings > Timezone tab with live clock preview
+- All date calculations across the entire app now respect configured timezone
+- Fixes off-by-one date bugs for users outside UTC
+
+### New: Chart Enhancements
+- Category chart style picker: switch between Donut, Pie, and Bar views
+- Interactive donut/pie tooltips on hover (colored dot, label, hours, percentage)
+- Bar chart logarithmic scale toggle
+- Timeline zoom: mouse wheel zoom, draggable range slider, adaptive tick spacing
+- Theme-aware font scaling for all canvas-rendered text
+
+### New: Competition Leaderboard
+- New "Competition" scope tab — centers the view around your rank (~10th in a 100-player window)
+- Leaderboard redesigned as sortable table: Rank, Name, Level, XP, Streak, Weekly columns
+- Click column headers to sort ascending/descending
+- Pagination (25 per page) with page navigation controls
+- New "Weekly" column shows weekly active time synced to cloud
+
+### New: Sidebar Clock
+- Live date and time display in sidebar footer, respects configured timezone
+
+### UI/UX
+- Chat channels simplified from 7 to 4: General, Coding, Creative, Off-Topic
+- Secondary nav (Profile, Changelog, Settings) redesigned as compact icon-only row
+- Subscription tab redesigned with plan overview card, feature grid, and credit usage bars
+- Font sizes increased across the entire app for readability (neutral +50%, matrix +30%)
+- Activity log dividers thinned and softened
+- Dashboard stat cards visually unified into merged rows
+- Settings default tab changed from Account to General
+- About description updated to "Desktop Activity Tracker"
+
+### Website
+- Added Changelog page with full version history
+- Updated tier descriptions with credit limits
+- Replaced guild references with team references
+- "EQUIPPED FOR BATTLE" heading changed to "YOUR TOOLKIT"
+- Removed village references from FAQ
+
 ## v1.4.1 — 2026-02-27
 **PATCH** — Security Hardening & Performance Fixes
 - Fixed: profile update now whitelists allowed fields only (avatar_color, custom_title, profile_frame, bio)
@@ -93,11 +149,7 @@ Format: [Semantic Versioning](https://semver.org/) — MAJOR.MINOR.PATCH
 ## v1.0.0 — 2026-02-25
 **MAJOR** — Initial production release
 - Activity tracking with privacy controls
-- Village metagame with 3D WebGL rendering (Three.js)
-- Military expansion: barracks, training ground, 4 weapon buildings, 5 troop tiers
-- Full deploy + watch raid system with tick-based battle simulation
-- Floating island sky theme with clouds
-- Tile-based shop UI with building previews
+- Gamification system with XP, levels, and achievements
 - Dashboard, Projects, Friends, Achievements, Settings tabs
 - Supabase cloud sync + offline support
 - Semantic versioning system

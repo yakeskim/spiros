@@ -1,5 +1,36 @@
 // app.js — Main renderer: routing, state, init, auth
 
+// ===== Timezone-aware helpers =====
+let _appTimezone = ''; // empty = system default
+
+function localDateStr(d) {
+  if (_appTimezone) {
+    return new Intl.DateTimeFormat('en-CA', { timeZone: _appTimezone }).format(d);
+  }
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+window.localDateStr = localDateStr;
+
+function getAppTimezone() { return _appTimezone; }
+window.getAppTimezone = getAppTimezone;
+
+function setAppTimezone(tz) { _appTimezone = tz || ''; }
+window.setAppTimezone = setAppTimezone;
+
+// ===== Sidebar Clock =====
+function updateSidebarClock() {
+  const el = document.getElementById('sidebar-clock');
+  if (!el) return;
+  const now = new Date();
+  const tzOpts = _appTimezone ? { timeZone: _appTimezone } : {};
+  const day = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', ...tzOpts });
+  const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true, ...tzOpts });
+  el.textContent = day + '  ' + time;
+}
+
 // ===== Global Tier State =====
 let currentTier = 'free';
 window._currentTier = 'free';
@@ -55,6 +86,95 @@ function showUpgradeModal(featureName, requiredTier) {
   modal.classList.remove('hidden');
 }
 window.showUpgradeModal = showUpgradeModal;
+
+// ===== Credits Display System =====
+let _creditsCapped = false;
+
+function _formatCredits(n) {
+  if (n >= 1000000) return (n / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+  return String(n);
+}
+
+function _applyBar(fillEl, textEl, used, limit) {
+  if (!fillEl) return;
+  const pct = limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
+  fillEl.style.width = pct + '%';
+  fillEl.classList.remove('warning', 'critical');
+  if (pct >= 90) fillEl.classList.add('critical');
+  else if (pct >= 70) fillEl.classList.add('warning');
+  if (textEl) textEl.textContent = _formatCredits(used) + ' / ' + _formatCredits(limit);
+}
+
+async function updateCreditsDisplay() {
+  try {
+    const credits = await spirosAPI.getTrackingCredits();
+    const meter = document.getElementById('credits-meter');
+    if (!meter) return;
+
+    meter.style.display = '';
+
+    // Window bar
+    _applyBar(
+      document.getElementById('credits-window-fill'),
+      document.getElementById('credits-window-text'),
+      credits.windowUsed, credits.windowLimit
+    );
+
+    // Weekly bar
+    _applyBar(
+      document.getElementById('credits-weekly-fill'),
+      document.getElementById('credits-weekly-text'),
+      credits.weeklyUsed, credits.weeklyLimit
+    );
+
+    // Reset label
+    const resetLabel = document.getElementById('credits-reset-label');
+    if (resetLabel) {
+      resetLabel.textContent = credits.windowLabel + ' \u00b7 resets ' + credits.windowResetLocal;
+    }
+  } catch (_) {}
+}
+
+function showCreditsExhausted(data) {
+  _creditsCapped = true;
+  const overlay = document.getElementById('credits-overlay');
+  if (overlay) overlay.classList.remove('hidden');
+
+  const reason = document.getElementById('credits-overlay-reason');
+  const reset = document.getElementById('credits-overlay-reset');
+  if (data.reason === 'weekly') {
+    if (reason) reason.textContent = 'Weekly credit limit reached.';
+    if (reset && data.weeklyResetAt) {
+      const d = new Date(data.weeklyResetAt);
+      reset.textContent = 'Resets ' + d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+    }
+  } else {
+    if (reason) reason.textContent = 'Window credit limit reached.';
+    if (reset && data.windowResetAt) {
+      const t = new Date(data.windowResetAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      reset.textContent = 'Resets at ' + t;
+    }
+  }
+
+  const dot = document.getElementById('tracking-dot');
+  if (dot) { dot.classList.remove('active', 'bg'); dot.classList.add('capped'); }
+  const label = document.getElementById('tracking-label');
+  if (label) label.textContent = 'Out of Credits';
+
+  updateCreditsDisplay();
+}
+
+function hideCreditsExhausted() {
+  _creditsCapped = false;
+  const overlay = document.getElementById('credits-overlay');
+  if (overlay) overlay.classList.add('hidden');
+
+  const dot = document.getElementById('tracking-dot');
+  if (dot) dot.classList.remove('capped');
+
+  updateCreditsDisplay();
+}
 
 // ===== General Toast =====
 let _toastTimer = null;
@@ -335,6 +455,16 @@ function showConfirm(message) {
   async function navigateTo(view) {
     currentView = view;
 
+    // Credits overlay: show on dashboard when capped, hide elsewhere
+    const creditsOverlay = document.getElementById('credits-overlay');
+    if (creditsOverlay) {
+      if (_creditsCapped && view === 'dashboard') {
+        creditsOverlay.classList.remove('hidden');
+      } else {
+        creditsOverlay.classList.add('hidden');
+      }
+    }
+
     showLoader();
 
     document.querySelectorAll('.nav-item').forEach(btn => {
@@ -361,15 +491,6 @@ function showConfirm(message) {
     switch (view) {
       case 'dashboard':
         await Dashboard.render(container);
-        break;
-      case 'projects':
-        await Projects.render(container);
-        break;
-      case 'community':
-        await Community.render(container);
-        break;
-      case 'guilds':
-        await Guilds.render(container);
         break;
       case 'chat':
         await Chat.render(container);
@@ -544,8 +665,10 @@ function showConfirm(message) {
     const dot = document.getElementById('tracking-dot');
     const label = document.getElementById('tracking-label');
     if (dot) {
-      dot.classList.remove('active', 'bg');
-      if (status.isTracking && status.activityState === 'active') {
+      dot.classList.remove('active', 'bg', 'capped');
+      if (status.creditsCapped) {
+        dot.classList.add('capped');
+      } else if (status.isTracking && status.activityState === 'active') {
         dot.classList.add('active');
       } else if (status.isTracking && status.activityState === 'bg') {
         dot.classList.add('bg');
@@ -553,33 +676,12 @@ function showConfirm(message) {
       // idle or paused = no class (grey default)
     }
     if (label) {
-      if (!status.isTracking) label.textContent = 'Paused';
+      if (status.creditsCapped) label.textContent = 'Out of Credits';
+      else if (!status.isTracking) label.textContent = 'Paused';
       else if (status.activityState === 'active') label.textContent = 'Active';
       else if (status.activityState === 'bg') label.textContent = 'BG';
       else label.textContent = 'Idle';
     }
-  }
-
-  // ===== Sidebar Online Count =====
-  let _cachedTotalUsers = 0;
-  async function updateSidebarOnline() {
-    try {
-      const stats = await spirosAPI.getCommunityStats();
-      if (!stats) return;
-      const container = document.getElementById('sidebar-online');
-      const countEl = document.getElementById('sidebar-online-count');
-      const pctEl = document.getElementById('sidebar-online-pct');
-      if (!container) return;
-
-      container.style.display = '';
-      if (stats.totalUsers) _cachedTotalUsers = stats.totalUsers;
-      const online = stats.onlineCount || 0;
-      const total = _cachedTotalUsers || 1;
-      const pct = Math.round((online / total) * 100);
-
-      if (countEl) countEl.textContent = online;
-      if (pctEl) pctEl.textContent = pct + '%';
-    } catch (_) {}
   }
 
   // ===== Achievement Toast =====
@@ -717,6 +819,9 @@ function showConfirm(message) {
     // Apply theme from settings
     document.documentElement.dataset.theme = settings.theme || 'neutral';
 
+    // Apply timezone from settings
+    setAppTimezone(settings.timezone || '');
+
     // Initialize tier state
     try {
       currentTier = await spirosAPI.getTier() || 'free';
@@ -737,24 +842,32 @@ function showConfirm(message) {
     updateStreak();
     updateTrackingStatus();
 
+    // Credits system
+    if (spirosAPI.onCreditsExhausted) {
+      spirosAPI.onCreditsExhausted(showCreditsExhausted);
+    }
+    if (spirosAPI.onCreditsRestored) {
+      spirosAPI.onCreditsRestored(hideCreditsExhausted);
+    }
+    updateCreditsDisplay();
+    setInterval(updateCreditsDisplay, 30000);
+
+    // Wire credits upgrade button
+    const creditsUpgradeBtn = document.getElementById('credits-upgrade-btn');
+    if (creditsUpgradeBtn) {
+      creditsUpgradeBtn.addEventListener('click', () => {
+        const overlay = document.getElementById('credits-overlay');
+        if (overlay) overlay.classList.add('hidden');
+        navigateTo('settings');
+      });
+    }
+
     // Display app version in sidebar
     if (spirosAPI.getAppVersion) {
       spirosAPI.getAppVersion().then(info => {
         const el = document.getElementById('app-version');
         if (el && info && info.version) el.textContent = 'v' + info.version;
       }).catch(() => {});
-    }
-
-    // Sidebar online count
-    updateSidebarOnline();
-    if (spirosAPI.onPresenceSync) {
-      spirosAPI.onPresenceSync(() => updateSidebarOnline());
-    }
-    if (spirosAPI.onPresenceJoin) {
-      spirosAPI.onPresenceJoin(() => updateSidebarOnline());
-    }
-    if (spirosAPI.onPresenceLeave) {
-      spirosAPI.onPresenceLeave(() => updateSidebarOnline());
     }
 
     // Wire nav
@@ -764,6 +877,10 @@ function showConfirm(message) {
 
     navigateTo('dashboard');
     setInterval(updateTrackingStatus, 3000);
+
+    // Sidebar clock
+    updateSidebarClock();
+    setInterval(updateSidebarClock, 1000);
   }
 
   // ===== Startup: check auth =====

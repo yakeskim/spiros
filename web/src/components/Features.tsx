@@ -57,7 +57,7 @@ export default function Features() {
             ◈ FEATURES
           </span>
           <h2 className="text-lg sm:text-xl text-text-bright mt-6 text-shadow-pixel">
-            EQUIPPED FOR BATTLE
+            YOUR TOOLKIT
           </h2>
           <p className="text-[12px] text-text-dim mt-4 max-w-lg mx-auto leading-loose">
             Everything you need to understand, gamify, and optimize your screen time.

@@ -23,6 +23,9 @@ export default function Footer() {
             <a href="#faq" className="text-[11px] text-text-dim hover:text-gold transition-colors">
               FAQ
             </a>
+            <a href="/changelog" className="text-[11px] text-text-dim hover:text-gold transition-colors">
+              Changelog
+            </a>
             <a href="/privacy" className="text-[11px] text-text-dim hover:text-gold transition-colors">
               Privacy
             </a>

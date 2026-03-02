@@ -25,13 +25,13 @@ export const TIERS: Tier[] = [
     annualTotalPrice: "$0",
     annualSave: "",
     features: [
-      "Unlimited activity tracking",
+      "500 credits / 8hr window (2k/week)",
       "Basic daily dashboard & charts",
       "Gamification & XP",
       "1 project",
       "Friends leaderboard",
       "General chat (50 msg/day)",
-      "Join guilds",
+      "Join teams",
       "AAA Neutral theme only",
       "90-day data retention",
     ],
@@ -51,6 +51,7 @@ export const TIERS: Tier[] = [
     annualSave: "Save 25%",
     features: [
       "Everything in Free",
+      "2,500 credits / 8hr window (12k/week)",
       "Unlimited projects",
       "Cloud sync & backup",
       "All chat channels (unlimited)",
@@ -75,6 +76,7 @@ export const TIERS: Tier[] = [
     annualSave: "Save 25%",
     features: [
       "Everything in Starter",
+      "10,000 credits / 8hr window (50k/week)",
       "Advanced analytics & trends",
       "1.25x XP bonus",
       "DMs + chat reactions",
@@ -99,8 +101,9 @@ export const TIERS: Tier[] = [
     annualSave: "Save 25%",
     features: [
       "Everything in Pro",
+      "100,000 credits / 8hr window (500k/week)",
       "1.5x XP bonus",
-      "Create & manage guilds",
+      "Create & manage teams",
       "Profile frames",
       "2-year data retention",
     ],

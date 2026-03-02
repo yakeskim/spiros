@@ -2,17 +2,18 @@
 
 const Settings = (() => {
   let currentSettings = null;
-  let activeTab = 'account';
+  let activeTab = 'general';
 
   const TABS = [
+    { id: 'general',      icon: '⊞', label: 'General' },
     { id: 'account',      icon: '◈', label: 'Account' },
     { id: 'subscription', icon: '★', label: 'Subscription' },
     { id: 'theme',        icon: '◐', label: 'Theme' },
-    { id: 'updates',      icon: '↻', label: 'Updates' },
     { id: 'tracking',     icon: '◎', label: 'Tracking' },
     { id: 'categories',   icon: '▣', label: 'Categories' },
+    { id: 'timezone',     icon: '⏱', label: 'Timezone' },
     { id: 'privacy',      icon: '◆', label: 'Privacy' },
-    { id: 'general',      icon: '⊞', label: 'General' },
+    { id: 'updates',      icon: '↻', label: 'Updates' },
     { id: 'about',        icon: 'ⓘ', label: 'About' }
   ];
 
@@ -60,6 +61,7 @@ const Settings = (() => {
       case 'tracking':     renderTracking(content); break;
       case 'categories':   renderCategories(content); break;
       case 'privacy':      await renderPrivacy(content); break;
+      case 'timezone':     renderTimezone(content); break;
       case 'general':      renderGeneral(content); break;
       case 'about':        renderAbout(content); break;
     }
@@ -120,7 +122,7 @@ const Settings = (() => {
 
           <div class="settings-section glass">
             <h3 class="section-title">Cloud Profile</h3>
-            <p class="setting-hint" style="margin-bottom:10px">Your stats must be synced to the cloud for leaderboards, public profile, and guilds to display correctly. Sync runs automatically every 5 minutes, or you can sync manually.</p>
+            <p class="setting-hint" style="margin-bottom:10px">Your stats must be synced to the cloud for leaderboards and public profile to display correctly. Sync runs automatically every 5 minutes, or you can sync manually.</p>
             <div id="cloud-profile-stats" class="cloud-profile-stats">
               <div class="cloud-profile-loading">Loading stats...</div>
             </div>
@@ -637,16 +639,122 @@ const Settings = (() => {
   }
 
   // ===== General Tab =====
-  function renderGeneral(el) {
+  // ===== Timezone Tab =====
+  function renderTimezone(el) {
+    const systemTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const savedTz = currentSettings.timezone || '';
+    const activeTz = savedTz || systemTz;
+
+    // Build timezone list grouped by region
+    let allTimezones;
+    try {
+      allTimezones = Intl.supportedValuesOf('timeZone');
+    } catch (_) {
+      // Fallback for older Electron
+      allTimezones = [
+        'America/New_York', 'America/Chicago', 'America/Denver', 'America/Los_Angeles',
+        'America/Anchorage', 'Pacific/Honolulu', 'America/Phoenix',
+        'America/Toronto', 'America/Vancouver', 'America/Mexico_City',
+        'America/Sao_Paulo', 'America/Argentina/Buenos_Aires',
+        'Europe/London', 'Europe/Paris', 'Europe/Berlin', 'Europe/Moscow',
+        'Asia/Tokyo', 'Asia/Shanghai', 'Asia/Kolkata', 'Asia/Dubai',
+        'Australia/Sydney', 'Pacific/Auckland',
+        'UTC'
+      ];
+    }
+
+    // Format display name from IANA timezone
+    function formatTz(tz) {
+      try {
+        const now = new Date();
+        const short = now.toLocaleTimeString('en-US', { timeZone: tz, timeZoneName: 'short' }).split(' ').pop();
+        return tz.replace(/_/g, ' ') + ' (' + short + ')';
+      } catch (_) {
+        return tz.replace(/_/g, ' ');
+      }
+    }
+
+    const options = allTimezones.map(tz =>
+      `<option value="${escapeAttr(tz)}" ${tz === activeTz ? 'selected' : ''}>${escapeHtml(formatTz(tz))}</option>`
+    ).join('');
+
+    const now = new Date();
+    const currentTime = now.toLocaleTimeString('en-US', {
+      timeZone: activeTz, hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true
+    });
+    const currentDate = now.toLocaleDateString('en-US', {
+      timeZone: activeTz, weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+    });
+
     el.innerHTML = `
       <div class="settings-section glass">
-        <h3 class="section-title">Projects Folder</h3>
-        <div class="setting-row">
-          <input type="text" id="setting-projects-folder" class="input-pixel" value="${escapeAttr(currentSettings.projectsFolder)}" readonly>
-          <button class="btn-pixel" id="btn-browse-folder">Browse</button>
+        <h3 class="section-title">Timezone</h3>
+        <div class="setting-hint" style="margin-bottom:12px">
+          Controls how dates and times are displayed throughout the app.
+          Auto-detected from your system: <strong>${escapeHtml(systemTz)}</strong>
+        </div>
+        <div class="setting-row" style="flex-direction:column;align-items:stretch;gap:8px">
+          <label style="font-size:var(--font-size-base);color:var(--text-dim)">Active Timezone</label>
+          <select id="setting-timezone" class="select-pixel" style="width:100%">
+            ${options}
+          </select>
+        </div>
+        <div class="setting-row" style="margin-top:8px">
+          <button class="btn-pixel" id="btn-tz-reset">Reset to System</button>
         </div>
       </div>
 
+      <div class="settings-section glass">
+        <h3 class="section-title">Current Time</h3>
+        <div id="tz-preview" style="font-size:11px;color:var(--text)">
+          <div id="tz-preview-time" style="font-size:16px;color:var(--gold);margin-bottom:4px">${currentTime}</div>
+          <div id="tz-preview-date" style="color:var(--text-dim)">${currentDate}</div>
+        </div>
+      </div>
+    `;
+
+    // Live preview clock
+    function updatePreview(tz) {
+      const n = new Date();
+      const timeEl = document.getElementById('tz-preview-time');
+      const dateEl = document.getElementById('tz-preview-date');
+      if (timeEl) timeEl.textContent = n.toLocaleTimeString('en-US', {
+        timeZone: tz, hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true
+      });
+      if (dateEl) dateEl.textContent = n.toLocaleDateString('en-US', {
+        timeZone: tz, weekday: 'long', month: 'long', day: 'numeric', year: 'numeric'
+      });
+    }
+
+    let previewInterval = setInterval(() => {
+      const sel = document.getElementById('setting-timezone');
+      if (!sel) { clearInterval(previewInterval); return; }
+      updatePreview(sel.value);
+    }, 1000);
+
+    el.querySelector('#setting-timezone')?.addEventListener('change', (e) => {
+      const tz = e.target.value;
+      currentSettings.timezone = tz === systemTz ? '' : tz;
+      saveCurrentSettings();
+      if (window.setAppTimezone) window.setAppTimezone(currentSettings.timezone);
+      updatePreview(tz);
+      if (window.showToast) window.showToast('Timezone updated', 'success');
+    });
+
+    el.querySelector('#btn-tz-reset')?.addEventListener('click', () => {
+      currentSettings.timezone = '';
+      saveCurrentSettings();
+      if (window.setAppTimezone) window.setAppTimezone('');
+      const sel = document.getElementById('setting-timezone');
+      if (sel) sel.value = systemTz;
+      updatePreview(systemTz);
+      if (window.showToast) window.showToast('Reset to system timezone', 'success');
+    });
+  }
+
+  // ===== General Tab =====
+  function renderGeneral(el) {
+    el.innerHTML = `
       <div class="settings-section glass">
         <h3 class="section-title">Startup</h3>
         <div class="setting-row">
@@ -657,15 +765,6 @@ const Settings = (() => {
         </div>
       </div>
     `;
-
-    el.querySelector('#btn-browse-folder')?.addEventListener('click', async () => {
-      const result = await spirosAPI.openFolder();
-      if (result.success) {
-        currentSettings.projectsFolder = result.path;
-        document.getElementById('setting-projects-folder').value = result.path;
-        saveCurrentSettings();
-      }
-    });
 
     el.querySelector('#setting-start-minimized')?.addEventListener('change', (e) => {
       currentSettings.startMinimized = e.target.checked;
@@ -681,44 +780,49 @@ const Settings = (() => {
       details = await spirosAPI.getSubscriptionDetails();
     } catch (_) {}
 
+    const STARTER_FEATURES = [
+      '2,500 credits / 8hr window',
+      'Cloud sync & backup',
+      'All chat channels (unlimited)',
+      'Data export (CSV/JSON)',
+      'Friend stat comparison',
+      'All 3 themes'
+    ];
+    const PRO_FEATURES = [
+      '10,000 credits / 8hr window',
+      'Advanced analytics & trends',
+      '1.25x XP bonus',
+      'DMs + chat reactions',
+      'Global leaderboard',
+      'Weekly challenges',
+      'Avatar color & custom title',
+      'Streak freeze (1/week)'
+    ];
+    const MAX_FEATURES = [
+      '100,000 credits / 8hr window',
+      '1.5x XP bonus',
+      'Profile frames',
+      '2-year data retention'
+    ];
+
     const TIER_PLANS = [
       {
         id: 'starter', label: 'STARTER', cssClass: 'tier-starter',
         monthly: '$3.99', yearly: '$35.88',
-        features: [
-          'Unlimited projects',
-          'Cloud sync & backup',
-          'All chat channels (unlimited)',
-          'Data export (CSV/JSON)',
-          'Community submissions',
-          'Friend stat comparison',
-          'All 3 themes'
-        ]
+        features: STARTER_FEATURES,
+        allFeatures: STARTER_FEATURES
       },
       {
         id: 'pro', label: 'PRO', cssClass: 'tier-pro',
         monthly: '$9.99', yearly: '$89.88',
-        features: [
-          'Everything in Starter',
-          'Advanced analytics & trends',
-          '1.25x XP bonus',
-          'DMs + chat reactions',
-          'Global leaderboard',
-          'Weekly challenges',
-          'Avatar color & custom title',
-          'Streak freeze (1/week)'
-        ]
+        features: ['Everything in Starter', ...PRO_FEATURES],
+        allFeatures: [...STARTER_FEATURES, ...PRO_FEATURES]
       },
       {
         id: 'max', label: 'MAX', cssClass: 'tier-max',
         monthly: '$19.99', yearly: '$179.88',
-        features: [
-          'Everything in Pro',
-          '1.5x XP bonus',
-          'Create & manage guilds',
-          'Profile frames',
-          '2-year data retention'
-        ]
+        features: ['Everything in Pro', ...MAX_FEATURES],
+        allFeatures: [...STARTER_FEATURES, ...PRO_FEATURES, ...MAX_FEATURES]
       }
     ];
 
@@ -746,14 +850,14 @@ const Settings = (() => {
       html = `
         <div class="settings-section glass">
           <h3 class="section-title">Choose Your Plan</h3>
-          <p class="setting-hint">You're currently on the <strong>Free</strong> plan</p>
+          <p class="setting-hint">You're currently on the <strong>Free</strong> plan &mdash; 500 credits per 8hr window</p>
           <div class="subscription-plans-grid">
             ${TIER_PLANS.map(p => buildPlanCard(p, 'Get ' + p.label.charAt(0) + p.label.slice(1).toLowerCase())).join('')}
           </div>
         </div>
       `;
     } else {
-      // Paid plan: current plan info + manage link
+      // Paid plan: rich plan overview
       const statusText = details?.cancel_at_period_end ? 'Cancels at period end' : (details?.status || 'Active');
       const renewLabel = details?.cancel_at_period_end ? 'Expires' : 'Renews';
       const renewDate = details?.current_period_end
@@ -762,16 +866,60 @@ const Settings = (() => {
       const planInfo = TIER_PLANS.find(p => p.id === tier);
       const planLabel = planInfo ? planInfo.label : tier.toUpperCase();
       const planClass = planInfo ? planInfo.cssClass : 'tier-starter';
+      const planPrice = planInfo ? planInfo.monthly : '';
+      const planYearly = planInfo ? planInfo.yearly : '';
+      const allFeatures = planInfo ? planInfo.allFeatures : [];
+      const isActive = !details?.cancel_at_period_end;
+      const statusClass = isActive ? 'sub-status-active' : 'sub-status-cancelling';
 
       html = `
-        <div class="settings-section glass sub-current-plan-card">
-          <h3 class="section-title">Your Plan</h3>
-          <div class="sub-current-plan-info">
-            <span class="tier-badge ${planClass}">${planLabel}</span>
-            <span class="sub-current-status">Status: ${escapeHtml(statusText)}</span>
+        <div class="settings-section glass sub-plan-overview">
+          <div class="sub-plan-overview-header ${planClass}">
+            <span class="sub-plan-overview-label">${planLabel}</span>
+            ${planPrice ? `<span class="sub-plan-overview-price">${planPrice}<span class="sub-plan-period">/mo</span></span>` : ''}
           </div>
-          <div class="sub-current-renew">${renewLabel}: ${escapeHtml(renewDate)}</div>
-          <button class="btn-pixel sub-manage-link" id="btn-manage-external">Manage on spiros.app &rarr;</button>
+          <div class="sub-plan-overview-body">
+            <div class="sub-plan-overview-meta">
+              <div class="sub-plan-meta-item">
+                <span class="sub-plan-meta-label">Status</span>
+                <span class="sub-plan-meta-value ${statusClass}">${escapeHtml(statusText)}</span>
+              </div>
+              <div class="sub-plan-meta-item">
+                <span class="sub-plan-meta-label">${renewLabel}</span>
+                <span class="sub-plan-meta-value">${escapeHtml(renewDate)}</span>
+              </div>
+              ${planYearly ? `<div class="sub-plan-meta-item">
+                <span class="sub-plan-meta-label">Yearly</span>
+                <span class="sub-plan-meta-value">${planYearly}/yr</span>
+              </div>` : ''}
+            </div>
+            <button class="btn-pixel sub-manage-link" id="btn-manage-external">Manage subscription &rarr;</button>
+          </div>
+        </div>
+
+        <div class="settings-section glass">
+          <h3 class="section-title">Included Features</h3>
+          <ul class="sub-included-features">
+            ${allFeatures.map(f => `<li>${escapeHtml(f)}</li>`).join('')}
+          </ul>
+        </div>
+
+        <div class="settings-section glass" id="sub-usage-section">
+          <h3 class="section-title">Credit Usage</h3>
+          <p class="setting-hint">Window resets every 8hrs &middot; Weekly resets Monday midnight</p>
+          <div id="sub-credits-usage" style="margin-top:8px">
+            <div class="credits-bar-row" style="gap:6px;margin-bottom:6px">
+              <span style="font-size:var(--font-size-base);color:var(--text-dim);width:50px">Window</span>
+              <div class="credits-bar" style="height:6px"><div id="sub-window-fill" class="credits-bar-fill" style="width:0%"></div></div>
+              <span id="sub-window-text" style="font-size:var(--font-size-base);color:var(--text-dim);width:80px;text-align:right">0 / 0</span>
+            </div>
+            <div class="credits-bar-row" style="gap:6px;margin-bottom:6px">
+              <span style="font-size:var(--font-size-base);color:var(--text-dim);width:50px">Week</span>
+              <div class="credits-bar" style="height:6px"><div id="sub-weekly-fill" class="credits-bar-fill" style="width:0%"></div></div>
+              <span id="sub-weekly-text" style="font-size:var(--font-size-base);color:var(--text-dim);width:80px;text-align:right">0 / 0</span>
+            </div>
+            <div style="font-size:var(--font-size-base);color:var(--text-dim);text-align:center" id="sub-credits-reset"></div>
+          </div>
         </div>
       `;
 
@@ -779,8 +927,11 @@ const Settings = (() => {
       const upgradePlans = TIER_PLANS.filter(p => (tierOrder[p.id] || 0) > currentOrder);
       if (upgradePlans.length > 0) {
         html += `
-          <div class="subscription-plans-grid" style="margin-top:16px">
-            ${upgradePlans.map(p => buildPlanCard(p, 'Upgrade to ' + p.label.charAt(0) + p.label.slice(1).toLowerCase())).join('')}
+          <div class="settings-section glass">
+            <h3 class="section-title">Upgrade</h3>
+            <div class="subscription-plans-grid sub-upgrade-grid">
+              ${upgradePlans.map(p => buildPlanCard(p, 'Upgrade to ' + p.label.charAt(0) + p.label.slice(1).toLowerCase())).join('')}
+            </div>
           </div>
         `;
       }
@@ -788,7 +939,7 @@ const Settings = (() => {
 
     el.innerHTML = html;
 
-    // Wire "Manage on spiros.app" button (paid users)
+    // Wire "Manage subscription" button (paid users)
     el.querySelector('#btn-manage-external')?.addEventListener('click', () => {
       spirosAPI.openExternalLink('https://spiros.app/settings/subscription');
     });
@@ -801,6 +952,27 @@ const Settings = (() => {
         showUpgradeModal(label, targetTier);
       });
     });
+
+    // Populate credit usage section (paid users)
+    if (tier !== 'free' && spirosAPI.getTrackingCredits) {
+      spirosAPI.getTrackingCredits().then(credits => {
+        function applyBar(fillId, textId, used, limit) {
+          const fill = el.querySelector('#' + fillId);
+          const text = el.querySelector('#' + textId);
+          if (!fill) return;
+          const pct = limit > 0 ? Math.min(100, (used / limit) * 100) : 0;
+          fill.style.width = pct + '%';
+          fill.classList.remove('warning', 'critical');
+          if (pct >= 90) fill.classList.add('critical');
+          else if (pct >= 70) fill.classList.add('warning');
+          if (text) text.textContent = used + ' / ' + limit;
+        }
+        applyBar('sub-window-fill', 'sub-window-text', credits.windowUsed, credits.windowLimit);
+        applyBar('sub-weekly-fill', 'sub-weekly-text', credits.weeklyUsed, credits.weeklyLimit);
+        const reset = el.querySelector('#sub-credits-reset');
+        if (reset) reset.textContent = credits.windowLabel + ' \u00b7 resets ' + credits.windowResetLocal;
+      }).catch(() => {});
+    }
   }
 
   // ===== Theme Tab =====
@@ -856,7 +1028,7 @@ const Settings = (() => {
     el.innerHTML = `
       <div class="settings-section glass">
         <h3 class="section-title">About</h3>
-        <p class="about-text">Spiros — Desktop Activity Tracker & Project Dashboard</p>
+        <p class="about-text">Spiros — Desktop Activity Tracker</p>
         <p class="about-text" style="margin-top:8px;color:var(--text-dim)">Track your digital quest. Level up by staying productive.</p>
       </div>
     `;

@@ -381,8 +381,8 @@ const Friends = (() => {
     content.innerHTML = '<div class="loading-state">Loading...</div>';
 
     // Get today's date and last 7 days
-    const today = new Date().toISOString().split('T')[0];
-    const weekAgo = new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0];
+    const today = localDateStr(new Date());
+    const weekAgo = localDateStr(new Date(Date.now() - 7 * 86400000));
 
     // Fetch friend's last 7 days (sanitized server-side — only totalMs, totalEvents, byCategory)
     const friendStats = await spirosAPI.getFriendStats(friendId, weekAgo, today);

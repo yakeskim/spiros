@@ -3,11 +3,14 @@
 const Dashboard = (() => {
   let currentRange = 'daily'; // daily | weekly | monthly
   let currentDate = new Date();
+  let _lastTimelineDate = '';
+  let _catChartStyle = 'donut';
+  let _catChartLog = false;
   let settings = null;
   let privacySettings = null;
 
   function getDateStr(d) {
-    return d.toISOString().split('T')[0];
+    return localDateStr(d);
   }
 
   function formatDate(d) {
@@ -249,11 +252,30 @@ const Dashboard = (() => {
           <h3 class="card-title" data-tooltip="Hour-by-hour activity colored by category">Timeline</h3>
           <canvas id="chart-timeline" class="chart-timeline"></canvas>
           <div id="timeline-tooltip" class="timeline-tooltip"></div>
+          <div class="timeline-zoom-slider" id="timeline-zoom-slider">
+            <div class="tz-track">
+              <div class="tz-range" id="tz-range"></div>
+              <div class="tz-handle tz-handle-left" id="tz-handle-left"></div>
+              <div class="tz-handle tz-handle-right" id="tz-handle-right"></div>
+            </div>
+          </div>
         </div>
 
-        <div class="dash-card glass">
-          <h3 class="card-title" data-tooltip="Time split across activity types">Categories</h3>
+        <div class="dash-card glass" style="position:relative">
+          <div class="card-title-row">
+            <h3 class="card-title" data-tooltip="Time split across activity types">Categories</h3>
+            <select id="cat-chart-style" class="chart-style-select">
+              <option value="donut">Donut</option>
+              <option value="pie">Pie</option>
+              <option value="bar">Bar</option>
+            </select>
+            <select id="cat-chart-scale" class="chart-style-select" style="display:none">
+              <option value="linear">Linear</option>
+              <option value="log">Log</option>
+            </select>
+          </div>
           <canvas id="chart-donut" class="chart-donut"></canvas>
+          <div id="donut-tooltip" class="donut-tooltip"></div>
           <div class="legend" id="cat-legend"></div>
         </div>
 
@@ -347,7 +369,127 @@ const Dashboard = (() => {
     requestAnimationFrame(() => {
       const timelineCanvas = document.getElementById('chart-timeline');
       if (timelineCanvas) {
-        Charts.drawTimeline(timelineCanvas, data.entries || [], categories);
+        // Reset zoom only when the viewed date changes
+        const dateKey = getDateStr(currentDate);
+        if (dateKey !== _lastTimelineDate) {
+          Charts.setTimelineView(0, 24);
+          _lastTimelineDate = dateKey;
+        }
+
+        const tlEntries = data.entries || [];
+        Charts.drawTimeline(timelineCanvas, tlEntries, categories);
+
+        // --- Zoom slider helpers ---
+        function updateSliderUI() {
+          const range = document.getElementById('tz-range');
+          const handleL = document.getElementById('tz-handle-left');
+          const handleR = document.getElementById('tz-handle-right');
+          if (!range || !handleL || !handleR) return;
+          const view = Charts.getTimelineView();
+          const leftPct = (view.start / 24) * 100;
+          const widthPct = ((view.end - view.start) / 24) * 100;
+          range.style.left = leftPct + '%';
+          range.style.width = widthPct + '%';
+          handleL.style.left = leftPct + '%';
+          handleR.style.left = (leftPct + widthPct) + '%';
+        }
+
+        function applyZoom(start, end) {
+          Charts.setTimelineView(start, end);
+          Charts.drawTimeline(timelineCanvas, tlEntries, categories);
+          updateSliderUI();
+        }
+
+        updateSliderUI();
+
+        // --- Scroll wheel zoom ---
+        timelineCanvas.addEventListener('wheel', (e) => {
+          e.preventDefault();
+          const view = Charts.getTimelineView();
+          const range = view.end - view.start;
+          const rect = timelineCanvas.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const frac = mouseX / rect.width;
+          const hourAtCursor = view.start + frac * range;
+
+          const zoomAmt = range * 0.1 * (e.deltaY > 0 ? 1 : -1);
+          let newRange = range + zoomAmt;
+          newRange = Math.max(1, Math.min(24, newRange));
+
+          let newStart = hourAtCursor - frac * newRange;
+          let newEnd = newStart + newRange;
+          if (newStart < 0) { newStart = 0; newEnd = newRange; }
+          if (newEnd > 24) { newEnd = 24; newStart = 24 - newRange; }
+          applyZoom(newStart, newEnd);
+        }, { passive: false });
+
+        // --- Drag handlers for slider ---
+        const slider = document.getElementById('timeline-zoom-slider');
+        if (slider) {
+          function setupHandleDrag(handleId, mode) {
+            const handle = document.getElementById(handleId);
+            if (!handle) return;
+            handle.addEventListener('pointerdown', (e) => {
+              e.preventDefault();
+              handle.setPointerCapture(e.pointerId);
+              const track = handle.closest('.tz-track');
+              const trackRect = track.getBoundingClientRect();
+
+              function onMove(ev) {
+                const pct = Math.max(0, Math.min(1, (ev.clientX - trackRect.left) / trackRect.width));
+                const hr = pct * 24;
+                const view = Charts.getTimelineView();
+                if (mode === 'left') {
+                  applyZoom(Math.min(hr, view.end - 1), view.end);
+                } else {
+                  applyZoom(view.start, Math.max(hr, view.start + 1));
+                }
+              }
+
+              function onUp() {
+                handle.removeEventListener('pointermove', onMove);
+                handle.removeEventListener('pointerup', onUp);
+              }
+
+              handle.addEventListener('pointermove', onMove);
+              handle.addEventListener('pointerup', onUp);
+            });
+          }
+
+          setupHandleDrag('tz-handle-left', 'left');
+          setupHandleDrag('tz-handle-right', 'right');
+
+          // Range bar drag (pan)
+          const rangeBar = document.getElementById('tz-range');
+          if (rangeBar) {
+            rangeBar.addEventListener('pointerdown', (e) => {
+              e.preventDefault();
+              rangeBar.setPointerCapture(e.pointerId);
+              const track = rangeBar.closest('.tz-track');
+              const trackRect = track.getBoundingClientRect();
+              const view = Charts.getTimelineView();
+              const startHr = view.start;
+              const width = view.end - view.start;
+              const startX = e.clientX;
+
+              function onMove(ev) {
+                const dx = ev.clientX - startX;
+                const dHr = (dx / trackRect.width) * 24;
+                let newStart = startHr + dHr;
+                newStart = Math.max(0, Math.min(24 - width, newStart));
+                applyZoom(newStart, newStart + width);
+              }
+
+              function onUp() {
+                rangeBar.removeEventListener('pointermove', onMove);
+                rangeBar.removeEventListener('pointerup', onUp);
+              }
+
+              rangeBar.addEventListener('pointermove', onMove);
+              rangeBar.addEventListener('pointerup', onUp);
+            });
+          }
+        }
 
         // Timeline hover tooltip
         const tooltip = document.getElementById('timeline-tooltip');
@@ -395,10 +537,63 @@ const Dashboard = (() => {
       }
 
       const donutCanvas = document.getElementById('chart-donut');
-      if (donutCanvas) Charts.drawDonutChart(donutCanvas, donutData, {
-        centerLabel: formatHours(summary.totalMs),
-        centerSub: 'active'
-      });
+      if (donutCanvas) {
+        const scaleSelect = document.getElementById('cat-chart-scale');
+        function drawCatChart(style) {
+          if (style === 'bar') {
+            Charts.drawBarChart(donutCanvas, donutData, { log: _catChartLog });
+          } else if (style === 'pie') {
+            Charts.drawPieChart(donutCanvas, donutData);
+          } else {
+            Charts.drawDonutChart(donutCanvas, donutData, {
+              centerLabel: formatHours(summary.totalMs),
+              centerSub: 'active'
+            });
+          }
+          if (scaleSelect) scaleSelect.style.display = style === 'bar' ? '' : 'none';
+        }
+        drawCatChart(_catChartStyle);
+
+        const styleSelect = document.getElementById('cat-chart-style');
+        if (styleSelect) {
+          styleSelect.value = _catChartStyle;
+          styleSelect.addEventListener('change', () => {
+            _catChartStyle = styleSelect.value;
+            drawCatChart(_catChartStyle);
+          });
+        }
+        if (scaleSelect) {
+          scaleSelect.value = _catChartLog ? 'log' : 'linear';
+          scaleSelect.addEventListener('change', () => {
+            _catChartLog = scaleSelect.value === 'log';
+            drawCatChart(_catChartStyle);
+          });
+        }
+
+        const donutTip = document.getElementById('donut-tooltip');
+        if (donutTip) {
+          donutCanvas.addEventListener('mousemove', (e) => {
+            const rect = donutCanvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const slice = Charts.getDonutSliceAt(x, y);
+            if (slice) {
+              donutTip.innerHTML = `<span class="donut-tip-dot" style="background:${slice.color}"></span><span class="donut-tip-label">${escapeHtml(slice.label)}</span><span class="donut-tip-value">${formatHours(slice.value)} (${slice.pct}%)</span>`;
+              donutTip.style.display = 'flex';
+              donutTip.style.left = (x + 12) + 'px';
+              donutTip.style.top = (y - 8) + 'px';
+              donutCanvas.style.cursor = 'pointer';
+            } else {
+              donutTip.style.display = 'none';
+              donutCanvas.style.cursor = '';
+            }
+          });
+          donutCanvas.addEventListener('mouseleave', () => {
+            donutTip.style.display = 'none';
+            donutCanvas.style.cursor = '';
+          });
+        }
+      }
 
       // Legend
       const legendEl = document.getElementById('cat-legend');
@@ -579,9 +774,21 @@ const Dashboard = (() => {
           <canvas id="chart-cat-bar" class="chart-bar"></canvas>
         </div>
 
-        <div class="dash-card glass">
-          <h3 class="card-title" data-tooltip="Proportional time split across categories">Category Split</h3>
+        <div class="dash-card glass" style="position:relative">
+          <div class="card-title-row">
+            <h3 class="card-title" data-tooltip="Proportional time split across categories">Category Split</h3>
+            <select id="week-chart-style" class="chart-style-select">
+              <option value="donut">Donut</option>
+              <option value="pie">Pie</option>
+              <option value="bar">Bar</option>
+            </select>
+            <select id="week-chart-scale" class="chart-style-select" style="display:none">
+              <option value="linear">Linear</option>
+              <option value="log">Log</option>
+            </select>
+          </div>
           <canvas id="chart-week-donut" class="chart-donut"></canvas>
+          <div id="week-donut-tooltip" class="donut-tooltip"></div>
           <div class="legend" id="week-legend"></div>
         </div>
       </div>
@@ -595,10 +802,41 @@ const Dashboard = (() => {
       if (barCanvas) Charts.drawBarChart(barCanvas, catBarData);
 
       const donutCanvas = document.getElementById('chart-week-donut');
-      if (donutCanvas) Charts.drawDonutChart(donutCanvas, catBarData, {
-        centerLabel: formatHours(totalMs),
-        centerSub: 'this week'
-      });
+      if (donutCanvas) {
+        const wkScaleSelect = document.getElementById('week-chart-scale');
+        function drawWeekCatChart(style) {
+          if (style === 'bar') Charts.drawBarChart(donutCanvas, catBarData, { log: _catChartLog });
+          else if (style === 'pie') Charts.drawPieChart(donutCanvas, catBarData);
+          else Charts.drawDonutChart(donutCanvas, catBarData, { centerLabel: formatHours(totalMs), centerSub: 'this week' });
+          if (wkScaleSelect) wkScaleSelect.style.display = style === 'bar' ? '' : 'none';
+        }
+        drawWeekCatChart('donut');
+        const wkStyleSelect = document.getElementById('week-chart-style');
+        if (wkStyleSelect) wkStyleSelect.addEventListener('change', () => drawWeekCatChart(wkStyleSelect.value));
+        if (wkScaleSelect) {
+          wkScaleSelect.value = _catChartLog ? 'log' : 'linear';
+          wkScaleSelect.addEventListener('change', () => {
+            _catChartLog = wkScaleSelect.value === 'log';
+            drawWeekCatChart(wkStyleSelect ? wkStyleSelect.value : 'donut');
+          });
+        }
+        const wkTip = document.getElementById('week-donut-tooltip');
+        if (wkTip) {
+          donutCanvas.addEventListener('mousemove', (e) => {
+            const rect = donutCanvas.getBoundingClientRect();
+            const slice = Charts.getDonutSliceAt(e.clientX - rect.left, e.clientY - rect.top);
+            if (slice) {
+              wkTip.innerHTML = `<span class="donut-tip-dot" style="background:${slice.color}"></span><span class="donut-tip-label">${escapeHtml(slice.label)}</span><span class="donut-tip-value">${formatHours(slice.value)} (${slice.pct}%)</span>`;
+              wkTip.style.display = 'flex';
+              wkTip.style.left = (e.clientX - rect.left + 12) + 'px';
+              wkTip.style.top = (e.clientY - rect.top - 8) + 'px';
+            } else {
+              wkTip.style.display = 'none';
+            }
+          });
+          donutCanvas.addEventListener('mouseleave', () => { wkTip.style.display = 'none'; });
+        }
+      }
 
       const legendEl = document.getElementById('week-legend');
       if (legendEl) {
@@ -743,9 +981,21 @@ const Dashboard = (() => {
           <canvas id="chart-trend" class="chart-line"></canvas>
         </div>
 
-        <div class="dash-card glass">
-          <h3 class="card-title" data-tooltip="Time split across activity types this month">Category Breakdown</h3>
+        <div class="dash-card glass" style="position:relative">
+          <div class="card-title-row">
+            <h3 class="card-title" data-tooltip="Time split across activity types this month">Category Breakdown</h3>
+            <select id="month-chart-style" class="chart-style-select">
+              <option value="donut">Donut</option>
+              <option value="pie">Pie</option>
+              <option value="bar">Bar</option>
+            </select>
+            <select id="month-chart-scale" class="chart-style-select" style="display:none">
+              <option value="linear">Linear</option>
+              <option value="log">Log</option>
+            </select>
+          </div>
           <canvas id="chart-month-donut" class="chart-donut"></canvas>
+          <div id="month-donut-tooltip" class="donut-tooltip"></div>
           <div class="legend" id="month-legend"></div>
         </div>
       </div>
@@ -759,10 +1009,41 @@ const Dashboard = (() => {
       if (trendCanvas) Charts.drawLineChart(trendCanvas, lineData, { color: '#00e676' });
 
       const donutCanvas = document.getElementById('chart-month-donut');
-      if (donutCanvas) Charts.drawDonutChart(donutCanvas, catDonutData, {
-        centerLabel: formatHours(totalMs),
-        centerSub: 'this month'
-      });
+      if (donutCanvas) {
+        const moScaleSelect = document.getElementById('month-chart-scale');
+        function drawMonthCatChart(style) {
+          if (style === 'bar') Charts.drawBarChart(donutCanvas, catDonutData, { log: _catChartLog });
+          else if (style === 'pie') Charts.drawPieChart(donutCanvas, catDonutData);
+          else Charts.drawDonutChart(donutCanvas, catDonutData, { centerLabel: formatHours(totalMs), centerSub: 'this month' });
+          if (moScaleSelect) moScaleSelect.style.display = style === 'bar' ? '' : 'none';
+        }
+        drawMonthCatChart('donut');
+        const moStyleSelect = document.getElementById('month-chart-style');
+        if (moStyleSelect) moStyleSelect.addEventListener('change', () => drawMonthCatChart(moStyleSelect.value));
+        if (moScaleSelect) {
+          moScaleSelect.value = _catChartLog ? 'log' : 'linear';
+          moScaleSelect.addEventListener('change', () => {
+            _catChartLog = moScaleSelect.value === 'log';
+            drawMonthCatChart(moStyleSelect ? moStyleSelect.value : 'donut');
+          });
+        }
+        const moTip = document.getElementById('month-donut-tooltip');
+        if (moTip) {
+          donutCanvas.addEventListener('mousemove', (e) => {
+            const rect = donutCanvas.getBoundingClientRect();
+            const slice = Charts.getDonutSliceAt(e.clientX - rect.left, e.clientY - rect.top);
+            if (slice) {
+              moTip.innerHTML = `<span class="donut-tip-dot" style="background:${slice.color}"></span><span class="donut-tip-label">${escapeHtml(slice.label)}</span><span class="donut-tip-value">${formatHours(slice.value)} (${slice.pct}%)</span>`;
+              moTip.style.display = 'flex';
+              moTip.style.left = (e.clientX - rect.left + 12) + 'px';
+              moTip.style.top = (e.clientY - rect.top - 8) + 'px';
+            } else {
+              moTip.style.display = 'none';
+            }
+          });
+          donutCanvas.addEventListener('mouseleave', () => { moTip.style.display = 'none'; });
+        }
+      }
 
       const legendEl = document.getElementById('month-legend');
       if (legendEl) {
@@ -800,7 +1081,7 @@ const Dashboard = (() => {
       widgetEl.innerHTML = `
         <div class="empty-state" style="text-align:center;padding:16px">
           <p>&#x1F512; Weekly Challenges require Pro</p>
-          <p style="font-size:8px;color:var(--text-dim);margin-top:4px">Complete challenges to earn bonus XP each week</p>
+          <p style="font-size:var(--font-size-base);color:var(--text-dim);margin-top:4px">Complete challenges to earn bonus XP each week</p>
           <button class="btn-pixel btn-sm" id="btn-upgrade-challenges" style="margin-top:8px">Upgrade to Pro</button>
         </div>
       `;
@@ -813,7 +1094,7 @@ const Dashboard = (() => {
     try {
       const challenges = await spirosAPI.getWeeklyChallenges();
       if (!challenges || challenges.length === 0) {
-        widgetEl.innerHTML = '<div style="color:var(--text-dim);font-size:9px">No challenges this week</div>';
+        widgetEl.innerHTML = '<div style="color:var(--text-dim);font-size:var(--font-size-base)">No challenges this week</div>';
         return;
       }
 
@@ -858,7 +1139,7 @@ const Dashboard = (() => {
         });
       });
     } catch (e) {
-      widgetEl.innerHTML = '<div style="color:var(--text-dim);font-size:9px">Could not load challenges</div>';
+      widgetEl.innerHTML = '<div style="color:var(--text-dim);font-size:var(--font-size-base)">Could not load challenges</div>';
     }
   }
 
@@ -920,16 +1201,16 @@ const Dashboard = (() => {
 
       el.innerHTML = `
         <div style="margin-bottom:12px">
-          <h4 style="font-size:9px;margin-bottom:6px">4-Week Productivity Trend</h4>
+          <h4 style="font-size:var(--font-size-base);margin-bottom:6px">4-Week Productivity Trend</h4>
           ${trendHtml}
         </div>
         <div style="margin-bottom:12px">
-          <h4 style="font-size:9px;margin-bottom:6px">Peak Hours Today ${peakHour >= 0 && Math.max(...hourBuckets) > 0 ? '(Peak: ' + (peakHour === 0 ? '12am' : peakHour < 12 ? peakHour + 'am' : peakHour === 12 ? '12pm' : (peakHour - 12) + 'pm') + ')' : ''}</h4>
+          <h4 style="font-size:var(--font-size-base);margin-bottom:6px">Peak Hours Today ${peakHour >= 0 && Math.max(...hourBuckets) > 0 ? '(Peak: ' + (peakHour === 0 ? '12am' : peakHour < 12 ? peakHour + 'am' : peakHour === 12 ? '12pm' : (peakHour - 12) + 'pm') + ')' : ''}</h4>
           <div style="display:flex;gap:2px;flex-wrap:wrap">${peakHoursHtml}</div>
         </div>
       `;
     } catch (e) {
-      el.innerHTML = '<div style="color:var(--text-dim);font-size:9px">Could not load analytics</div>';
+      el.innerHTML = '<div style="color:var(--text-dim);font-size:var(--font-size-base)">Could not load analytics</div>';
     }
   }
 
